@@ -1,5 +1,5 @@
 <#
-    CUSTARD - PowerShell Edition (Dracula Registry Edition)
+    CUSTARD - PowerShell Edition (Dracula Instant Buffer Edition)
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -14,22 +14,12 @@ if (-not $isAdmin) {
     Exit
 }
 
-# --- [ DRACULA THEME REGISTRY INJECTION ] ---
-# ทำการเปลี่ยนสีหน้าต่างคอนโซลของ PowerShell ในระดับ Registry (มีผลเมื่อเปิดหน้าต่างใหม่)
-$RegistryPath = "HKCU:\Console"
-if (Test-Path $RegistryPath) {
-    # สีม่วงเข้มจัด/เทาดำโฟลาร์ (#282a36) -> แปลงค่าเป็น RGB (54, 42, 40) ในระบบ Windows
-    Set-ItemProperty -Path $RegistryPath -Name "ColorTable00" -Value 0x00362a28 -Type DWord -Force 2>$null
-    # สีขาวนวลสำหรับตัวหนังสือหลัก (#f8f8f2) -> แปลงเป็นค่า RGB (242, 248, 248)
-    Set-ItemProperty -Path $RegistryPath -Name "ColorTable07" -Value 0x00f2f8f8 -Type DWord -Force 2>$null
-    # สีฟ้าอมเขียว Cyan (#8be9fd)
-    Set-ItemProperty -Path $RegistryPath -Name "ColorTable0b" -Value 0x00fde98b -Type DWord -Force 2>$null
-    # สีชมพูอมม่วง Magenta (#ff79c6)
-    Set-ItemProperty -Path $RegistryPath -Name "ColorTable0d" -Value 0x00c679ff -Type DWord -Force 2>$null
-}
-
-$Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL (DRACULA MODE)"
-Clear-Host
+# --- [ INSTANT DRACULA BUFFER THEME ] ---
+# บังคับระบบย้อมสี UI ของตัวหน้าต่างปัจจุบันที่กำลังรันอยู่ทันที
+$Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL (DRACULA INSTANT)"
+$Host.UI.RawUI.BackgroundColor = "DarkMagenta"  # บังคับให้ขยับสีพื้นหลังเป็นโทนสีม่วงเข้ม
+$Host.UI.RawUI.ForegroundColor = "White"        # ปรับตัวหนังสือหลักเป็นสีขาวนวล
+Clear-Host                                      # เคลียร์หน้าจอเพื่อบัฟเฟอร์ให้สีม่วงถมเต็มหน้าต่างโปรแกรม
 
 # ตั้งค่าตำแหน่งทำงานชั่วคราวในเครื่อง
 $WorkingDir = "$env:TEMP\CustardUltimate"
@@ -149,6 +139,7 @@ function Clean-TrashAndLogs {
     
     foreach ($Path in $JunkPaths) {
         if (Test-Path $Path -ErrorAction SilentlyContinue) {
+            # เติม SilentlyContinue ครบถ้วนเพื่อซ่อนตัวอักษรสีแดงจากไฟล์ที่ถูกโปรแกรมอื่นล็อกไว้
             Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
         }
     }
