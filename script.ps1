@@ -1,5 +1,4 @@
 <#
-.SYNOPSIS
     CUSTARD PREMIER OPTIMIZER v15.0 - PowerShell Edition
     Inspired by Chris Titus Tech Optimization Style.
 #>
@@ -16,12 +15,18 @@ if (-not $isAdmin) {
     Exit
 }
 
-# ตั้งค่าหน้าจอคอนโซล
 $Host.UI.RawUI.WindowTitle = "CUSTARD PREMIER OPTIMIZER v15.0 - POWERSHELL"
 Clear-Host
 
-# --- [ FUNCTIONS ] ---
+# เธ”เธฒเธงเธเนเนเธซเธฅเธ”เนเธเธฅเนเธเธฅเธฑเธเธเธฒเธเธซเธฒเธเธฃเธฑเธเธชเธ”เธเธฅเธฒเธเธญเธฒเธเธฒเธจเนเธฅเนเธงเนเธกเนเธกเธตเนเธเธฅเนเธเธนเนเธซเธน
+$WorkingDir = Get-Location
+$PowPath = Join-Path $WorkingDir "Custard.pow"
+if (-not (Test-Path $PowPath)) {
+    Write-Host " -> Downloading dependency component..." -ForegroundColor Yellow
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Custardshop/script/main/Custard.pow" -OutFile $PowPath -UseBasicParsing | Out-Null
+}
 
+# --- [ FUNCTIONS ] ---
 function Optimize-Kernel {
     Write-Host " -> Optimizing Kernel Settings..." -ForegroundColor Cyan
     bcdedit /set useplatformclock no | Out-Null
@@ -39,7 +44,6 @@ function Optimize-Priority {
     Set-ItemProperty -Path $PriorityPath -Name "Win32PrioritySeparation" -Value 38 -Type DWord -Force
     Set-ItemProperty -Path $PriorityPath -Name "ConvertibleSlateMode" -Value 0 -Type DWord -Force
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force
-    
     Set-ItemProperty -Path $SystemProfilePath -Name "SystemResponsiveness" -Value 0 -Type DWord -Force
     
     if (-not (Test-Path $GamesTaskPath)) { New-Item -Path $GamesTaskPath -Force | Out-Null }
@@ -57,11 +61,8 @@ function Optimize-Memory {
     Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageThreshold" -Value 15 -Type DWord -Force
     Set-ItemProperty -Path $MemoryPath -Name "CcTotalDirtyPages" -Value 0 -Type DWord -Force
     Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageTarget" -Value 0 -Type DWord -Force
-    
     Set-ItemProperty -Path $PrefetchPath -Name "EnablePrefetcher" -Value 3 -Type DWord -Force
     Set-ItemProperty -Path $PrefetchPath -Name "EnableSuperfetch" -Value 0 -Type DWord -Force
-    
-    # ปิด C-States (ระวัง: CPU จะวิ่งเต็มประสิทธิภาพตลอดเวลาและกินไฟเพิ่มขึ้น)
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Processor" -Name "Cstates" -Value 0 -Type DWord -Force
 }
 
@@ -76,35 +77,25 @@ function Optimize-Input {
     
     Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "MaximumSpeed2" -Value "9000" -Type String -Force
     Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "TimeToMaximumSpeed2" -Value "9000" -Type String -Force
-    
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\DXGKrnl" -Name "MonitorLatencyTolerance" -Value 0 -Type DWord -Force
 }
 
 function Install-CustardPowerPlan {
     Write-Host " -> Importing Custard Power Plan..." -ForegroundColor Cyan
-    $PSScriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Definition
-    $PowPath = Join-Path $PSScriptRoot "Custard.pow"
     $Guid = "4e2cd77e-229e-484e-b077-c63e8b092ec8"
 
     if (Test-Path $PowPath) {
-        # ลบ GUID ซ้ำเดิมออกก่อนเพื่อป้องกัน Error
         powercfg /delete $Guid 2>$null
-        
-        # นำเข้าและเปิดใช้งาน
         powercfg /import $PowPath $Guid | Out-Null
         powercfg /setactive $Guid | Out-Null
-        Write-Host " [SUCCESS] Custard Power Plan Applied Successfully." -ForegroundColor Green
+        Write-Host " [SUCCESS] Custard Power Plan Applied." -ForegroundColor Green
     } else {
-        Write-Host " [!] ERROR: Custard.pow not found in script directory." -ForegroundColor Red
+        Write-Host " [!] ERROR: Custard.pow missing." -ForegroundColor Red
     }
 }
 
 function Optimize-Network {
     Write-Host " -> Optimizing Network & DNS..." -ForegroundColor Cyan
-    
-    # หมายเหตุสไตล์ Chris Titus: แนะนำให้เปิด Defender ไว้ แต่หากต้องการปิดจริงๆ ให้เอาเครื่องหมาย # ออกจากบรรทัดด้านล่าง
-    # Set-MpPreference -DisableRealtimeMonitoring $true
-    
     netsh int tcp set global rss=enabled | Out-Null
     netsh int tcp set global autotuninglevel=normal | Out-Null
     netsh int tcp set global timestamps=disabled | Out-Null
@@ -112,7 +103,7 @@ function Optimize-Network {
     netsh winsock reset | Out-Null
 }
 
-# --- [ 2. PROGRESS BAR & EXECUTION UI ] ---
+# --- [ 2. RUNNING TWEAKS ] ---
 $Tasks = @(
     @{ Name = "Kernel Optimization"; Func = { Optimize-Kernel } },
     @{ Name = "Priority & Profiles Tweak"; Func = { Optimize-Priority } },
@@ -130,10 +121,8 @@ Write-Host ""
 for ($i = 0; $i -lt $Tasks.Count; $i++) {
     $Percent = [math]::Round((($i + 1) / $Tasks.Count) * 100)
     Write-Progress -Activity "Applying Tweaks" -Status "Executing: $($Tasks[$i].Name)" -PercentComplete $Percent
-    
-    # รันฟังก์ชัน
     & $Tasks[$i].Func
-    Start-Sleep -Milliseconds 400 # หน่วงเวลาเพื่อให้แสดงผลทันแบบเท่ๆ
+    Start-Sleep -Milliseconds 200
 }
 
 # --- [ 3. FINALIZATION ] ---
@@ -146,7 +135,6 @@ Write-Host " [ ! ] PLEASE RESTART YOUR PC NOW TO APPLY CHANGES." -ForegroundColo
 Write-Host "__________________________________________________________________________________________" -ForegroundColor Green
 Write-Host ""
 
-# ถามผู้ใช้ว่าจะรีสตาร์ทคอมพิวเตอร์เลยไหม (สไตล์ Chris Titus Tool)
 $Choice = Read-Host "Do you want to restart your PC now? (Y/N)"
 if ($Choice -eq "Y" -or $Choice -eq "y") {
     Restart-Computer
