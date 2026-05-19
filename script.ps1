@@ -18,18 +18,8 @@ if (-not $isAdmin) {
 $Host.UI.RawUI.WindowTitle = "CUSTARD PREMIER OPTIMIZER v15.0 - POWERSHELL"
 Clear-Host
 
-# กำหนดโฟลเดอร์ทำงานถาวรใน Temp ป้องกันบัก Get-Location บนแรม
-$WorkingDir = "$env:TEMP\Custard"
-if (-not (Test-Path $WorkingDir)) {
-    New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null
-}
-Set-Location $WorkingDir
-
-$PowPath = Join-Path $WorkingDir "Custard.pow"
-if (-not (Test-Path $PowPath)) {
-    Write-Host " -> Downloading dependency component..." -ForegroundColor Yellow
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Custardshop/script/main/Custard.pow" -OutFile $PowPath -UseBasicParsing | Out-Null
-}
+# ตั้งค่า Path ของไฟล์พลังงาน
+$PowPath = Join-Path $PSScriptRoot "Custard.pow"
 
 # --- [ FUNCTIONS ] ---
 function Optimize-Kernel {
