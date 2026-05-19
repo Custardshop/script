@@ -1,5 +1,5 @@
 <#
-    CUSTARD - PowerShell Edition (Dracula Edition)
+    CUSTARD - PowerShell Edition (Dracula Registry Edition)
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -14,12 +14,21 @@ if (-not $isAdmin) {
     Exit
 }
 
-# --- [ DRACULA THEME CUSTOMIZATION ] ---
-# ปรับสีหน้าต่างเบื้องหลังและตัวอักษรหลักตามธีม Dracula
-$H = $Host.UI.RawUI
-$H.WindowTitle = "OPTIMIZERPOWERSHELL"
-$H.BackgroundColor = "DarkMagenta"  # ใช้ค่าสีระบบที่ใกล้เคียงม่วงเข้มจัดที่สุด
-$H.ForegroundColor = "White"        # ตัวหนังสือหลักสีขาวนวลสบายตา
+# --- [ DRACULA THEME REGISTRY INJECTION ] ---
+# ทำการเปลี่ยนสีหน้าต่างคอนโซลของ PowerShell ในระดับ Registry (มีผลเมื่อเปิดหน้าต่างใหม่)
+$RegistryPath = "HKCU:\Console"
+if (Test-Path $RegistryPath) {
+    # สีม่วงเข้มจัด/เทาดำโฟลาร์ (#282a36) -> แปลงค่าเป็น RGB (54, 42, 40) ในระบบ Windows
+    Set-ItemProperty -Path $RegistryPath -Name "ColorTable00" -Value 0x00362a28 -Type DWord -Force 2>$null
+    # สีขาวนวลสำหรับตัวหนังสือหลัก (#f8f8f2) -> แปลงเป็นค่า RGB (242, 248, 248)
+    Set-ItemProperty -Path $RegistryPath -Name "ColorTable07" -Value 0x00f2f8f8 -Type DWord -Force 2>$null
+    # สีฟ้าอมเขียว Cyan (#8be9fd)
+    Set-ItemProperty -Path $RegistryPath -Name "ColorTable0b" -Value 0x00fde98b -Type DWord -Force 2>$null
+    # สีชมพูอมม่วง Magenta (#ff79c6)
+    Set-ItemProperty -Path $RegistryPath -Name "ColorTable0d" -Value 0x00c679ff -Type DWord -Force 2>$null
+}
+
+$Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL (DRACULA MODE)"
 Clear-Host
 
 # ตั้งค่าตำแหน่งทำงานชั่วคราวในเครื่อง
@@ -77,7 +86,6 @@ function Optimize-Memory {
     Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageTarget" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $PrefetchPath -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $PrefetchPath -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Processor" -Name "Cstates" -Value 0 -Type DWord -Force 2>$null
 
     $v1 = (Get-ItemProperty -Path $MemoryPath -ErrorAction SilentlyContinue).CcDirtyPageThreshold
     Write-Host "    [VERIFIED REGISTRY] CcDirtyPageThreshold set to: $v1" -ForegroundColor Green
