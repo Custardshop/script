@@ -17,10 +17,9 @@ if (-not $isAdmin) {
 $Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL"
 Clear-Host
 
-# กระต่ายส่วนหัว
-Write-Host "  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/) " -ForegroundColor White
+# กระต่ายประกอบร่างส่วนหัว
+Write-Host "  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/) " -ForegroundColor White
 Write-Host "  ---DEPLOYING CUSTARD PREMIER CONFIGURATION---" -ForegroundColor White
-Write-Host ""
 
 # ตั้งค่าตำแหน่งทำงานชั่วคราวในเครื่อง
 $WorkingDir = "$env:TEMP\CustardUltimate"
@@ -176,7 +175,8 @@ Write-Host ""
 Write-Host " [ SUCCESS ] ALL TWEAKS, JUNK CLEANING, AND POWER PLAN APPLIED SUCCESSFULLY!" -ForegroundColor White
 Write-Host " [ ! ] PLEASE RESTART YOUR PC NOW TO APPLY CHANGES." -ForegroundColor White
 Write-Host "------------------------------------------------------------------------------------------" -ForegroundColor White
-Write-Host "  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/) " -ForegroundColor White
+# กระต่ายประกอบร่างส่วนท้าย
+Write-Host "  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/) " -ForegroundColor White
 Write-Host ""
 
 $Choice = Read-Host "Do you want to restart your PC now? (Y/N)"
