@@ -1,5 +1,5 @@
 <#
-    CUSTARD - PowerShell Edition (Dracula Instant Buffer Edition)
+    CUSTARD - PowerShell Edition
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -14,12 +14,8 @@ if (-not $isAdmin) {
     Exit
 }
 
-# --- [ INSTANT DRACULA BUFFER THEME ] ---
-# บังคับระบบย้อมสี UI ของตัวหน้าต่างปัจจุบันที่กำลังรันอยู่ทันที
-$Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL (DRACULA INSTANT)"
-$Host.UI.RawUI.BackgroundColor = "DarkMagenta"  # บังคับให้ขยับสีพื้นหลังเป็นโทนสีม่วงเข้ม
-$Host.UI.RawUI.ForegroundColor = "White"        # ปรับตัวหนังสือหลักเป็นสีขาวนวล
-Clear-Host                                      # เคลียร์หน้าจอเพื่อบัฟเฟอร์ให้สีม่วงถมเต็มหน้าต่างโปรแกรม
+$Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL"
+Clear-Host
 
 # ตั้งค่าตำแหน่งทำงานชั่วคราวในเครื่อง
 $WorkingDir = "$env:TEMP\CustardUltimate"
@@ -37,7 +33,7 @@ if (-not (Test-Path $PowPath)) {
 
 # --- [ FUNCTIONS ] ---
 function Optimize-Kernel {
-    Write-Host " -> Optimizing Kernel Settings..." -ForegroundColor Cyan
+    Write-Host " -> Optimizing Kernel Settings..." -ForegroundColor Yellow
     bcdedit /set useplatformclock no 2>$null | Out-Null
     bcdedit /set disabledynamictick yes 2>$null | Out-Null
     bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
@@ -46,7 +42,7 @@ function Optimize-Kernel {
 }
 
 function Optimize-Priority {
-    Write-Host " -> Optimizing Process & GPU Priorities..." -ForegroundColor Cyan
+    Write-Host " -> Optimizing Process & GPU Priorities..." -ForegroundColor Yellow
     $PriorityPath = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
     $SystemProfilePath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
     $GamesTaskPath = "$SystemProfilePath\Tasks\Games"
@@ -66,7 +62,7 @@ function Optimize-Priority {
 }
 
 function Optimize-Memory {
-    Write-Host " -> Tweaking Memory Management..." -ForegroundColor Cyan
+    Write-Host " -> Tweaking Memory Management..." -ForegroundColor Yellow
     $MemoryPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
     $PrefetchPath = "$MemoryPath\PrefetchParameters"
 
@@ -82,7 +78,7 @@ function Optimize-Memory {
 }
 
 function Optimize-Input {
-    Write-Host " -> Tuning Input Response & Power Throttling..." -ForegroundColor Cyan
+    Write-Host " -> Tuning Input Response & Power Throttling..." -ForegroundColor Yellow
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize" -Value 16 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
     
@@ -99,7 +95,7 @@ function Optimize-Input {
 }
 
 function Install-CustardPowerPlan {
-    Write-Host " -> Importing Custard Power Plan..." -ForegroundColor Cyan
+    Write-Host " -> Importing Custard Power Plan..." -ForegroundColor Yellow
     $Guid = "4e2cd77e-229e-484e-b077-c63e8b092ec8"
 
     if (Test-Path $PowPath) {
@@ -111,15 +107,15 @@ function Install-CustardPowerPlan {
         if ($ActivePlan -match "Custard") {
             Write-Host "    [VERIFIED] Active Power Plan is now set to CUSTARD." -ForegroundColor Green
         } else {
-            Write-Host "    [VERIFIED] Plan imported but needs manual switch." -ForegroundColor Yellow
+            Write-Host "    [VERIFIED] Plan imported but needs manual switch." -ForegroundColor Green
         }
     } else {
-        Write-Host " [!] ERROR: Custard.pow missing." -ForegroundColor Red
+        Write-Host " [!] ERROR: Custard.pow missing." -ForegroundColor White
     }
 }
 
 function Optimize-Network {
-    Write-Host " -> Optimizing Network & DNS..." -ForegroundColor Cyan
+    Write-Host " -> Optimizing Network & DNS..." -ForegroundColor Yellow
     netsh int tcp set global rss=enabled 2>$null | Out-Null
     netsh int tcp set global autotuninglevel=normal 2>$null | Out-Null
     netsh int tcp set global timestamps=disabled 2>$null | Out-Null
@@ -129,7 +125,7 @@ function Optimize-Network {
 }
 
 function Clean-TrashAndLogs {
-    Write-Host " -> Cleaning Temporary Junk Files..." -ForegroundColor Magenta
+    Write-Host " -> Cleaning Temporary Junk Files..." -ForegroundColor Yellow
     
     $JunkPaths = @(
         "$env:USERPROFILE\AppData\Local\Temp\*",
@@ -139,7 +135,6 @@ function Clean-TrashAndLogs {
     
     foreach ($Path in $JunkPaths) {
         if (Test-Path $Path -ErrorAction SilentlyContinue) {
-            # เติม SilentlyContinue ครบถ้วนเพื่อซ่อนตัวอักษรสีแดงจากไฟล์ที่ถูกโปรแกรมอื่นล็อกไว้
             Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
         }
     }
@@ -157,9 +152,9 @@ $Tasks = @(
     @{ Name = "System Junk Cleaner"; Func = { Clean-TrashAndLogs } }
 )
 
-Write-Host "==========================================================================================" -ForegroundColor Magenta
-Write-Host "                      DEPLOYING CUSTARD PREMIER CONFIGURATION                             " -ForegroundColor White -BackgroundColor Magenta
-Write-Host "==========================================================================================" -ForegroundColor Magenta
+Write-Host "==========================================================================================" -ForegroundColor Cyan
+Write-Host "                      DEPLOYING CUSTARD PREMIER CONFIGURATION                             " -ForegroundColor White
+Write-Host "==========================================================================================" -ForegroundColor Cyan
 Write-Host ""
 
 for ($i = 0; $i -lt $Tasks.Count; $i++) {
@@ -171,11 +166,11 @@ for ($i = 0; $i -lt $Tasks.Count; $i++) {
 
 # --- [ 3. FINALIZATION ] ---
 Write-Host ""
-Write-Host "__________________________________________________________________________________________" -ForegroundColor Green
+Write-Host "__________________________________________________________________________________________" -ForegroundColor Cyan
 Write-Host ""
 Write-Host " [ SUCCESS ] ALL TWEAKS, JUNK CLEANING, AND POWER PLAN APPLIED SUCCESSFULLY!" -ForegroundColor Green
-Write-Host " [ ! ] PLEASE RESTART YOUR PC NOW TO APPLY CHANGES." -ForegroundColor Yellow
-Write-Host "__________________________________________________________________________________________" -ForegroundColor Green
+Write-Host " [ ! ] PLEASE RESTART YOUR PC NOW TO APPLY CHANGES." -ForegroundColor White
+Write-Host "__________________________________________________________________________________________" -ForegroundColor Cyan
 Write-Host ""
 
 $Choice = Read-Host "Do you want to restart your PC now? (Y/N)"
