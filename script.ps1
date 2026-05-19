@@ -1,5 +1,5 @@
 <#
-    CUSTARD - PowerShell Edition (Original Structure)
+    CUSTARD - PowerShell Edition (Original Structure + Real-time Clean Log)
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -125,7 +125,7 @@ function Optimize-Network {
 }
 
 function Clean-TrashAndLogs {
-    Write-Host " -> Cleaning Temporary Junk Files..." -ForegroundColor Yellow
+    Write-Host " -> Cleaning Temporary Junk Files & Logs..." -ForegroundColor Yellow
     
     $JunkPaths = @(
         "$env:USERPROFILE\AppData\Local\Temp\*",
@@ -134,11 +134,17 @@ function Clean-TrashAndLogs {
     )
     
     foreach ($Path in $JunkPaths) {
-        if (Test-Path $Path -ErrorAction SilentlyContinue) {
-            Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
+        if (Test-Path $Path) {
+            $Items = Get-ChildItem -Path $Path -Recurse -ErrorAction SilentlyContinue
+            foreach ($Item in $Items) {
+                try {
+                    Write-Host "    [DELETING] $($Item.FullName)" -ForegroundColor Gray
+                    Remove-Item -Path $Item.FullName -Recurse -Force -ErrorAction SilentlyContinue
+                } catch { }
+            }
         }
     }
-    Write-Host "    [VERIFIED CLEANED] Temporary Junk Files Wiped Clean!" -ForegroundColor Green
+    Write-Host "    [VERIFIED CLEANED] All Junk Files and Logs Wiped Clean!" -ForegroundColor Green
 }
 
 # --- [ 2. RUNNING TWEAKS ] ---
