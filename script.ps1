@@ -1,6 +1,5 @@
 <#
-    CUSTARD PREMIER OPTIMIZER v15.3 - PowerShell Edition
-    Inspired by Chris Titus Tech Optimization Style.
+    CUSTARD  - PowerShell Edition
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -15,10 +14,10 @@ if (-not $isAdmin) {
     Exit
 }
 
-$Host.UI.RawUI.WindowTitle = "CUSTARD PREMIER OPTIMIZER v15.3 - POWERSHELL"
+$Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL"
 Clear-Host
 
-# ตั้งค่าตำแหน่งไฟล์ให้ถูกต้อง (รองรับทั้งรันบนแรมและรันบนเครื่อง)
+# ตั้งค่าตำแหน่งทำงานชั่วคราวในเครื่อง
 $WorkingDir = "$env:TEMP\CustardUltimate"
 if (-not (Test-Path $WorkingDir)) {
     New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null
@@ -35,11 +34,12 @@ if (-not (Test-Path $PowPath)) {
 # --- [ FUNCTIONS ] ---
 function Optimize-Kernel {
     Write-Host " -> Optimizing Kernel Settings..." -ForegroundColor Cyan
-    bcdedit /set useplatformclock no | Out-Null
-    bcdedit /set disabledynamictick yes | Out-Null
-    bcdedit /set tscsyncpolicy Enhanced | Out-Null
-    bcdedit /set nx OptOut | Out-Null
-    Write-Host "    [VERIFIED] Kernel Tweaks Applied." -ForegroundColor Green
+    # แก้ไขตรงนี้: สั่งให้ข้ามแจ้งเตือนสีแดงหาก Windows ของเครื่องนั้นๆ ล็อคระบบ bcdedit เอาไว้
+    bcdedit /set useplatformclock no 2>$null | Out-Null
+    bcdedit /set disabledynamictick yes 2>$null | Out-Null
+    bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
+    bcdedit /set nx OptOut 2>$null | Out-Null
+    Write-Host "    [VERIFIED] Kernel Tweaks Processed." -ForegroundColor Green
 }
 
 function Optimize-Priority {
@@ -129,7 +129,6 @@ function Optimize-Network {
 function Clean-TrashAndLogs {
     Write-Host " -> Cleaning Temporary Junk Files..." -ForegroundColor Magenta
     
-    # ล้างไฟล์ขยะในเครื่อง (เซฟกว่าการล้าง Event log เพื่อไม่ให้ระบบความปลอดภัยตื่นตระหนก)
     $JunkPaths = @(
         "$env:USERPROFILE\AppData\Local\Temp\*",
         "C:\Windows\Temp\*",
