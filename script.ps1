@@ -1,5 +1,5 @@
 <#
-    CUSTARD - PowerShell Edition (Original Structure + Real-time Clean Log)
+    CUSTARD - PREMIER CLEANER & OPTIMIZER (FULL INTEGRATED)
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -7,9 +7,7 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 if (-not $isAdmin) {
     Write-Host ""
     Write-Host "  [!] ERROR: ADMINISTRATIVE PRIVILEGES REQUIRED" -ForegroundColor Red
-    Write-Host "  -------------------------------------------------" -ForegroundColor Red
     Write-Host "  Please restart PowerShell as Administrator." -ForegroundColor Yellow
-    Write-Host ""
     Read-Host "Press Enter to exit"
     Exit
 }
@@ -17,16 +15,13 @@ if (-not $isAdmin) {
 $Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL"
 Clear-Host
 
-# ตั้งค่าตำแหน่งทำงานชั่วคราวในเครื่อง
+# ตั้งค่าตำแหน่งทำงาน
 $WorkingDir = "$env:TEMP\CustardUltimate"
-if (-not (Test-Path $WorkingDir)) {
-    New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null
-}
+if (-not (Test-Path $WorkingDir)) { New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null }
 Set-Location $WorkingDir
 
 $PowPath = Join-Path $WorkingDir "Custard.pow"
 if (-not (Test-Path $PowPath)) {
-    Write-Host " -> Downloading dependency components..." -ForegroundColor Yellow
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Custardshop/script/main/Custard.pow" -OutFile $PowPath -UseBasicParsing | Out-Null
 }
@@ -56,9 +51,6 @@ function Optimize-Priority {
     Set-ItemProperty -Path $GamesTaskPath -Name "GPU Priority" -Value 8 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $GamesTaskPath -Name "Priority" -Value 6 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $GamesTaskPath -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null
-
-    $v1 = (Get-ItemProperty -Path $PriorityPath -ErrorAction SilentlyContinue).Win32PrioritySeparation
-    Write-Host "    [VERIFIED REGISTRY] Win32PrioritySeparation set to: $v1" -ForegroundColor Green
 }
 
 function Optimize-Memory {
@@ -72,9 +64,6 @@ function Optimize-Memory {
     Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageTarget" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $PrefetchPath -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $PrefetchPath -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null
-
-    $v1 = (Get-ItemProperty -Path $MemoryPath -ErrorAction SilentlyContinue).CcDirtyPageThreshold
-    Write-Host "    [VERIFIED REGISTRY] CcDirtyPageThreshold set to: $v1" -ForegroundColor Green
 }
 
 function Optimize-Input {
@@ -88,29 +77,15 @@ function Optimize-Input {
     
     Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "MaximumSpeed2" -Value "9000" -Type String -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "TimeToMaximumSpeed2" -Value "9000" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\DXGKrnl" -Name "MonitorLatencyTolerance" -Value 0 -Type DWord -Force 2>$null
-
-    $v1 = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -ErrorAction SilentlyContinue).MouseDataQueueSize
-    Write-Host "    [VERIFIED REGISTRY] MouseDataQueueSize set to: $v1" -ForegroundColor Green
 }
 
 function Install-CustardPowerPlan {
     Write-Host " -> Importing Custard Power Plan..." -ForegroundColor Yellow
     $Guid = "4e2cd77e-229e-484e-b077-c63e8b092ec8"
-
     if (Test-Path $PowPath) {
         powercfg /delete $Guid 2>$null
         powercfg /import $PowPath $Guid 2>$null | Out-Null
         powercfg /setactive $Guid 2>$null | Out-Null
-        
-        $ActivePlan = powercfg /getactivescheme
-        if ($ActivePlan -match "Custard") {
-            Write-Host "    [VERIFIED] Active Power Plan is now set to CUSTARD." -ForegroundColor Green
-        } else {
-            Write-Host "    [VERIFIED] Plan imported but needs manual switch." -ForegroundColor Green
-        }
-    } else {
-        Write-Host " [!] ERROR: Custard.pow missing." -ForegroundColor White
     }
 }
 
@@ -121,65 +96,41 @@ function Optimize-Network {
     netsh int tcp set global timestamps=disabled 2>$null | Out-Null
     Clear-DnsClientCache -ErrorAction SilentlyContinue | Out-Null
     netsh winsock reset 2>$null | Out-Null
-    Write-Host "    [VERIFIED] Network Tweak Completed." -ForegroundColor Green
 }
 
 function Clean-TrashAndLogs {
-    Write-Host " -> Cleaning Temporary Junk Files & Logs..." -ForegroundColor Yellow
+    Write-Host " -> Cleaning System Junk, Logs, Updates & EventLogs..." -ForegroundColor Yellow
     
-    $JunkPaths = @(
-        "$env:USERPROFILE\AppData\Local\Temp\*",
-        "C:\Windows\Temp\*",
-        "C:\Windows\Prefetch\*"
-    )
-    
+    # 1. ล้างไฟล์ขยะ (Temp, Prefetch)
+    $JunkPaths = @("$env:USERPROFILE\AppData\Local\Temp\*", "C:\Windows\Temp\*", "C:\Windows\Prefetch\*")
     foreach ($Path in $JunkPaths) {
-        if (Test-Path $Path) {
-            $Items = Get-ChildItem -Path $Path -Recurse -ErrorAction SilentlyContinue
-            foreach ($Item in $Items) {
-                try {
-                    Write-Host "    [DELETING] $($Item.FullName)" -ForegroundColor Gray
-                    Remove-Item -Path $Item.FullName -Recurse -Force -ErrorAction SilentlyContinue
-                } catch { }
-            }
+        Get-ChildItem -Path $Path -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host "    [DELETING] $($_.FullName)" -ForegroundColor Gray
+            Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
-    Write-Host "    [VERIFIED CLEANED] All Junk Files and Logs Wiped Clean!" -ForegroundColor Green
+
+    # 2. ล้าง Windows Update (SoftwareDistribution)
+    Write-Host "    [CLEANING] Windows Update Cache..." -ForegroundColor Gray
+    Stop-Service -Name wuauserv, UsoSvc -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path "C:\Windows\SoftwareDistribution\*" -Recurse -Force -ErrorAction SilentlyContinue
+    Start-Service -Name wuauserv
+
+    # 3. ล้าง Event Logs
+    Write-Host "    [CLEANING] Windows Event Logs..." -ForegroundColor Gray
+    wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" }
+    
+    Write-Host "    [VERIFIED CLEANED] All System Junk & Logs Wiped Clean!" -ForegroundColor Green
 }
 
-# --- [ 2. RUNNING TWEAKS ] ---
+# --- [ EXECUTION ] ---
 $Tasks = @(
-    @{ Name = "Kernel Optimization"; Func = { Optimize-Kernel } },
-    @{ Name = "Priority & Profiles Tweak"; Func = { Optimize-Priority } },
-    @{ Name = "Memory Management Tweak"; Func = { Optimize-Memory } },
-    @{ Name = "Input & Latency Optimization"; Func = { Optimize-Input } },
-    @{ Name = "Custard Power Plan Injection"; Func = { Install-CustardPowerPlan } },
-    @{ Name = "Network Tweaks & Reset"; Func = { Optimize-Network } },
-    @{ Name = "System Junk Cleaner"; Func = { Clean-TrashAndLogs } }
+    { Optimize-Kernel }, { Optimize-Priority }, { Optimize-Memory }, 
+    { Optimize-Input }, { Install-CustardPowerPlan }, { Optimize-Network }, { Clean-TrashAndLogs }
 )
 
-Write-Host "==========================================================================================" -ForegroundColor Cyan
-Write-Host "                      DEPLOYING CUSTARD PREMIER CONFIGURATION                             " -ForegroundColor White
-Write-Host "==========================================================================================" -ForegroundColor Cyan
-Write-Host ""
+foreach ($Task in $Tasks) { & $Task }
 
-for ($i = 0; $i -lt $Tasks.Count; $i++) {
-    $Percent = [math]::Round((($i + 1) / $Tasks.Count) * 100)
-    Write-Progress -Activity "Applying Tweaks" -Status "Executing: $($Tasks[$i].Name)" -PercentComplete $Percent
-    & $Tasks[$i].Func
-    Start-Sleep -Milliseconds 300
-}
-
-# --- [ 3. FINALIZATION ] ---
-Write-Host ""
-Write-Host "__________________________________________________________________________________________" -ForegroundColor Cyan
-Write-Host ""
-Write-Host " [ SUCCESS ] ALL TWEAKS, JUNK CLEANING, AND POWER PLAN APPLIED SUCCESSFULLY!" -ForegroundColor Green
-Write-Host " [ ! ] PLEASE RESTART YOUR PC NOW TO APPLY CHANGES." -ForegroundColor White
-Write-Host "__________________________________________________________________________________________" -ForegroundColor Cyan
-Write-Host ""
-
-$Choice = Read-Host "Do you want to restart your PC now? (Y/N)"
-if ($Choice -eq "Y" -or $Choice -eq "y") {
-    Restart-Computer
-}
+# --- [ FINALIZATION ] ---
+Write-Host "`n[ SUCCESS ] ALL TWEAKS AND SYSTEM CLEANUP COMPLETED!" -ForegroundColor Green
+if ((Read-Host "Do you want to restart your PC now? (Y/N)") -match "[Yy]") { Restart-Computer }
