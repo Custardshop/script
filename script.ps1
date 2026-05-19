@@ -1,5 +1,5 @@
 <#
-    CUSTARD - BUNNY OVERLOAD (STABLE & FULL)
+    CUSTARD - BUNNY MASTER EDITION
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -13,22 +13,22 @@ if (-not $isAdmin) {
 $Host.UI.RawUI.WindowTitle = "CUSTARD BUNNY OPTIMIZER"
 Clear-Host
 
-# กระต่ายจัดเต็ม
+# Bunny Art Header
 $B = "  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/) "
 Write-Host "$B`n$B" -ForegroundColor White
 Write-Host "  ---DEPLOYING CUSTARD PREMIER CONFIGURATION---" -ForegroundColor White
-Write-Host ""
+Write-Host "------------------------------------------------------------------------------------------" -ForegroundColor White
 
 $WorkingDir = "$env:TEMP\CustardUltimate"
 if (-not (Test-Path $WorkingDir)) { New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null }
 Set-Location $WorkingDir
 
-# --- [ OPTIMIZED FUNCTIONS (แก้ไขให้สมบูรณ์ 100%) ] ---
+# --- [ FUNCTIONS ] ---
 function Run-Tweak {
     param($Msg, $Action)
-    Write-Host " -> $Msg..." -ForegroundColor White
+    Write-Host "--- ( ) --- $Msg..." -ForegroundColor White
     & $Action
-    Write-Host "    [VERIFIED] $Msg Completed." -ForegroundColor White
+    Write-Host "--- ( ) --- VERIFIED. $Msg Completed." -ForegroundColor White
 }
 
 Run-Tweak "Kernel Settings" { bcdedit /set useplatformclock no 2>$null; bcdedit /set disabledynamictick yes 2>$null; bcdedit /set tscsyncpolicy Enhanced 2>$null; bcdedit /set nx OptOut 2>$null }
@@ -52,12 +52,12 @@ Run-Tweak "Input Response" {
     Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "MaximumSpeed2" -Value "9000" -Type String -Force 
 }
 
-Run-Tweak "Temporary Junk Files" { Get-ChildItem -Path "$env:USERPROFILE\AppData\Local\Temp\*" -Recurse -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }
+Run-Tweak "Cleanup Junk Files" { Get-ChildItem -Path "$env:USERPROFILE\AppData\Local\Temp\*" -Recurse -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue }
 
 # --- [ FOOTER ] ---
-Write-Host "`n------------------------------------------------------------------------------------------" -ForegroundColor White
-Write-Host " [ SUCCESS ] ALL TWEAKS AND JUNK CLEANING APPLIED SUCCESSFULLY!" -ForegroundColor White
-Write-Host " [ ! ] PLEASE RESTART YOUR PC NOW TO APPLY CHANGES." -ForegroundColor White
+Write-Host "------------------------------------------------------------------------------------------" -ForegroundColor White
+Write-Host " SUCCESS! ALL TWEAKS AND JUNK CLEANING APPLIED SUCCESSFULLY!" -ForegroundColor White
+Write-Host " PLEASE RESTART YOUR PC NOW TO APPLY CHANGES." -ForegroundColor White
 Write-Host "------------------------------------------------------------------------------------------" -ForegroundColor White
 Write-Host "`n$B`n$B`n$B" -ForegroundColor White
 
