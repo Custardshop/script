@@ -18,8 +18,13 @@ if (-not $isAdmin) {
 $Host.UI.RawUI.WindowTitle = "CUSTARD PREMIER OPTIMIZER v15.0 - POWERSHELL"
 Clear-Host
 
-# ดาวน์โหลดไฟล์พลังงานหากรันสดกลางอากาศแล้วไม่มีไฟล์คู่หู
-$WorkingDir = Get-Location
+# กำหนดโฟลเดอร์ทำงานถาวรใน Temp ป้องกันบัก Get-Location บนแรม
+$WorkingDir = "$env:TEMP\Custard"
+if (-not (Test-Path $WorkingDir)) {
+    New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null
+}
+Set-Location $WorkingDir
+
 $PowPath = Join-Path $WorkingDir "Custard.pow"
 if (-not (Test-Path $PowPath)) {
     Write-Host " -> Downloading dependency component..." -ForegroundColor Yellow
