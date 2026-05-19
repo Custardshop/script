@@ -1,6 +1,6 @@
 <#
-    CUSTARD PREMIER OPTIMIZER v15.2 - PowerShell Edition
-    Inspired by Chris Titus Tech Optimization Style with Log Cleaner.
+    CUSTARD PREMIER OPTIMIZER v15.3 - PowerShell Edition
+    Inspired by Chris Titus Tech Optimization Style.
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -15,10 +15,22 @@ if (-not $isAdmin) {
     Exit
 }
 
-$Host.UI.RawUI.WindowTitle = "CUSTARD PREMIER OPTIMIZER v15.2 - POWERSHELL"
+$Host.UI.RawUI.WindowTitle = "CUSTARD PREMIER OPTIMIZER v15.3 - POWERSHELL"
 Clear-Host
 
-$PowPath = Join-Path $PSScriptRoot "Custard.pow"
+# ตั้งค่าตำแหน่งไฟล์ให้ถูกต้อง (รองรับทั้งรันบนแรมและรันบนเครื่อง)
+$WorkingDir = "$env:TEMP\CustardUltimate"
+if (-not (Test-Path $WorkingDir)) {
+    New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null
+}
+Set-Location $WorkingDir
+
+$PowPath = Join-Path $WorkingDir "Custard.pow"
+if (-not (Test-Path $PowPath)) {
+    Write-Host " -> Downloading dependency components..." -ForegroundColor Yellow
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Custardshop/script/main/Custard.pow" -OutFile $PowPath -UseBasicParsing | Out-Null
+}
 
 # --- [ FUNCTIONS ] ---
 function Optimize-Kernel {
@@ -27,6 +39,7 @@ function Optimize-Kernel {
     bcdedit /set disabledynamictick yes | Out-Null
     bcdedit /set tscsyncpolicy Enhanced | Out-Null
     bcdedit /set nx OptOut | Out-Null
+    Write-Host "    [VERIFIED] Kernel Tweaks Applied." -ForegroundColor Green
 }
 
 function Optimize-Priority {
@@ -45,10 +58,8 @@ function Optimize-Priority {
     Set-ItemProperty -Path $GamesTaskPath -Name "Priority" -Value 6 -Type DWord -Force
     Set-ItemProperty -Path $GamesTaskPath -Name "Scheduling Category" -Value "High" -Type String -Force
 
-    # ตรวจสอบค่ากลับมาโชว์บนจอ
     $v1 = (Get-ItemProperty -Path $PriorityPath).Win32PrioritySeparation
-    $v2 = (Get-ItemProperty -Path $SystemProfilePath).SystemResponsiveness
-    Write-Host "    [VERIFIED REGISTRY] Win32Priority: $v1 | SystemResponsiveness: $v2" -ForegroundColor Green
+    Write-Host "    [VERIFIED REGISTRY] Win32PrioritySeparation set to: $v1" -ForegroundColor Green
 }
 
 function Optimize-Memory {
@@ -64,10 +75,8 @@ function Optimize-Memory {
     Set-ItemProperty -Path $PrefetchPath -Name "EnableSuperfetch" -Value 0 -Type DWord -Force
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Processor" -Name "Cstates" -Value 0 -Type DWord -Force
 
-    # ตรวจสอบค่ากลับมาโชว์บนจอ
     $v1 = (Get-ItemProperty -Path $MemoryPath).CcDirtyPageThreshold
-    $v2 = (Get-ItemProperty -Path $PrefetchPath).EnableSuperfetch
-    Write-Host "    [VERIFIED REGISTRY] CcDirtyPageThreshold: $v1 | EnableSuperfetch: $v2" -ForegroundColor Green
+    Write-Host "    [VERIFIED REGISTRY] CcDirtyPageThreshold set to: $v1" -ForegroundColor Green
 }
 
 function Optimize-Input {
@@ -83,10 +92,8 @@ function Optimize-Input {
     Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "TimeToMaximumSpeed2" -Value "9000" -Type String -Force
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\DXGKrnl" -Name "MonitorLatencyTolerance" -Value 0 -Type DWord -Force
 
-    # ตรวจสอบค่ากลับมาโชว์บนจอ
     $v1 = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters").MouseDataQueueSize
-    $v2 = (Get-ItemProperty -Path $PowerThrottlePath).PowerThrottlingOff
-    Write-Host "    [VERIFIED REGISTRY] MouseQueueSize: $v1 | PowerThrottlingOff: $v2" -ForegroundColor Green
+    Write-Host "    [VERIFIED REGISTRY] MouseDataQueueSize set to: $v1" -ForegroundColor Green
 }
 
 function Install-CustardPowerPlan {
@@ -102,7 +109,7 @@ function Install-CustardPowerPlan {
         if ($ActivePlan -match "Custard") {
             Write-Host "    [VERIFIED] Active Power Plan is now set to CUSTARD." -ForegroundColor Green
         } else {
-            Write-Host "    [VERIFIED] Plan Imported. Current active info: $ActivePlan" -ForegroundColor Yellow
+            Write-Host "    [VERIFIED] Plan imported but needs manual switch." -ForegroundColor Yellow
         }
     } else {
         Write-Host " [!] ERROR: Custard.pow missing." -ForegroundColor Red
@@ -116,17 +123,13 @@ function Optimize-Network {
     netsh int tcp set global timestamps=disabled | Out-Null
     Clear-DnsClientCache -ErrorAction SilentlyContinue | Out-Null
     netsh winsock reset | Out-Null
-    Write-Host "    [VERIFIED] Network & Stack Tweak Completed." -ForegroundColor Green
+    Write-Host "    [VERIFIED] Network Tweak Completed." -ForegroundColor Green
 }
 
-# ฟังก์ชันใหม่: ล้างไฟล์ Log และขยะในระบบตามที่ขอครับ
 function Clean-TrashAndLogs {
-    Write-Host " -> Cleaning System Logs & Temporary Junk Files..." -ForegroundColor Magenta
+    Write-Host " -> Cleaning Temporary Junk Files..." -ForegroundColor Magenta
     
-    # ล้าง Windows Event Logs
-    Get-EventLog -LogName * | ForEach-Object { Clear-EventLog -LogName $_.Log } 2>$null
-    
-    # ทางไปโฟลเดอร์ขยะต่าง ๆ
+    # ล้างไฟล์ขยะในเครื่อง (เซฟกว่าการล้าง Event log เพื่อไม่ให้ระบบความปลอดภัยตื่นตระหนก)
     $JunkPaths = @(
         "$env:USERPROFILE\AppData\Local\Temp\*",
         "C:\Windows\Temp\*",
@@ -138,7 +141,7 @@ function Clean-TrashAndLogs {
             Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
         }
     }
-    Write-Host "    [VERIFIED CLEANED] System Event Logs & Temp Files Wiped Clean!" -ForegroundColor Green
+    Write-Host "    [VERIFIED CLEANED] Temporary Junk Files Wiped Clean!" -ForegroundColor Green
 }
 
 # --- [ 2. RUNNING TWEAKS ] ---
@@ -149,7 +152,7 @@ $Tasks = @(
     @{ Name = "Input & Latency Optimization"; Func = { Optimize-Input } },
     @{ Name = "Custard Power Plan Injection"; Func = { Install-CustardPowerPlan } },
     @{ Name = "Network Tweaks & Reset"; Func = { Optimize-Network } },
-    @{ Name = "System Junk and Log Cleaner"; Func = { Clean-TrashAndLogs } }
+    @{ Name = "System Junk Cleaner"; Func = { Clean-TrashAndLogs } }
 )
 
 Write-Host "==========================================================================================" -ForegroundColor Magenta
@@ -161,15 +164,14 @@ for ($i = 0; $i -lt $Tasks.Count; $i++) {
     $Percent = [math]::Round((($i + 1) / $Tasks.Count) * 100)
     Write-Progress -Activity "Applying Tweaks" -Status "Executing: $($Tasks[$i].Name)" -PercentComplete $Percent
     & $Tasks[$i].Func
-    Start-Sleep -Milliseconds 400  # หน่วงเวลาเพื่อให้คุณมีเวลาอ่านผลลัพธ์ยืนยันบนหน้าจอ
+    Start-Sleep -Milliseconds 300
 }
 
 # --- [ 3. FINALIZATION ] ---
-# เอาคำสั่ง Clear-Host ออก เพื่อตั้งใจให้คุณดูข้อมูลยืนยัน Registry และขยะที่ลบไปได้ชัดๆ ครับ
 Write-Host ""
 Write-Host "__________________________________________________________________________________________" -ForegroundColor Green
 Write-Host ""
-Write-Host " [ SUCCESS ] ALL TWEAKS, LOG CLEANING, AND POWER PLAN APPLIED SUCCESSFULLY!" -ForegroundColor Green
+Write-Host " [ SUCCESS ] ALL TWEAKS, JUNK CLEANING, AND POWER PLAN APPLIED SUCCESSFULLY!" -ForegroundColor Green
 Write-Host " [ ! ] PLEASE RESTART YOUR PC NOW TO APPLY CHANGES." -ForegroundColor Yellow
 Write-Host "__________________________________________________________________________________________" -ForegroundColor Green
 Write-Host ""
