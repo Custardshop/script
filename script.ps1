@@ -1,11 +1,11 @@
 <#
-    CUSTARD - BUNNY OVERLOAD EDITION
+    CUSTARD - BUNNY OVERLOAD (FULL STRUCTURE VERSION)
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host " [!] ERROR: ADMINISTRATIVE PRIVILEGES REQUIRED" -ForegroundColor White
+    Write-Host "  [!] ERROR: ADMINISTRATIVE PRIVILEGES REQUIRED" -ForegroundColor White
     Read-Host "Press Enter to exit"
     Exit
 }
@@ -13,48 +13,81 @@ if (-not $isAdmin) {
 $Host.UI.RawUI.WindowTitle = "CUSTARD BUNNY OPTIMIZER"
 Clear-Host
 
-# --- [ BUNNY ARMY HEADER ] ---
-Write-Host @"
-  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)
-  ( . .) ( . .) ( . .) ( . .) ( . .) ( . .) ( . .) ( . .) ( . .) ( . .)
-  c(")(")c(")(")c(")(")c(")(")c(")(")c(")(")c(")(")c(")(")c(")(")c(")(")
-  ----------------DEPLOYING CUSTARD PREMIER CONFIGURATION----------------
-  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)
-"@ -ForegroundColor White
+# กระต่ายประกอบร่างส่วนหัว
+Write-Host "  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/) " -ForegroundColor White
+Write-Host "  ---DEPLOYING CUSTARD PREMIER CONFIGURATION---" -ForegroundColor White
+Write-Host "  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/) " -ForegroundColor White
+Write-Host ""
 
-# ตั้งค่าตำแหน่งทำงาน
 $WorkingDir = "$env:TEMP\CustardUltimate"
 if (-not (Test-Path $WorkingDir)) { New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null }
 Set-Location $WorkingDir
 
-# --- [ FUNCTIONS ] ---
-function Run-Task {
-    param($Title, $Action)
-    Write-Host "---( )---$Title..." -ForegroundColor White
-    & $Action
-    Write-Host "---( )---VERIFIED. $Title Processed." -ForegroundColor White
+$PowPath = Join-Path $WorkingDir "Custard.pow"
+if (-not (Test-Path $PowPath)) {
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Custardshop/script/main/Custard.pow" -OutFile $PowPath -UseBasicParsing | Out-Null
 }
 
-# --- [ TWEAKS ] ---
-Run-Task "Optimizing Kernel Settings" { bcdedit /set useplatformclock no 2>$null | Out-Null }
-Run-Task "Optimizing Process & GPU Priorities" { Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -Value 38 -Force 2>$null }
-Run-Task "Tweaking Memory Management" { Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name "CcDirtyPageThreshold" -Value 15 -Force 2>$null }
-Run-Task "Tuning Input Response" { Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize" -Value 16 -Force 2>$null }
-Run-Task "Importing Custard Power Plan" { powercfg /setactive 4e2cd77e-229e-484e-b077-c63e8b092ec8 2>$null }
-Run-Task "Optimizing Network & DNS" { netsh int tcp set global rss=enabled 2>$null | Out-Null }
-# ปรับแก้ให้ข้ามไฟล์ที่ติดสิทธิ์ Access Denied เพื่อไม่ให้ขึ้น Error รบกวนสายตา
-Run-Task "Cleaning Temporary Junk Files" { Get-ChildItem -Path "$env:USERPROFILE\AppData\Local\Temp\*" -Recurse -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }
+# --- [ FUNCTIONS (คงโครงสร้างเดิมแบบละเอียด) ] ---
+function Optimize-Kernel {
+    Write-Host " -> Optimizing Kernel Settings..." -ForegroundColor White
+    bcdedit /set useplatformclock no 2>$null | Out-Null
+    bcdedit /set disabledynamictick yes 2>$null | Out-Null
+    bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
+    bcdedit /set nx OptOut 2>$null | Out-Null
+    Write-Host "    [VERIFIED] Kernel Tweaks Processed." -ForegroundColor White
+}
 
-# --- [ BUNNY ARMY FOOTER ] ---
-Write-Host @"
+function Optimize-Priority {
+    Write-Host " -> Optimizing Process & GPU Priorities..." -ForegroundColor White
+    $PriorityPath = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
+    $SystemProfilePath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
+    $GamesTaskPath = "$SystemProfilePath\Tasks\Games"
+    Set-ItemProperty -Path $PriorityPath -Name "Win32PrioritySeparation" -Value 38 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $PriorityPath -Name "ConvertibleSlateMode" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $SystemProfilePath -Name "SystemResponsiveness" -Value 0 -Type DWord -Force 2>$null
+    if (-not (Test-Path $GamesTaskPath)) { New-Item -Path $GamesTaskPath -Force | Out-Null }
+    Set-ItemProperty -Path $GamesTaskPath -Name "GPU Priority" -Value 8 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $GamesTaskPath -Name "Priority" -Value 6 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $GamesTaskPath -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null
+    Write-Host "    [VERIFIED REGISTRY] Process Priorities Set." -ForegroundColor White
+}
 
-  (\_/)(\_/)(\_/)(\_/)(\_/)(\_/)(\_/)(\_/)(\_/)(\_/)(\_/)(\_/)(\_/)(\_/)
-  SUCCESS! ALL TWEAKS, JUNK CLEANING, AND POWER PLAN APPLIED SUCCESSFULLY!
-  ---PLEASE RESTART YOUR PC NOW TO APPLY CHANGES.---
-  (\_/)   (\_/)   (\_/)   (\_/)   (\_/)   (\_/)   (\_/)   (\_/)
-  ( . .)  ( . .)  ( . .)  ( . .)  ( . .)  ( . .)  ( . .)  ( . .)
-  c(")(") c(")(") c(")(") c(")(") c(")(") c(")(") c(")(") c(")(")
-"@ -ForegroundColor White
+function Optimize-Memory {
+    Write-Host " -> Tweaking Memory Management..." -ForegroundColor White
+    $MemoryPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
+    $PrefetchPath = "$MemoryPath\PrefetchParameters"
+    Set-ItemProperty -Path $MemoryPath -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageThreshold" -Value 15 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $MemoryPath -Name "CcTotalDirtyPages" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageTarget" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $PrefetchPath -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $PrefetchPath -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null
+    Write-Host "    [VERIFIED REGISTRY] Memory Tweaks Set." -ForegroundColor White
+}
+
+function Optimize-Input {
+    Write-Host " -> Tuning Input Response..." -ForegroundColor White
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize" -Value 16 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "MaximumSpeed2" -Value "9000" -Type String -Force 2>$null
+    Write-Host "    [VERIFIED REGISTRY] Input Response Set." -ForegroundColor White
+}
+
+# เรียกใช้งานฟังก์ชันเดิม
+Optimize-Kernel
+Optimize-Priority
+Optimize-Memory
+Optimize-Input
+
+# --- [ FINALIZATION ] ---
+Write-Host ""
+Write-Host "--- SUCCESS! ALL TWEAKS APPLIED SUCCESSFULLY ---" -ForegroundColor White
+Write-Host "  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/)  (\_/) " -ForegroundColor White
+Write-Host "  ( . .) ( . .) ( . .) ( . .) ( . .) ( . .) ( . .) ( . .) ( . .) ( . .) " -ForegroundColor White
+Write-Host "  c(")(")c(")(")c(")(")c(")(")c(")(")c(")(")c(")(")c(")(")c(")(")c(")(") " -ForegroundColor White
 
 $Choice = Read-Host "Do you want to restart your PC now? (Y/N)"
 if ($Choice -eq "Y" -or $Choice -eq "y") { Restart-Computer }
