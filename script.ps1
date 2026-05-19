@@ -14,7 +14,6 @@ if (-not $isAdmin) {
     Exit
 }
 
-# ปรับชื่อหน้าต่างตามที่คุณแก้ไขใหม่
 $Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL"
 Clear-Host
 
@@ -48,8 +47,6 @@ function Optimize-Priority {
     $SystemProfilePath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
     $GamesTaskPath = "$SystemProfilePath\Tasks\Games"
 
-    # ป้องกัน Error หากไม่มีโฟลเดอร์ Registry อยู่จริง
-    if (-not (Test-Path $PriorityPath)) { New-Item -Path $PriorityPath -Force | Out-Null }
     Set-ItemProperty -Path $PriorityPath -Name "Win32PrioritySeparation" -Value 38 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $PriorityPath -Name "ConvertibleSlateMode" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null
@@ -68,12 +65,6 @@ function Optimize-Memory {
     Write-Host " -> Tweaking Memory Management..." -ForegroundColor Cyan
     $MemoryPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
     $PrefetchPath = "$MemoryPath\PrefetchParameters"
-    $ProcessorPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Processor"
-
-    # บังคับสร้างโฟลเดอร์รองรับ หากระบบเครื่องนั้นไม่มีคีย์นี้อยู่ เพื่อป้องกันสีแดง
-    if (-not (Test-Path $MemoryPath)) { New-Item -Path $MemoryPath -Force | Out-Null }
-    if (-not (Test-Path $PrefetchPath)) { New-Item -Path $PrefetchPath -Force | Out-Null }
-    if (-not (Test-Path $ProcessorPath)) { New-Item -Path $ProcessorPath -Force | Out-Null }
 
     Set-ItemProperty -Path $MemoryPath -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageThreshold" -Value 15 -Type DWord -Force 2>$null
@@ -81,7 +72,7 @@ function Optimize-Memory {
     Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageTarget" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $PrefetchPath -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $PrefetchPath -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $ProcessorPath -Name "Cstates" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Processor" -Name "Cstates" -Value 0 -Type DWord -Force 2>$null
 
     $v1 = (Get-ItemProperty -Path $MemoryPath -ErrorAction SilentlyContinue).CcDirtyPageThreshold
     Write-Host "    [VERIFIED REGISTRY] CcDirtyPageThreshold set to: $v1" -ForegroundColor Green
@@ -89,24 +80,18 @@ function Optimize-Memory {
 
 function Optimize-Input {
     Write-Host " -> Tuning Input Response & Power Throttling..." -ForegroundColor Cyan
-    $MousePath = "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters"
-    $KbdPath = "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters"
-    $PowerThrottlePath = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
-
-    # บังคับสร้างโฟลเดอร์รองรับ หากไม่มีอยู่จริง
-    if (-not (Test-Path $MousePath)) { New-Item -Path $MousePath -Force | Out-Null }
-    if (-not (Test-Path $KbdPath)) { New-Item -Path $KbdPath -Force | Out-Null }
-    if (-not (Test-Path $PowerThrottlePath)) { New-Item -Path $PowerThrottlePath -Force | Out-Null }
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize" -Value 16 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
     
-    Set-ItemProperty -Path $MousePath -Name "MouseDataQueueSize" -Value 16 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $KbdPath -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
+    $PowerThrottlePath = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
+    if (-not (Test-Path $PowerThrottlePath)) { New-Item -Path $PowerThrottlePath -Force | Out-Null }
     Set-ItemProperty -Path $PowerThrottlePath -Name "PowerThrottlingOff" -Value 1 -Type DWord -Force 2>$null
     
     Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "MaximumSpeed2" -Value "9000" -Type String -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "TimeToMaximumSpeed2" -Value "9000" -Type String -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\DXGKrnl" -Name "MonitorLatencyTolerance" -Value 0 -Type DWord -Force 2>$null
 
-    $v1 = (Get-ItemProperty -Path $MousePath -ErrorAction SilentlyContinue).MouseDataQueueSize
+    $v1 = (Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -ErrorAction SilentlyContinue).MouseDataQueueSize
     Write-Host "    [VERIFIED REGISTRY] MouseDataQueueSize set to: $v1" -ForegroundColor Green
 }
 
@@ -118,7 +103,13 @@ function Install-CustardPowerPlan {
         powercfg /delete $Guid 2>$null
         powercfg /import $PowPath $Guid 2>$null | Out-Null
         powercfg /setactive $Guid 2>$null | Out-Null
-        Write-Host "    [VERIFIED] Active Power Plan is now set to CUSTARD." -ForegroundColor Green
+        
+        $ActivePlan = powercfg /getactivescheme
+        if ($ActivePlan -match "Custard") {
+            Write-Host "    [VERIFIED] Active Power Plan is now set to CUSTARD." -ForegroundColor Green
+        } else {
+            Write-Host "    [VERIFIED] Plan imported but needs manual switch." -ForegroundColor Yellow
+        }
     } else {
         Write-Host " [!] ERROR: Custard.pow missing." -ForegroundColor Red
     }
@@ -144,8 +135,8 @@ function Clean-TrashAndLogs {
     )
     
     foreach ($Path in $JunkPaths) {
-        if (Test-Path $Path) {
-            # เติม SilentlyContinue เพื่อซ่อนสีแดงเวลาเจอไฟล์ขยะของระบบที่กำลังถูกเปิดใช้งานอยู่
+        # บล็อก ErrorAction ทั้งในขั้นตอนตรวจสิทธิ์และสั่งลบ เพื่อตัดปัญหาระบบพ่นสีแดงเวลาเจอไฟล์ล็อก
+        if (Test-Path $Path -ErrorAction SilentlyContinue) {
             Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
         }
     }
