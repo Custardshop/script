@@ -1,5 +1,5 @@
 <#
-    CUSTARD - PowerShell Edition
+    CUSTARD - PowerShell Edition (Dracula Edition)
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -14,7 +14,12 @@ if (-not $isAdmin) {
     Exit
 }
 
-$Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL"
+# --- [ DRACULA THEME CUSTOMIZATION ] ---
+# ปรับสีหน้าต่างเบื้องหลังและตัวอักษรหลักตามธีม Dracula
+$H = $Host.UI.RawUI
+$H.WindowTitle = "OPTIMIZERPOWERSHELL"
+$H.BackgroundColor = "DarkMagenta"  # ใช้ค่าสีระบบที่ใกล้เคียงม่วงเข้มจัดที่สุด
+$H.ForegroundColor = "White"        # ตัวหนังสือหลักสีขาวนวลสบายตา
 Clear-Host
 
 # ตั้งค่าตำแหน่งทำงานชั่วคราวในเครื่อง
@@ -135,7 +140,6 @@ function Clean-TrashAndLogs {
     )
     
     foreach ($Path in $JunkPaths) {
-        # บล็อก ErrorAction ทั้งในขั้นตอนตรวจสิทธิ์และสั่งลบ เพื่อตัดปัญหาระบบพ่นสีแดงเวลาเจอไฟล์ล็อก
         if (Test-Path $Path -ErrorAction SilentlyContinue) {
             Remove-Item -Path $Path -Recurse -Force -ErrorAction SilentlyContinue | Out-Null
         }
@@ -155,7 +159,7 @@ $Tasks = @(
 )
 
 Write-Host "==========================================================================================" -ForegroundColor Magenta
-Write-Host "                      DEPLOYING CUSTARD PREMIER CONFIGURATION                             " -ForegroundColor White -BackgroundColor DarkMagenta
+Write-Host "                      DEPLOYING CUSTARD PREMIER CONFIGURATION                             " -ForegroundColor White -BackgroundColor Magenta
 Write-Host "==========================================================================================" -ForegroundColor Magenta
 Write-Host ""
 
