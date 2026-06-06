@@ -1,5 +1,5 @@
 <#
-    CUSTARD - PREMIER CLEANER & OPTIMIZER (FULL INTEGRATED)
+    GOAT - PREMIER CLEANER & OPTIMIZER (FULL INTEGRATED)
 #>
 
 # --- [ 1. ADMIN PRIVILEGE CHECK ] ---
@@ -12,8 +12,22 @@ if (-not $isAdmin) {
     Exit
 }
 
-$Host.UI.RawUI.WindowTitle = "OPTIMIZERPOWERSHELL"
+$Host.UI.RawUI.WindowTitle = "GOAT"
 Clear-Host
+
+# --- [ BANNER ] ---
+Write-Host ""
+Write-Host "   ██████╗  ██████╗  █████╗ ████████╗" -ForegroundColor Cyan
+Write-Host "  ██╔════╝ ██╔═══██╗██╔══██╗╚══██╔══╝" -ForegroundColor Cyan
+Write-Host "  ██║  ███╗██║   ██║███████║   ██║   " -ForegroundColor Cyan
+Write-Host "  ██║   ██║██║   ██║██╔══██║   ██║   " -ForegroundColor Cyan
+Write-Host "  ╚██████╔╝╚██████╔╝██║  ██║   ██║   " -ForegroundColor Cyan
+Write-Host "   ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝   " -ForegroundColor Cyan
+Write-Host ""
+Write-Host "        GREATEST OF ALL TWEAKS         " -ForegroundColor Yellow
+Write-Host "          Greatest Of All Tweaks        " -ForegroundColor DarkGray
+Write-Host "  ====================================  " -ForegroundColor DarkGray
+Write-Host ""
 
 # ตั้งค่าตำแหน่งทำงาน
 $WorkingDir = "$env:TEMP\CustardUltimate"
