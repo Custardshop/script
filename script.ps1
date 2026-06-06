@@ -1,3 +1,8 @@
+<#
+    GOAT - GREATEST OF ALL TWEAKS (FULL INTEGRATED)
+    Banner: Cyber Edition v2.0
+#>
+
 # ══════════════════════════════════════════════════════════════════════════
 #  [ 1 ] ADMIN PRIVILEGE CHECK
 # ══════════════════════════════════════════════════════════════════════════
@@ -65,11 +70,6 @@ $edge = '═' * $W
 # ══════════════════════════════════════════════════════════════════════════
 $CPU      = (Get-CimInstance Win32_Processor).Name
 $CPULoad  = (Get-CimInstance Win32_Processor).LoadPercentage
-if ($null -eq $CPULoad) {
-    try {
-        $CPULoad = [int](Get-CimInstance -Query "SELECT PercentProcessorTime FROM Win32_PerfFormattedData_PerfOS_Processor WHERE Name='_Total'").PercentProcessorTime
-    } catch {}
-}
 if ($null -eq $CPULoad) { $CPULoad = 0 }
 $CPULoad = [int]$CPULoad
 
