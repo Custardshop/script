@@ -48,15 +48,16 @@ function Bar ($pct, $width = 28, $fillColor = 'Cyan', $emptyColor = 'DarkGray') 
 }
 
 function SysRow ($label, $detail, $pct, $fillColor) {
+    $pctSafe = if ($null -ne $pct) { [int]$pct } else { 0 }
     W "  ║" DarkCyan -NoNewline
     Write-Host "  " -NoNewline
     Write-Host $label.PadRight(6) -NoNewline -ForegroundColor DarkCyan
     Write-Host "│ " -NoNewline -ForegroundColor DarkGray
     Write-Host $detail.PadRight(36) -NoNewline -ForegroundColor White
     Write-Host " [" -NoNewline -ForegroundColor DarkGray
-    Bar $pct 28 $fillColor DarkGray
+    Bar $pctSafe 28 $fillColor DarkGray
     Write-Host "] " -NoNewline -ForegroundColor DarkGray
-    Write-Host "$($pct.ToString().PadLeft(3))%" -NoNewline -ForegroundColor $fillColor
+    Write-Host "$($pctSafe.ToString().PadLeft(3))%" -NoNewline -ForegroundColor $fillColor
     Write-Host (' ' * 2) -NoNewline
     W "║" DarkCyan
 }
@@ -69,6 +70,14 @@ $edge = '═' * $W
 # ══════════════════════════════════════════════════════════════════════════
 $CPU      = (Get-CimInstance Win32_Processor).Name
 $CPULoad  = (Get-CimInstance Win32_Processor).LoadPercentage
+if ($null -eq $CPULoad) {
+    try {
+        $CPULoad = [int](Get-CimInstance -Query "SELECT PercentProcessorTime FROM Win32_PerfFormattedData_PerfOS_Processor WHERE Name='_Total'").PercentProcessorTime
+    } catch {}
+}
+if ($null -eq $CPULoad) { $CPULoad = 0 }
+$CPULoad = [int]$CPULoad
+
 $RAMTotal = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
 $RAMFree  = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 1)
 $RAMUsed  = [math]::Round($RAMTotal - $RAMFree, 1)
