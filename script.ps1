@@ -1,166 +1,204 @@
-<#
-    GOAT - GREATEST OF ALL TWEAKS (FULL INTEGRATED)
-#>
-
-# --- [ 1. ADMIN PRIVILEGE CHECK ] ---
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 1 ] ADMIN PRIVILEGE CHECK
+# ══════════════════════════════════════════════════════════════════════════
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host ""
-    Write-Host "  [!] ERROR: ADMINISTRATIVE PRIVILEGES REQUIRED" -ForegroundColor Red
-    Write-Host "  Please restart PowerShell as Administrator." -ForegroundColor Yellow
+    Write-Host "`n  [!] ADMINISTRATIVE PRIVILEGES REQUIRED" -ForegroundColor Red
+    Write-Host "  Restart PowerShell as Administrator.`n" -ForegroundColor DarkGray
     Read-Host "Press Enter to exit"
     Exit
 }
 
-$Host.UI.RawUI.WindowTitle = "GOAT"
+$Host.UI.RawUI.WindowTitle = "GOAT // GREATEST OF ALL TWEAKS"
+$Host.UI.RawUI.BackgroundColor = 'Black'
+$Host.UI.RawUI.ForegroundColor = 'Cyan'
 Clear-Host
 
-# --- [ SYSTEM INFO ] ---
-$CPU     = (Get-CimInstance Win32_Processor).Name
-$RAMTotal= [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 0)
-$RAMUsed = [math]::Round((Get-CimInstance Win32_OperatingSystem).TotalVisibleMemorySize / 1MB - (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 1)
-$OSName  = (Get-CimInstance Win32_OperatingSystem).Caption
-$RAMPct  = [math]::Round(($RAMUsed / $RAMTotal) * 100)
+# Try to widen the window
+try {
+    $w = $Host.UI.RawUI.WindowSize; $w.Width = 100
+    $b = $Host.UI.RawUI.BufferSize; $b.Width = 100
+    $Host.UI.RawUI.BufferSize = $b
+    $Host.UI.RawUI.WindowSize = $w
+} catch {}
 
-# CPU Usage (sample)
-$CPULoad = (Get-CimInstance Win32_Processor).LoadPercentage
-
-# Bar builder
-function Make-Bar {
-    param([int]$Pct, [int]$Width = 32)
-    $filled = [math]::Round($Pct / 100 * $Width)
-    $empty  = $Width - $filled
-    return ('█' * $filled) + ('░' * $empty)
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 2 ] BANNER HELPERS
+# ══════════════════════════════════════════════════════════════════════════
+function W ($text, $color = 'White', [switch]$NoNewline) {
+    if ($NoNewline) { Write-Host $text -ForegroundColor $color -NoNewline }
+    else            { Write-Host $text -ForegroundColor $color }
 }
 
-$border = '║'
-$line   = '═' * 86
+function Center ($text, $width = 98) {
+    $pad = [math]::Max(0, [math]::Floor(($width - $text.Length) / 2))
+    return (' ' * $pad) + $text
+}
 
-# --- [ BANNER ] ---
-Write-Host ""
-Write-Host "  ╔$line╗" -ForegroundColor DarkCyan
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host (' ' * 86) -NoNewline
-Write-Host "$border" -ForegroundColor DarkCyan
+function Bar ($pct, $width = 28, $fillColor = 'Cyan', $emptyColor = 'DarkGray') {
+    $f = [math]::Round($pct / 100 * $width)
+    $e = $width - $f
+    Write-Host ('█' * $f) -ForegroundColor $fillColor  -NoNewline
+    Write-Host ('░' * $e) -ForegroundColor $emptyColor -NoNewline
+}
 
-# GOAT ASCII — ไล่สี 3 ระดับ
+function SysRow ($label, $detail, $pct, $fillColor) {
+    W "  ║" DarkCyan -NoNewline
+    Write-Host "  " -NoNewline
+    Write-Host $label.PadRight(6) -NoNewline -ForegroundColor DarkCyan
+    Write-Host "│ " -NoNewline -ForegroundColor DarkGray
+    Write-Host $detail.PadRight(36) -NoNewline -ForegroundColor White
+    Write-Host " [" -NoNewline -ForegroundColor DarkGray
+    Bar $pct 28 $fillColor DarkGray
+    Write-Host "] " -NoNewline -ForegroundColor DarkGray
+    Write-Host "$($pct.ToString().PadLeft(3))%" -NoNewline -ForegroundColor $fillColor
+    Write-Host (' ' * 2) -NoNewline
+    W "║" DarkCyan
+}
+
+$W    = 96
+$edge = '═' * $W
+
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 3 ] SYSTEM INFO (collected before banner draw)
+# ══════════════════════════════════════════════════════════════════════════
+$CPU      = (Get-CimInstance Win32_Processor).Name
+$CPULoad  = (Get-CimInstance Win32_Processor).LoadPercentage
+$RAMTotal = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
+$RAMFree  = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 1)
+$RAMUsed  = [math]::Round($RAMTotal - $RAMFree, 1)
+$RAMPct   = [math]::Round(($RAMUsed / $RAMTotal) * 100)
+$OSName   = (Get-CimInstance Win32_OperatingSystem).Caption
+
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 4 ] BANNER DRAW
+# ══════════════════════════════════════════════════════════════════════════
+W ""
+W "  ╔$edge╗" DarkCyan
+W "  ║" DarkCyan -NoNewline; W ('▓' * $W) Cyan -NoNewline; W "║" DarkCyan
+W "  ║" DarkCyan -NoNewline; W (' ' * $W) -NoNewline;      W "║" DarkCyan
+
+# GOAT ASCII logo
 $logo = @(
-    '    ██████╗  ██████╗  █████╗ ████████╗                                              ',
-    '   ██╔════╝ ██╔═══██╗██╔══██╗╚══██╔══╝                                              ',
-    '   ██║  ███╗██║   ██║███████║   ██║                                                  ',
-    '   ██║   ██║██║   ██║██╔══██║   ██║                                                  ',
-    '   ╚██████╔╝╚██████╔╝██║  ██║   ██║                                                  ',
-    '    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝                                                  '
+    '    ██████╗  ██████╗  █████╗ ████████╗    ',
+    '   ██╔════╝ ██╔═══██╗██╔══██╗╚══██╔══╝    ',
+    '   ██║  ███╗██║   ██║███████║   ██║        ',
+    '   ██║   ██║██║   ██║██╔══██║   ██║        ',
+    '   ╚██████╔╝╚██████╔╝██║  ██║   ██║        ',
+    '    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝        '
 )
-$colors = @('Cyan','Cyan','DarkCyan','DarkCyan','DarkCyan','DarkCyan')
-for ($i = 0; $i -lt $logo.Count; $i++) {
-    Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-    Write-Host $logo[$i] -NoNewline -ForegroundColor $colors[$i]
-    Write-Host "$border" -ForegroundColor DarkCyan
+$logoColors = @('Cyan','Cyan','White','White','DarkCyan','DarkCyan')
+foreach ($i in 0..($logo.Count - 1)) {
+    W "  ║" DarkCyan -NoNewline
+    Write-Host (Center $logo[$i] $W).PadRight($W) -NoNewline -ForegroundColor $logoColors[$i]
+    W "║" DarkCyan
 }
 
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host (' ' * 86) -NoNewline
-Write-Host "$border" -ForegroundColor DarkCyan
+W "  ║" DarkCyan -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkCyan
+W "  ║" DarkCyan -NoNewline
+Write-Host (Center "·  G R E A T E S T   O F   A L L   T W E A K S  ·" $W).PadRight($W) -NoNewline -ForegroundColor Yellow
+W "║" DarkCyan
+W "  ║" DarkCyan -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkCyan
 
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-$tagline = '─────  G R E A T E S T   O F   A L L   T W E A K S  ─────'
-$pad = [math]::Floor((86 - $tagline.Length) / 2)
-Write-Host (' ' * $pad) -NoNewline
-Write-Host $tagline -NoNewline -ForegroundColor Yellow
-Write-Host (' ' * (86 - $pad - $tagline.Length)) -NoNewline
-Write-Host "$border" -ForegroundColor DarkCyan
+# System info section
+W "  ╠$edge╣" DarkCyan
+W "  ║" DarkCyan -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkCyan
+SysRow "CPU" ($CPU.Substring(0, [math]::Min(36, $CPU.Length))) $CPULoad 'Cyan'
+W "  ║" DarkCyan -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkCyan
+SysRow "RAM" "$RAMUsed GB / $RAMTotal GB DDR" $RAMPct 'Green'
+W "  ║" DarkCyan -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkCyan
+SysRow "OS " ($OSName.Substring(0, [math]::Min(36, $OSName.Length))) 100 'Magenta'
+W "  ║" DarkCyan -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkCyan
 
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host (' ' * 86) -NoNewline
-Write-Host "$border" -ForegroundColor DarkCyan
-
-# --- [ SYSTEM INFO SECTION ] ---
-Write-Host "  ╠$line╣" -ForegroundColor DarkCyan
-
-# CPU
-$cpuBar = Make-Bar -Pct $CPULoad
-$cpuLine = "   CPU  $($CPU.PadRight(38))  [$cpuBar] $($CPULoad.ToString().PadLeft(3))%"
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host $cpuLine.PadRight(86) -NoNewline -ForegroundColor White
-Write-Host "$border" -ForegroundColor DarkCyan
-
-# RAM
-$ramBar = Make-Bar -Pct $RAMPct
-$ramLine = "   RAM  $($RAMTotal.ToString())GB DDR                        [$ramBar] $($RAMPct.ToString().PadLeft(3))%"
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host $ramLine.PadRight(86) -NoNewline -ForegroundColor White
-Write-Host "$border" -ForegroundColor DarkCyan
-
-# OS
-$osBar  = Make-Bar -Pct 100
-$osLine = "   OS   $($OSName.PadRight(38))  [$osBar] RDY"
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host $osLine.PadRight(86) -NoNewline -ForegroundColor Cyan
-Write-Host "$border" -ForegroundColor DarkCyan
-
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host (' ' * 86) -NoNewline
-Write-Host "$border" -ForegroundColor DarkCyan
-
-# --- [ MODULE BAR ] ---
-Write-Host "  ╠$line╣" -ForegroundColor DarkCyan
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host '   [ KERNEL ]      [ MEMORY ]      [ INPUT ]      [ NETWORK ]      [ CLEANER ]   ' -NoNewline -ForegroundColor Green
-Write-Host "$border" -ForegroundColor DarkCyan
-Write-Host "  ╠$line╣" -ForegroundColor DarkCyan
-
-# --- [ LOADING BAR ] ---
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host -NoNewline '   Initializing GOAT  [' -ForegroundColor Yellow
-$totalBlocks = 40
-for ($b = 0; $b -lt $totalBlocks; $b++) {
-    Write-Host -NoNewline '█' -ForegroundColor Cyan
-    Start-Sleep -Milliseconds 30
+# Module tags
+W "  ╠$edge╣" DarkCyan
+W "  ║" DarkCyan -NoNewline
+$mods = @('KERNEL','MEMORY','INPUT','NETWORK','IRQ/MSI','POWER','SERVICES','CLEANER')
+Write-Host "  " -NoNewline
+foreach ($m in $mods) {
+    Write-Host "[ " -NoNewline -ForegroundColor DarkGray
+    Write-Host $m   -NoNewline -ForegroundColor Green
+    Write-Host " ] " -NoNewline -ForegroundColor DarkGray
 }
-Write-Host -NoNewline '] 100%' -ForegroundColor Green
-Write-Host (' ' * 17) -NoNewline
-Write-Host "$border" -ForegroundColor DarkCyan
+$modLen = 2 + ($mods | ForEach-Object { "[ $_ ] ".Length } | Measure-Object -Sum).Sum
+Write-Host (' ' * [math]::Max(0, $W - $modLen)) -NoNewline
+W "║" DarkCyan
+W "  ╠$edge╣" DarkCyan
 
-Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-Write-Host '   [OK] ALL MODULES READY' -NoNewline -ForegroundColor Green
-Write-Host (' ' * 61) -NoNewline
-Write-Host "$border" -ForegroundColor DarkCyan
+# Animated loading bar
+W "  ║" DarkCyan -NoNewline
+Write-Host "  INITIALIZING  [" -NoNewline -ForegroundColor Yellow
+$total  = 50
+$colors = @('DarkCyan','DarkCyan','Cyan','Cyan','White','Cyan','Cyan','DarkCyan','DarkCyan')
+for ($b = 0; $b -lt $total; $b++) {
+    $ci = [math]::Min($b * ($colors.Count - 1) / ($total - 1), $colors.Count - 1)
+    Write-Host '█' -NoNewline -ForegroundColor $colors[[math]::Floor($ci)]
+    Start-Sleep -Milliseconds 22
+}
+Write-Host "]" -NoNewline -ForegroundColor Yellow
+Write-Host " 100% " -NoNewline -ForegroundColor Green
+$afterLoad = $W - 2 - "  INITIALIZING  [".Length - $total - "] 100% ".Length
+Write-Host (' ' * [math]::Max(0, $afterLoad)) -NoNewline
+W "║" DarkCyan
 
-Write-Host "  ╚$line╝" -ForegroundColor DarkCyan
-Write-Host "  · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·" -ForegroundColor DarkCyan
-Write-Host ""
+W "  ║" DarkCyan -NoNewline
+Write-Host "  " -NoNewline
+Write-Host "✔ " -NoNewline -ForegroundColor Green
+Write-Host "ALL MODULES READY" -NoNewline -ForegroundColor Green
+Write-Host (' ' * ($W - 22)) -NoNewline
+W "║" DarkCyan
+W "  ║" DarkCyan -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkCyan
 
-# --- [ PROMPT: ต้องการปรับแต่งหรือไม่ ] ---
-Write-Host "  ┌─────────────────────────────────────────────┐" -ForegroundColor DarkCyan
-Write-Host "  │                                             │" -ForegroundColor DarkCyan
-Write-Host "  │    Ready to run GOAT?                      │" -ForegroundColor Yellow
-Write-Host "  │                                             │" -ForegroundColor DarkCyan
-Write-Host "  │     [Y]  YES — Begin Optimization          │" -ForegroundColor Green
-Write-Host "  │     [N]  NO  — Exit                        │" -ForegroundColor DarkGray
-Write-Host "  │                                             │" -ForegroundColor DarkCyan
-Write-Host "  └─────────────────────────────────────────────┘" -ForegroundColor DarkCyan
-Write-Host ""
+# Prompt box (split column)
+W "  ╠═══════════════════════════════════════════════════╦$(('═' * 46))╣" DarkCyan
+W "  ║" DarkCyan -NoNewline
+Write-Host "   ►  READY TO RUN GOAT?                         " -NoNewline -ForegroundColor Yellow
+W "║" DarkCyan -NoNewline
+Write-Host "  ▸ Press " -NoNewline -ForegroundColor DarkGray
+Write-Host "Y" -NoNewline -ForegroundColor Green
+Write-Host " to begin optimization           " -NoNewline -ForegroundColor DarkGray
+W "║" DarkCyan
 
-# วนรับ input จนกว่าจะถูกต้อง
+W "  ║" DarkCyan -NoNewline
+Write-Host "                                                  " -NoNewline
+W "║" DarkCyan -NoNewline
+Write-Host "  ▸ Press " -NoNewline -ForegroundColor DarkGray
+Write-Host "N" -NoNewline -ForegroundColor DarkGray
+Write-Host " to exit                           " -NoNewline -ForegroundColor DarkGray
+W "║" DarkCyan
+W "  ╚═══════════════════════════════════════════════════╩$(('═' * 46))╝" DarkCyan
+
+# Footer
+W ""
+$ts = Get-Date -Format "yyyy-MM-dd  HH:mm:ss"
+Write-Host "  " -NoNewline
+Write-Host "● " -NoNewline -ForegroundColor Green
+Write-Host "SYSTEM ONLINE" -NoNewline -ForegroundColor DarkCyan
+Write-Host "   v2.0.0   $ts" -ForegroundColor DarkGray
+W ""
+
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 5 ] INPUT
+# ══════════════════════════════════════════════════════════════════════════
 do {
-    Write-Host "  >> Your choice [Y/N]: " -NoNewline -ForegroundColor Yellow
+    Write-Host "  >> " -NoNewline -ForegroundColor DarkCyan
+    Write-Host "Your choice " -NoNewline -ForegroundColor White
+    Write-Host "[Y/N]" -NoNewline -ForegroundColor Yellow
+    Write-Host " : " -NoNewline -ForegroundColor White
     $choice = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown").Character
     Write-Host $choice -ForegroundColor Cyan
 } while ($choice -notmatch '^[YyNn]$')
 
 if ($choice -match '[Nn]') {
-    Write-Host ""
-    Write-Host "  [!] Aborted — Exiting GOAT." -ForegroundColor DarkGray
-    Write-Host ""
+    W "`n  [✖] Aborted — Exiting GOAT.`n" DarkGray
     Exit
 }
 
-Write-Host ""
-Write-Host "  [>>] GOAT is on the run — Starting optimization..." -ForegroundColor Green
-Write-Host ""
+W "`n  [✔] GOAT is on the run — Starting optimization...`n" Green
 
-# ตั้งค่าตำแหน่งทำงาน
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 6 ] WORKING DIRECTORY & POWER PLAN FILE
+# ══════════════════════════════════════════════════════════════════════════
 $WorkingDir = "$env:TEMP\CustardUltimate"
 if (-not (Test-Path $WorkingDir)) { New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null }
 Set-Location $WorkingDir
@@ -171,7 +209,9 @@ if (-not (Test-Path $PowPath)) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Custardshop/script/main/Custard.pow" -OutFile $PowPath -UseBasicParsing | Out-Null
 }
 
-# --- [ FUNCTIONS ] ---
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 7 ] OPTIMIZATION FUNCTIONS
+# ══════════════════════════════════════════════════════════════════════════
 function Optimize-Kernel {
     Write-Host " -> Optimizing Kernel & HPET Settings..." -ForegroundColor Yellow
     bcdedit /set useplatformclock no 2>$null | Out-Null
@@ -227,11 +267,11 @@ function Optimize-VisualEffects {
 
 function Disable-GameBar {
     Write-Host " -> Disabling Xbox Game Bar & DVR..." -ForegroundColor Yellow
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled"              -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled"                     -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode"              -Value 2 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode"     -Value 1 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible"-Value 1 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled"               -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled"                      -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode"               -Value 2 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode"      -Value 1 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord -Force 2>$null
     $GameBarPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
     if (-not (Test-Path $GameBarPath)) { New-Item -Path $GameBarPath -Force | Out-Null }
     Set-ItemProperty -Path $GameBarPath -Name "AllowGameDVR" -Value 0 -Type DWord -Force 2>$null
@@ -248,20 +288,18 @@ function Optimize-ProcessorPower {
 
 function Optimize-Priority {
     Write-Host " -> Optimizing Process & GPU Priorities..." -ForegroundColor Yellow
-    $PriorityPath = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
+    $PriorityPath      = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
     $SystemProfilePath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
-    $GamesTaskPath = "$SystemProfilePath\Tasks\Games"
+    $GamesTaskPath     = "$SystemProfilePath\Tasks\Games"
+    $ExecPath          = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Executive"
 
     Set-ItemProperty -Path $PriorityPath -Name "Win32PrioritySeparation" -Value 0x2a -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $PriorityPath -Name "ConvertibleSlateMode"    -Value 0     -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $PriorityPath -Name "ConvertibleSlateMode"    -Value 0    -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $SystemProfilePath -Name "SystemResponsiveness"   -Value 0          -Type DWord -Force 2>$null
     Set-ItemProperty -Path $SystemProfilePath -Name "NetworkThrottlingIndex" -Value 0xFFFFFFFF -Type DWord -Force 2>$null
-    # Worker threads — server-style CPU scheduling
-    $ExecPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Executive"
     Set-ItemProperty -Path $ExecPath -Name "AdditionalCriticalWorkerThreads" -Value 2 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $ExecPath -Name "AdditionalDelayedWorkerThreads"  -Value 2 -Type DWord -Force 2>$null
-    # Full Games task profile
     if (-not (Test-Path $GamesTaskPath)) { New-Item -Path $GamesTaskPath -Force | Out-Null }
     Set-ItemProperty -Path $GamesTaskPath -Name "Affinity"            -Value 0       -Type DWord  -Force 2>$null
     Set-ItemProperty -Path $GamesTaskPath -Name "Background Only"     -Value "False" -Type String -Force 2>$null
@@ -270,64 +308,53 @@ function Optimize-Priority {
     Set-ItemProperty -Path $GamesTaskPath -Name "Priority"            -Value 6       -Type DWord  -Force 2>$null
     Set-ItemProperty -Path $GamesTaskPath -Name "Scheduling Category" -Value "High"  -Type String -Force 2>$null
     Set-ItemProperty -Path $GamesTaskPath -Name "SFIO Priority"       -Value "High"  -Type String -Force 2>$null
+    Write-Host "    [VERIFIED] Process & GPU Priorities Set." -ForegroundColor Green
 }
 
 function Optimize-Memory {
     Write-Host " -> Tweaking Memory Management..." -ForegroundColor Yellow
-    $MemoryPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
+    $MemoryPath   = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
     $PrefetchPath = "$MemoryPath\PrefetchParameters"
-
-    Set-ItemProperty -Path $MemoryPath -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageThreshold" -Value 15 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $MemoryPath -Name "CcTotalDirtyPages" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageTarget" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $PrefetchPath -Name "EnablePrefetcher"         -Value 3 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $PrefetchPath -Name "EnableSuperfetch"          -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $MemoryPath   -Name "LargeSystemCache"          -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $MemoryPath   -Name "ClearPageFileAtShutdown"   -Value 0 -Type DWord -Force 2>$null
-    # Disable Hibernate (saves SSD space, reduces kernel overhead)
+    Set-ItemProperty -Path $MemoryPath -Name "SystemCacheDirtyPageThreshold" -Value 0  -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageThreshold"          -Value 15 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $MemoryPath -Name "CcTotalDirtyPages"             -Value 0  -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $MemoryPath -Name "CcDirtyPageTarget"             -Value 0  -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $PrefetchPath -Name "EnablePrefetcher"  -Value 3 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $PrefetchPath -Name "EnableSuperfetch"  -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $MemoryPath   -Name "LargeSystemCache"  -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $MemoryPath   -Name "ClearPageFileAtShutdown" -Value 0 -Type DWord -Force 2>$null
     powercfg -h off 2>$null | Out-Null
-    # Kill OneDrive background sync (frees bandwidth & CPU)
     taskkill /f /im OneDrive.exe 2>$null | Out-Null
-    $RunPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
-    Remove-ItemProperty -Path $RunPath -Name "OneDrive" -Force -ErrorAction SilentlyContinue
+    Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue
+    Write-Host "    [VERIFIED] Memory Management Tweaked." -ForegroundColor Green
 }
 
 function Optimize-Input {
     Write-Host " -> Tuning Input Response & Power Throttling..." -ForegroundColor Yellow
-    # Mouse queue
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize" -Value 16 -Type DWord -Force 2>$null
-    # Keyboard queue
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize"    -Value 16 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
-    # Power throttle off
     $PowerThrottlePath = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
     if (-not (Test-Path $PowerThrottlePath)) { New-Item -Path $PowerThrottlePath -Force | Out-Null }
     Set-ItemProperty -Path $PowerThrottlePath -Name "PowerThrottlingOff" -Value 1 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "MaximumSpeed2" -Value "9000" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys" -Name "TimeToMaximumSpeed2" -Value "9000" -Type String -Force 2>$null
-    # Disable Mouse Acceleration (Windows Enhance Pointer Precision)
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed"      -Value "0" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold1" -Value "0" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold2" -Value "0" -Type String -Force 2>$null
-    # Keyboard delay & repeat speed
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed"      -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold1" -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold2" -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseHoverTime"  -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSensitivity" -Value "10" -Type String -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Value "0"  -Type String -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed" -Value "31" -Type String -Force 2>$null
-    # Disable USB Selective Suspend (prevent USB ports from sleeping)
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB"    -Name "DisableSelectiveSuspend" -Value 1 -Type DWord -Force 2>$null
-    # Disable HID USB idle (prevents polling rate jitter)
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HidUsb" -Name "IdleEnable"              -Value 0 -Type DWord -Force 2>$null
-    # Additional mouse raw input
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseHoverTime"   -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSensitivity" -Value "10" -Type String -Force 2>$null
-    # Disable accessibility key delays (StickyKeys / ToggleKeys / FilterKeys)
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\StickyKeys"         -Name "Flags"                -Value "506" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\ToggleKeys"         -Name "Flags"                -Value "58"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys"          -Name "Flags"                -Value "0"   -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response"  -Name "AutoRepeatDelay"      -Value "125" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response"  -Name "AutoRepeatRate"       -Value "11"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response"  -Name "BounceTime"           -Value "0"   -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response"  -Name "DelayBeforeAcceptance"-Value "0"   -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response"  -Name "Flags"                -Value "122" -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\StickyKeys"        -Name "Flags"                 -Value "506" -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\ToggleKeys"        -Name "Flags"                 -Value "58"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys"         -Name "Flags"                 -Value "0"   -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys"         -Name "MaximumSpeed2"         -Value "9000"-Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\MouseKeys"         -Name "TimeToMaximumSpeed2"   -Value "9000"-Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response" -Name "AutoRepeatDelay"       -Value "125" -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response" -Name "AutoRepeatRate"        -Value "11"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response" -Name "BounceTime"            -Value "0"   -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response" -Name "DelayBeforeAcceptance" -Value "0"   -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Accessibility\Keyboard Response" -Name "Flags"                 -Value "122" -Type String -Force 2>$null
     Write-Host "    [VERIFIED] Input & USB Tuned." -ForegroundColor Green
 }
 
@@ -339,103 +366,85 @@ function Install-CustardPowerPlan {
         powercfg /import $PowPath $Guid 2>$null | Out-Null
         powercfg /setactive $Guid 2>$null | Out-Null
     }
+    Write-Host "    [VERIFIED] Power Plan Applied." -ForegroundColor Green
 }
 
 function Optimize-Network {
     Write-Host " -> Optimizing Network & DNS..." -ForegroundColor Yellow
-    # TCP stack global tweaks
-    netsh int tcp set global rss=enabled          2>$null | Out-Null
-    netsh int tcp set global autotuninglevel=normal 2>$null | Out-Null
-    netsh int tcp set global timestamps=disabled   2>$null | Out-Null
-    netsh int tcp set global chimney=disabled      2>$null | Out-Null
-    netsh int tcp set global ecncapability=disabled 2>$null | Out-Null
-    # Global TCP registry params
+    netsh int tcp set global rss=enabled            2>$null | Out-Null
+    netsh int tcp set global autotuninglevel=normal  2>$null | Out-Null
+    netsh int tcp set global timestamps=disabled     2>$null | Out-Null
+    netsh int tcp set global chimney=disabled        2>$null | Out-Null
+    netsh int tcp set global ecncapability=disabled  2>$null | Out-Null
     $TcpParams = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"
-    Set-ItemProperty -Path $TcpParams -Name "EnableTCPChimney" -Value 0          -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $TcpParams -Name "EnableRSS"        -Value 1          -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $TcpParams -Name "EnableTCPA"       -Value 0          -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $TcpParams -Name "Tcp1323Opts"      -Value 1          -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $TcpParams -Name "TCPNoDelay"       -Value 1          -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $TcpParams -Name "TcpAckFrequency"  -Value 1          -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $TcpParams -Name "TcpDelAckTicks"   -Value 0          -Type DWord -Force 2>$null
-    # Additional TCP params
-    Set-ItemProperty -Path $TcpParams -Name "DefaultTTL"          -Value 64   -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $TcpParams -Name "EnablePMTUDiscovery"  -Value 1   -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $TcpParams -Name "TcpTimedWaitDelay"    -Value 30  -Type DWord -Force 2>$null
-    # DNS cache tuning
+    Set-ItemProperty -Path $TcpParams -Name "EnableTCPChimney"    -Value 0          -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $TcpParams -Name "EnableRSS"           -Value 1          -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $TcpParams -Name "EnableTCPA"          -Value 0          -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $TcpParams -Name "Tcp1323Opts"         -Value 1          -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $TcpParams -Name "TCPNoDelay"          -Value 1          -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $TcpParams -Name "TcpAckFrequency"     -Value 1          -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $TcpParams -Name "TcpDelAckTicks"      -Value 0          -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $TcpParams -Name "DefaultTTL"          -Value 64         -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $TcpParams -Name "EnablePMTUDiscovery" -Value 1          -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $TcpParams -Name "TcpTimedWaitDelay"   -Value 30         -Type DWord -Force 2>$null
     $DnsPath = "HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters"
-    Set-ItemProperty -Path $DnsPath -Name "CacheHashTableBucketSize"  -Value 1      -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $DnsPath -Name "CacheHashTableSize"        -Value 0x180  -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $DnsPath -Name "MaxCacheEntryTtlLimit"     -Value 0xfa00 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $DnsPath -Name "MaxSOACacheEntryTtlLimit"  -Value 0x12d  -Type DWord -Force 2>$null
-    # Task offload & initial congestion window
+    Set-ItemProperty -Path $DnsPath -Name "CacheHashTableBucketSize" -Value 1       -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $DnsPath -Name "CacheHashTableSize"       -Value 0x180   -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $DnsPath -Name "MaxCacheEntryTtlLimit"    -Value 0xfa00  -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $DnsPath -Name "MaxSOACacheEntryTtlLimit" -Value 0x12d   -Type DWord -Force 2>$null
+    $InterfacesPath = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces"
+    Get-ChildItem $InterfacesPath -ErrorAction SilentlyContinue | ForEach-Object {
+        Set-ItemProperty -Path $_.PSPath -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null
+        Set-ItemProperty -Path $_.PSPath -Name "TCPNoDelay"      -Value 1 -Type DWord -Force 2>$null
+        Set-ItemProperty -Path $_.PSPath -Name "TcpDelAckTicks"  -Value 0 -Type DWord -Force 2>$null
+    }
     netsh int ip set global taskoffload=enabled 2>$null | Out-Null
     netsh int tcp set supplemental template=custom icw=10 2>$null | Out-Null
-    # Flush DNS & reset winsock
     Clear-DnsClientCache -ErrorAction SilentlyContinue | Out-Null
     netsh winsock reset 2>$null | Out-Null
-    # Reset IP stack
-    netsh int ip reset 2>$null | Out-Null
-    # Release & renew IP
-    ipconfig /release 2>$null | Out-Null
-    ipconfig /renew   2>$null | Out-Null
-    # Restart physical NICs to apply all settings immediately
+    netsh int ip reset  2>$null | Out-Null
+    ipconfig /release   2>$null | Out-Null
+    ipconfig /renew     2>$null | Out-Null
     Get-NetAdapter | Where-Object { $_.Physical } | Restart-NetAdapter -ErrorAction SilentlyContinue
     Write-Host "    [VERIFIED] Network Stack Fully Optimized." -ForegroundColor Green
 }
 
+function Optimize-Services {
+    Write-Host " -> Optimizing Windows Services..." -ForegroundColor Yellow
+    $DisableServices = @('DiagTrack','WSearch','MapsBroker','XblAuthManager','XblGameSave','XboxNetApiSvc','Fax','RetailDemo','RemoteRegistry','WerSvc')
+    foreach ($svc in $DisableServices) {
+        Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue
+        Set-Service  -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
+    }
+    $EnableServices = @('Audiosrv','AudioEndpointBuilder','Dhcp','NlaSvc','Netman','WlanSvc','RpcSs','EventLog','PlugPlay','LanmanWorkstation','LanmanServer')
+    foreach ($svc in $EnableServices) {
+        Set-Service  -Name $svc -StartupType Automatic -ErrorAction SilentlyContinue
+        Start-Service -Name $svc -ErrorAction SilentlyContinue
+    }
+    Write-Host "    [VERIFIED] Services Optimized." -ForegroundColor Green
+}
+
 function Clean-TrashAndLogs {
     Write-Host " -> Cleaning System Junk, Logs, Updates & EventLogs..." -ForegroundColor Yellow
-    
-    # 1. ล้างไฟล์ขยะ (Temp, Prefetch)
-    $JunkPaths = @("$env:USERPROFILE\AppData\Local\Temp\*", "C:\Windows\Temp\*", "C:\Windows\Prefetch\*")
+    $JunkPaths = @("$env:USERPROFILE\AppData\Local\Temp\*","C:\Windows\Temp\*","C:\Windows\Prefetch\*")
     foreach ($Path in $JunkPaths) {
         Get-ChildItem -Path $Path -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
             Write-Host "    [DELETING] $($_.FullName)" -ForegroundColor Gray
             Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
-
-    # 2. ล้าง Windows Update (SoftwareDistribution)
     Write-Host "    [CLEANING] Windows Update Cache..." -ForegroundColor Gray
     Stop-Service -Name wuauserv, UsoSvc -Force -ErrorAction SilentlyContinue
     Remove-Item -Path "C:\Windows\SoftwareDistribution\*" -Recurse -Force -ErrorAction SilentlyContinue
     Start-Service -Name wuauserv
-
-    # 3. ล้าง Event Logs
     Write-Host "    [CLEANING] Windows Event Logs..." -ForegroundColor Gray
     wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" }
-    
     Write-Host "    [VERIFIED CLEANED] All System Junk & Logs Wiped Clean!" -ForegroundColor Green
 }
 
-
-function Optimize-Services {
-    Write-Host " -> Optimizing Windows Services..." -ForegroundColor Yellow
-    # Disable background junk services
-    $DisableServices = @(
-        'DiagTrack','WSearch','MapsBroker',
-        'XblAuthManager','XblGameSave','XboxNetApiSvc',
-        'Fax','RetailDemo','RemoteRegistry','WerSvc'
-    )
-    foreach ($svc in $DisableServices) {
-        Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue
-        Set-Service  -Name $svc -StartupType Disabled -ErrorAction SilentlyContinue
-    }
-    # Ensure critical audio & network services are running
-    $EnableServices = @(
-        'Audiosrv','AudioEndpointBuilder','Dhcp','NlaSvc',
-        'Netman','WlanSvc','RpcSs','EventLog','PlugPlay',
-        'LanmanWorkstation','LanmanServer'
-    )
-    foreach ($svc in $EnableServices) {
-        Set-Service -Name $svc -StartupType Automatic -ErrorAction SilentlyContinue
-        Start-Service -Name $svc -ErrorAction SilentlyContinue
-    }
-    Write-Host "    [VERIFIED] Services Optimized." -ForegroundColor Green
-}
-
-# --- [ EXECUTION ] ---
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 8 ] EXECUTION
+# ══════════════════════════════════════════════════════════════════════════
 $Tasks = @(
     { Optimize-Kernel },
     { Optimize-TimerResolution },
@@ -455,6 +464,13 @@ $Tasks = @(
 
 foreach ($Task in $Tasks) { & $Task }
 
-# --- [ FINALIZATION ] ---
-Write-Host "`n[ SUCCESS ] ALL TWEAKS AND SYSTEM CLEANUP COMPLETED!" -ForegroundColor Green
-if ((Read-Host "Do you want to restart your PC now? (Y/N)") -match "[Yy]") { Restart-Computer }
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 9 ] FINALIZATION
+# ══════════════════════════════════════════════════════════════════════════
+W "`n  ╔$edge╗" DarkCyan
+W "  ║" DarkCyan -NoNewline
+Write-Host (Center "✔  ALL TWEAKS AND SYSTEM CLEANUP COMPLETED!" $W).PadRight($W) -NoNewline -ForegroundColor Green
+W "║" DarkCyan
+W "  ╚$edge╝`n" DarkCyan
+
+if ((Read-Host "  Restart your PC now? (Y/N)") -match "[Yy]") { Restart-Computer }
