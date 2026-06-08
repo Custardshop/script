@@ -595,203 +595,7 @@ $Tasks = @(
     { Clean-TrashAndLogs }
 )
 
-# ── WPF GUI ──────────────────────────────────────────────────────────────
-Add-Type -AssemblyName PresentationFramework
-Add-Type -AssemblyName PresentationCore
-Add-Type -AssemblyName WindowsBase
-
-[xml]$xaml = @"
-<Window
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="GOAT — GREATEST OF ALL TWEAKS  v2.0"
-    Width="800" Height="620"
-    WindowStartupLocation="CenterScreen"
-    ResizeMode="CanMinimize"
-    Background="#080000">
-  <Window.Resources>
-    <Style TargetType="Button">
-      <Setter Property="Background"      Value="#1A0000"/>
-      <Setter Property="Foreground"      Value="#FF3333"/>
-      <Setter Property="BorderBrush"     Value="#8B0000"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="FontFamily"      Value="Consolas"/>
-      <Setter Property="FontSize"        Value="12"/>
-      <Setter Property="FontWeight"      Value="Bold"/>
-      <Setter Property="Cursor"          Value="Hand"/>
-      <Setter Property="Height"          Value="36"/>
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Button">
-            <Border Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}"
-                    CornerRadius="3">
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="Background" Value="#330000"/>
-                <Setter Property="BorderBrush" Value="#CC0000"/>
-              </Trigger>
-              <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Opacity" Value="0.3"/>
-              </Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
-    <Style TargetType="ProgressBar">
-      <Setter Property="Height" Value="6"/>
-      <Setter Property="Background" Value="#1A0000"/>
-      <Setter Property="BorderThickness" Value="0"/>
-      <Setter Property="Foreground" Value="#CC0000"/>
-    </Style>
-  </Window.Resources>
-
-  <Grid Margin="14">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*"/>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="Auto"/>
-    </Grid.RowDefinitions>
-
-    <!-- HEADER LOGO -->
-    <Border Grid.Row="0" Background="#100000" BorderBrush="#5A0000" BorderThickness="1" CornerRadius="4" Padding="14,10" Margin="0,0,0,8">
-      <StackPanel>
-        <TextBlock Text="  ██████╗  ██████╗  █████╗ ████████╗" FontFamily="Consolas" FontSize="11" Foreground="#CC0000"/>
-        <TextBlock Text=" ██╔════╝ ██╔═══██╗██╔══██╗╚══██╔══╝" FontFamily="Consolas" FontSize="11" Foreground="#CC0000"/>
-        <TextBlock Text=" ██║  ███╗██║   ██║███████║   ██║    " FontFamily="Consolas" FontSize="11" Foreground="#990000"/>
-        <TextBlock Text=" ██║   ██║██║   ██║██╔══██║   ██║    " FontFamily="Consolas" FontSize="11" Foreground="#990000"/>
-        <TextBlock Text=" ╚██████╔╝╚██████╔╝██║  ██║   ██║    " FontFamily="Consolas" FontSize="11" Foreground="#660000"/>
-        <TextBlock Text="  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝    " FontFamily="Consolas" FontSize="11" Foreground="#660000"/>
-        <TextBlock Text="─── G R E A T E S T   O F   A L L   T W E A K S ───" FontFamily="Consolas" FontSize="11" Foreground="#FF2222" HorizontalAlignment="Center" Margin="0,6,0,0"/>
-      </StackPanel>
-    </Border>
-
-    <!-- SYSINFO -->
-    <Border Grid.Row="1" Background="#0D0000" BorderBrush="#3A0000" BorderThickness="1" CornerRadius="4" Padding="12,8" Margin="0,0,0,8">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-          <TextBlock Text="CPU" FontFamily="Consolas" FontSize="9" Foreground="#550000" LetterSpacing="2"/>
-          <TextBlock x:Name="lblCPU" FontFamily="Consolas" FontSize="10" Foreground="#FF3333" TextWrapping="Wrap"/>
-          <ProgressBar x:Name="pbCPU" Margin="0,4,0,0"/>
-        </StackPanel>
-        <StackPanel Grid.Column="1" Margin="10,0">
-          <TextBlock Text="RAM" FontFamily="Consolas" FontSize="9" Foreground="#550000" LetterSpacing="2"/>
-          <TextBlock x:Name="lblRAM" FontFamily="Consolas" FontSize="10" Foreground="#FF3333"/>
-          <ProgressBar x:Name="pbRAM" Foreground="#8B0000" Margin="0,4,0,0"/>
-        </StackPanel>
-        <StackPanel Grid.Column="2" Margin="10,0,0,0">
-          <TextBlock Text="OS" FontFamily="Consolas" FontSize="9" Foreground="#550000" LetterSpacing="2"/>
-          <TextBlock x:Name="lblOS" FontFamily="Consolas" FontSize="10" Foreground="#FF3333" TextWrapping="Wrap"/>
-          <ProgressBar Value="100" Foreground="#550000" Margin="0,4,0,0"/>
-        </StackPanel>
-      </Grid>
-    </Border>
-
-    <!-- PROGRESS -->
-    <Border Grid.Row="2" Background="#0D0000" BorderBrush="#3A0000" BorderThickness="1" CornerRadius="4" Padding="12,8" Margin="0,0,0,8">
-      <StackPanel>
-        <Grid Margin="0,0,0,5">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-          <TextBlock x:Name="lblTask" Text="WAITING — Press RUN GOAT to begin" FontFamily="Consolas" FontSize="11" Foreground="#FF4444"/>
-          <TextBlock x:Name="lblPct"  Text="0%" Grid.Column="1" FontFamily="Consolas" FontSize="11" Foreground="#CC0000" Margin="10,0,0,0"/>
-        </Grid>
-        <ProgressBar x:Name="pbMain" Height="10" Maximum="100"/>
-      </StackPanel>
-    </Border>
-
-    <!-- LOG -->
-    <Border Grid.Row="3" Background="#060000" BorderBrush="#3A0000" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,0,8">
-      <ScrollViewer x:Name="sv" VerticalScrollBarVisibility="Auto">
-        <TextBlock x:Name="tbLog" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" LineHeight="19"/>
-      </ScrollViewer>
-    </Border>
-
-    <!-- BUTTONS -->
-    <Grid Grid.Row="4" Margin="0,0,0,8">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="*"/>
-        <ColumnDefinition Width="10"/>
-        <ColumnDefinition Width="*"/>
-        <ColumnDefinition Width="10"/>
-        <ColumnDefinition Width="*"/>
-      </Grid.ColumnDefinitions>
-      <Button x:Name="btnRun"     Grid.Column="0" Content="▶  RUN GOAT"/>
-      <Button x:Name="btnRestart" Grid.Column="2" Content="↺  RESTART PC" IsEnabled="False"/>
-      <Button x:Name="btnExit"    Grid.Column="4" Content="✕  EXIT"/>
-    </Grid>
-
-    <!-- STATUS BAR -->
-    <Border Grid.Row="5" Background="#0D0000" BorderBrush="#3A0000" BorderThickness="1" CornerRadius="3" Padding="10,5">
-      <Grid>
-        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <TextBlock x:Name="lblStatus" Text="● SYSTEM ONLINE" FontFamily="Consolas" FontSize="10" Foreground="#660000"/>
-        <TextBlock x:Name="lblTime"   Text="GOAT v2.0.0" FontFamily="Consolas" FontSize="10" Foreground="#3A0000" Grid.Column="1"/>
-      </Grid>
-    </Border>
-  </Grid>
-</Window>
-"@
-
-$reader  = [System.Xml.XmlNodeReader]::new($xaml)
-$window  = [Windows.Markup.XamlReader]::Load($reader)
-
-$lblCPU     = $window.FindName('lblCPU')
-$lblRAM     = $window.FindName('lblRAM')
-$lblOS      = $window.FindName('lblOS')
-$pbCPU      = $window.FindName('pbCPU')
-$pbRAM      = $window.FindName('pbRAM')
-$pbMain     = $window.FindName('pbMain')
-$lblTask    = $window.FindName('lblTask')
-$lblPct     = $window.FindName('lblPct')
-$tbLog      = $window.FindName('tbLog')
-$sv         = $window.FindName('sv')
-$btnRun     = $window.FindName('btnRun')
-$btnRestart = $window.FindName('btnRestart')
-$btnExit    = $window.FindName('btnExit')
-$lblStatus  = $window.FindName('lblStatus')
-$lblTime    = $window.FindName('lblTime')
-
-# Populate sysinfo
-$lblCPU.Text = $CPU.Substring(0,[math]::Min(34,$CPU.Length))
-$pbCPU.Value = $CPULoad
-$lblRAM.Text = "$RAMUsed GB / $RAMTotal GB"
-$pbRAM.Value = $RAMPct
-$lblOS.Text  = $OSName.Substring(0,[math]::Min(34,$OSName.Length))
-
-# Helper functions
-function UI-Log {
-    param([string]$msg,[string]$color='#AA0000')
-    $window.Dispatcher.Invoke([action]{
-        $run = [Windows.Documents.Run]::new("$msg`n")
-        $run.Foreground = [Windows.Media.SolidColorBrush][Windows.Media.ColorConverter]::ConvertFromString($color)
-        $tbLog.Inlines.Add($run)
-        $sv.ScrollToBottom()
-    })
-}
-
-function UI-Set {
-    param([string]$task,[int]$pct,[string]$status='')
-    $window.Dispatcher.Invoke([action]{
-        $pbMain.Value = $pct
-        $lblTask.Text = $task
-        $lblPct.Text  = "$pct%"
-        if ($status) { $lblStatus.Text = $status }
-    })
-}
-
-# Task list
+# --- [ EXECUTION ] ---
 $TaskList = @(
     @{Label='Kernel & HPET';       Fn={Optimize-Kernel}},
     @{Label='Timer Resolution';    Fn={Optimize-TimerResolution}},
@@ -803,7 +607,7 @@ $TaskList = @(
     @{Label='Memory Advanced';     Fn={Optimize-MemoryAdvanced}},
     @{Label='Memory Management';   Fn={Optimize-Memory}},
     @{Label='Input & USB';         Fn={Optimize-Input}},
-    @{Label="Nagle Algorithm";     Fn={Optimize-Nagle}},
+    @{Label='Nagle Algorithm';     Fn={Optimize-Nagle}},
     @{Label='Visual Effects';      Fn={Optimize-VisualEffects}},
     @{Label='Game Bar & DVR';      Fn={Disable-GameBar}},
     @{Label='Processor Power';     Fn={Optimize-ProcessorPower}},
@@ -816,71 +620,23 @@ $TaskList = @(
     @{Label='Junk & Logs Cleanup'; Fn={Clean-TrashAndLogs}}
 )
 
-# Elapsed timer
-$elapsed = 0
-$uiTimer = [System.Windows.Threading.DispatcherTimer]::new()
-$uiTimer.Interval = [TimeSpan]::FromSeconds(1)
-$uiTimer.Add_Tick({
-    $elapsed++
-    $lblTime.Text = "GOAT v2.0.0   {0:D2}:{1:D2}:{2:D2}" -f [math]::Floor($elapsed/3600),([math]::Floor($elapsed%3600/60)),($elapsed%60)
-})
+$total = $TaskList.Count
+for ($i = 0; $i -lt $total; $i++) {
+    $t   = $TaskList[$i]
+    $pct = [math]::Round(($i + 1) / $total * 100)
+    Write-Host ""
+    Write-Host "  [$($i+1)/$total] " -NoNewline -ForegroundColor DarkRed
+    Write-Host $t.Label -NoNewline -ForegroundColor Red
+    Write-Host "  ($pct%)" -ForegroundColor DarkGray
+    & $t.Fn
+}
 
-# RUN button
-$btnRun.Add_Click({
-    $btnRun.IsEnabled = $false
-    $uiTimer.Start()
-    UI-Log '════════════════════════════════════════' '#2A0000'
-    UI-Log '  GOAT OPTIMIZATION SEQUENCE STARTED   ' '#FF2222'
-    UI-Log '════════════════════════════════════════' '#2A0000'
-    UI-Set 'INITIALIZING...' 0 '● RUNNING'
-
-    $total   = $TaskList.Count
-    $taskRef = $TaskList
-
-    $worker = [System.ComponentModel.BackgroundWorker]::new()
-    $worker.WorkerReportsProgress = $true
-
-    $worker.Add_DoWork({
-        param($sender, $e)
-        $tList = $e.Argument.Tasks
-        $tTotal = $e.Argument.Total
-        for ($i = 0; $i -lt $tTotal; $i++) {
-            $t   = $tList[$i]
-            $pct = [math]::Round(($i / $tTotal) * 100)
-            UI-Set "[$($i+1)/$tTotal]  $($t.Label)..." $pct
-            UI-Log "  -> $($t.Label)..." '#FF3333'
-            try {
-                & $t.Fn
-                UI-Log "     [OK] Done." '#660000'
-            } catch {
-                UI-Log "     [ERR] $($_.Exception.Message)" '#FF0000'
-            }
-        }
-    })
-
-    $worker.Add_RunWorkerCompleted({
-        $uiTimer.Stop()
-        UI-Set 'ALL MODULES COMPLETE' 100 '● DONE'
-        UI-Log '════════════════════════════════════════' '#2A0000'
-        UI-Log '  ✔ ALL TWEAKS APPLIED SUCCESSFULLY!   ' '#FF2222'
-        UI-Log '  Restart PC to finalize all changes.  ' '#660000'
-        UI-Log '════════════════════════════════════════' '#2A0000'
-        $window.Dispatcher.Invoke([action]{ $btnRestart.IsEnabled = $true })
-    })
-
-    $arg = [PSCustomObject]@{ Tasks = $taskRef; Total = $total }
-    $worker.RunWorkerAsync($arg)
-})
-
-# RESTART button
-$btnRestart.Add_Click({
-    $r = [System.Windows.MessageBox]::Show('Restart your PC now?','GOAT — Restart',[System.Windows.MessageBoxButton]::YesNo,[System.Windows.MessageBoxImage]::Warning)
-    if ($r -eq 'Yes') { Restart-Computer -Force }
-})
-
-# EXIT button
-$btnExit.Add_Click({ $window.Close() })
-
-# Initial log
-UI-Log '  GOAT v2.0 ready. Press RUN GOAT to start.' '#440000'
-$window.ShowDialog() | Out-Null
+# --- [ FINALIZATION ] ---
+Write-Host ""
+Write-Host "  ╔══════════════════════════════════════════════════════════════════════════════════════╗" -ForegroundColor DarkRed
+Write-Host "  ║" -NoNewline -ForegroundColor DarkRed
+Write-Host "          ✔  ALL TWEAKS AND SYSTEM CLEANUP COMPLETED!                                  " -NoNewline -ForegroundColor Red
+Write-Host "║" -ForegroundColor DarkRed
+Write-Host "  ╚══════════════════════════════════════════════════════════════════════════════════════╝" -ForegroundColor DarkRed
+Write-Host ""
+if ((Read-Host "  Restart your PC now? (Y/N)") -match "[Yy]") { Restart-Computer -Force }
