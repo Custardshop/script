@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
     GOAT - GREATEST OF ALL TWEAKS
-    GUI Edition v2.1 - WinForms Red/Black Theme (Fixed)
+    GUI Edition v2.2 - Fixed task order + background support
 #>
 
 # ── ADMIN AUTO-ELEVATE ─────────────────────────────────────────────────────
@@ -27,20 +27,30 @@ $RAMPct   = [math]::Round(($RAMUsed / $RAMTotal) * 100)
 $OSName   = (Get-CimInstance Win32_OperatingSystem).Caption
 
 # ── COLORS & FONTS ─────────────────────────────────────────────────────────
-$cBlack    = [System.Drawing.Color]::FromArgb(0, 0, 0)
-$cDarkBg   = [System.Drawing.Color]::FromArgb(10, 0, 0)
-$cPanelBg  = [System.Drawing.Color]::FromArgb(15, 0, 0)
-$cRed      = [System.Drawing.Color]::FromArgb(220, 30, 30)      # สีแดงสดหลัก
-$cRedBright= [System.Drawing.Color]::FromArgb(255, 50, 50)      # สีแดงสว่างสุด
-$cRedDim   = [System.Drawing.Color]::FromArgb(200, 40, 40)      # สีแดงสำหรับ text ทั่วไป
-$cRedDark  = [System.Drawing.Color]::FromArgb(80, 10, 10)       # สีแดงเข้มสำหรับ bg
-$cGreen    = [System.Drawing.Color]::FromArgb(40, 200, 40)
-$cGray     = [System.Drawing.Color]::FromArgb(160, 140, 140)
-$cWhite    = [System.Drawing.Color]::FromArgb(240, 220, 220)    # ขาวอมชมพูนิดๆ
+$cBlack     = [System.Drawing.Color]::FromArgb(0,0,0)
+$cDarkBg    = [System.Drawing.Color]::FromArgb(10,0,0)
+$cRed       = [System.Drawing.Color]::FromArgb(220,30,30)
+$cRedBright = [System.Drawing.Color]::FromArgb(255,60,60)
+$cRedDim    = [System.Drawing.Color]::FromArgb(200,40,40)
+$cRedDark   = [System.Drawing.Color]::FromArgb(80,10,10)
+$cGreen     = [System.Drawing.Color]::FromArgb(40,200,40)
+$cGray      = [System.Drawing.Color]::FromArgb(160,140,140)
+$cWhite     = [System.Drawing.Color]::FromArgb(240,220,220)
+$cTransBg   = [System.Drawing.Color]::FromArgb(160,0,0,0)   # พื้นหลังโปร่งใส row
 
 $fMono9    = New-Object System.Drawing.Font("Consolas", 9)
 $fMono10   = New-Object System.Drawing.Font("Consolas", 10)
 $fMonoBold = New-Object System.Drawing.Font("Consolas", 10, [System.Drawing.FontStyle]::Bold)
+
+# ── BACKGROUND IMAGE (optional) ───────────────────────────────────────────
+# วางไฟล์รูปชื่อ "bg.jpg" (หรือ .png) ไว้ในโฟลเดอร์เดียวกับ script นี้
+# ถ้าไม่มีรูป จะใช้สีดำธรรมดา
+$script:BgImage = $null
+$bgPath = Join-Path (Split-Path $MyInvocation.MyCommand.Path) "bg.jpg"
+if (-not (Test-Path $bgPath)) { $bgPath = Join-Path (Split-Path $MyInvocation.MyCommand.Path) "bg.png" }
+if (Test-Path $bgPath) {
+    try { $script:BgImage = [System.Drawing.Image]::FromFile($bgPath) } catch {}
+}
 
 # ── TASK DEFINITIONS ───────────────────────────────────────────────────────
 $script:Tasks = [ordered]@{
@@ -61,18 +71,17 @@ $script:Tasks = [ordered]@{
 
 # ── OPTIMIZATION FUNCTIONS ─────────────────────────────────────────────────
 function Invoke-Kernel {
-    bcdedit /set useplatformclock no       2>$null | Out-Null
-    bcdedit /set useplatformtick yes       2>$null | Out-Null
-    bcdedit /set disabledynamictick yes    2>$null | Out-Null
-    bcdedit /set tscsyncpolicy Enhanced   2>$null | Out-Null
-    bcdedit /set nx OptOut                2>$null | Out-Null
-    bcdedit /set synthetictimers yes      2>$null | Out-Null
-    $hpet = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*High Precision*" }
-    if ($hpet) { Disable-PnpDevice -InstanceId $hpet.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }
+    bcdedit /set useplatformclock no    2>$null | Out-Null
+    bcdedit /set useplatformtick yes    2>$null | Out-Null
+    bcdedit /set disabledynamictick yes 2>$null | Out-Null
+    bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
+    bcdedit /set nx OptOut              2>$null | Out-Null
+    bcdedit /set synthetictimers yes    2>$null | Out-Null
+    $h = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*High Precision*" }
+    if ($h) { Disable-PnpDevice -InstanceId $h.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }
 }
 function Invoke-TimerResolution {
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" `
-        -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null
 }
 function Invoke-IRQ {
     Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI" -ErrorAction SilentlyContinue | ForEach-Object {
@@ -92,11 +101,9 @@ function Invoke-VisualEffects {
     $vp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"
     if (-not (Test-Path $vp)) { New-Item -Path $vp -Force | Out-Null }
     Set-ItemProperty -Path $vp -Name "VisualFXSetting" -Value 2 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" `
-        -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" `
-        -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null
 }
 function Invoke-GameBar {
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled"              -Value 0 -Type DWord -Force 2>$null
@@ -189,7 +196,6 @@ function Invoke-Cleanup {
     wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" 2>$null }
 }
 
-# Map key → function (ใช้ string แล้ว invoke ตอน run เพื่อหลีกเลี่ยง scope issue)
 $script:FnMap = [ordered]@{
     "kernel"   = "Invoke-Kernel"
     "timer"    = "Invoke-TimerResolution"
@@ -209,115 +215,32 @@ $script:FnMap = [ordered]@{
 # ── FORM ───────────────────────────────────────────────────────────────────
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS"
-$form.Size            = New-Object System.Drawing.Size(900, 700)
-$form.MinimumSize     = New-Object System.Drawing.Size(900, 700)
+$form.Size            = New-Object System.Drawing.Size(920, 720)
+$form.MinimumSize     = New-Object System.Drawing.Size(920, 720)
 $form.StartPosition   = "CenterScreen"
 $form.BackColor       = $cBlack
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::Sizable
 $form.Icon            = [System.Drawing.SystemIcons]::Shield
 
-# ── TOP BAR ────────────────────────────────────────────────────────────────
-$topBar = New-Object System.Windows.Forms.Panel
-$topBar.Dock      = [System.Windows.Forms.DockStyle]::Top
-$topBar.Height    = 32
-$topBar.BackColor = $cDarkBg
-$form.Controls.Add($topBar)
+# ── BACKGROUND PAINT (ถ้ามีรูป) ───────────────────────────────────────────
+if ($script:BgImage) {
+    $form.Add_Paint({
+        param($s,$e)
+        $e.Graphics.DrawImage($script:BgImage, 0, 0, $s.Width, $s.Height)
+    })
+}
 
-$lblTitle = New-Object System.Windows.Forms.Label
-$lblTitle.Text      = "GOAT  //  GREATEST OF ALL TWEAKS  //  v2.1"
-$lblTitle.Font      = $fMono9
-$lblTitle.ForeColor = $cRedDim           # แดงสดขึ้น
-$lblTitle.AutoSize  = $false
-$lblTitle.Dock      = [System.Windows.Forms.DockStyle]::Fill
-$lblTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$topBar.Controls.Add($lblTitle)
+# ══════════════════════════════════════════════════════════════════════════
+# NOTE: WinForms Dock=Top adds controls in REVERSE order visually
+# (last Added control appears at top). We add controls bottom→top
+# so that Top panel → sepTop → heroPanel → sepHero → sysBar → fill area
+# ══════════════════════════════════════════════════════════════════════════
 
-$sepTop = New-Object System.Windows.Forms.Panel
-$sepTop.Dock      = [System.Windows.Forms.DockStyle]::Top
-$sepTop.Height    = 2
-$sepTop.BackColor = $cRed
-$form.Controls.Add($sepTop)
-
-# ── HERO PANEL ─────────────────────────────────────────────────────────────
-$heroPanel = New-Object System.Windows.Forms.Panel
-$heroPanel.Dock      = [System.Windows.Forms.DockStyle]::Top
-$heroPanel.Height    = 160
-$heroPanel.BackColor = $cBlack
-$form.Controls.Add($heroPanel)
-
-$heroPanel.Add_Paint({
-    param($s, $e)
-    $g = $e.Graphics
-    $g.SmoothingMode     = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
-
-    for ($y = 0; $y -lt $s.Height; $y += 4) {
-        $g.DrawLine([System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(10,100,0,0)), 0, $y, $s.Width, $y)
-    }
-
-    $logoFont = New-Object System.Drawing.Font("Consolas", 72, [System.Drawing.FontStyle]::Bold)
-    $logoText = "G O A T"
-    $sz = $g.MeasureString($logoText, $logoFont)
-    $x  = ($s.Width - $sz.Width) / 2
-    $y  = ($s.Height - $sz.Height) / 2 - 12
-
-    foreach ($offset in @(6,4,2)) {
-        $glowBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(30, 255, 40, 40))
-        $g.DrawString($logoText, $logoFont, $glowBrush, ($x - $offset), ($y - $offset/2))
-        $g.DrawString($logoText, $logoFont, $glowBrush, ($x + $offset), ($y + $offset/2))
-        $glowBrush.Dispose()
-    }
-
-    $mainBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(220,30,30))
-    $g.DrawString($logoText, $logoFont, $mainBrush, $x, $y)
-    $mainBrush.Dispose()
-    $logoFont.Dispose()
-
-    $subFont = New-Object System.Drawing.Font("Consolas", 9)
-    $subText = "·  G R E A T E S T   O F   A L L   T W E A K S  ·"
-    $sz2 = $g.MeasureString($subText, $subFont)
-    $subBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(160,200,50,50))
-    $g.DrawString($subText, $subFont, $subBrush, ($s.Width - $sz2.Width)/2, $y + $sz.Height - 8)
-    $subBrush.Dispose()
-    $subFont.Dispose()
-})
-
-$sepHero = New-Object System.Windows.Forms.Panel
-$sepHero.Dock      = [System.Windows.Forms.DockStyle]::Top
-$sepHero.Height    = 2
-$sepHero.BackColor = $cRedDark
-$form.Controls.Add($sepHero)
-
-# ── SYS INFO BAR ──────────────────────────────────────────────────────────
-$sysBar = New-Object System.Windows.Forms.Panel
-$sysBar.Dock      = [System.Windows.Forms.DockStyle]::Top
-$sysBar.Height    = 44
-$sysBar.BackColor = $cDarkBg
-$sysBar.Padding   = New-Object System.Windows.Forms.Padding(14,6,14,6)
-$form.Controls.Add($sysBar)
-
-$cpuShort = if ($CPU.Length -gt 35) { $CPU.Substring(0,35)+"..." } else { $CPU }
-$osShort  = if ($OSName.Length -gt 28) { $OSName.Substring(0,28)+"..." } else { $OSName }
-
-$lblSys = New-Object System.Windows.Forms.Label
-$lblSys.Text      = "CPU: $cpuShort   |   RAM: $RAMUsed GB / $RAMTotal GB  ($RAMPct%)   |   OS: $osShort"
-$lblSys.Font      = $fMono9
-$lblSys.ForeColor = $cRedDim             # แดงสดขึ้น
-$lblSys.Dock      = [System.Windows.Forms.DockStyle]::Fill
-$lblSys.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$sysBar.Controls.Add($lblSys)
-
-$sepSys = New-Object System.Windows.Forms.Panel
-$sepSys.Dock      = [System.Windows.Forms.DockStyle]::Top
-$sepSys.Height    = 1
-$sepSys.BackColor = $cRedDark
-$form.Controls.Add($sepSys)
-
-# ── FOOTER ─────────────────────────────────────────────────────────────────
+# ── FOOTER (add first → sits at bottom via Dock=Bottom) ───────────────────
 $footer = New-Object System.Windows.Forms.Panel
 $footer.Dock      = [System.Windows.Forms.DockStyle]::Bottom
 $footer.Height    = 54
-$footer.BackColor = $cDarkBg
+$footer.BackColor = [System.Drawing.Color]::FromArgb(200,10,0,0)
 $footer.Padding   = New-Object System.Windows.Forms.Padding(14,8,14,8)
 $form.Controls.Add($footer)
 
@@ -329,7 +252,7 @@ $form.Controls.Add($sepFoot)
 
 $overallBar = New-Object System.Windows.Forms.Panel
 $overallBar.Location  = New-Object System.Drawing.Point(14, 10)
-$overallBar.Size      = New-Object System.Drawing.Size(580, 6)
+$overallBar.Size      = New-Object System.Drawing.Size(540, 6)
 $overallBar.BackColor = $cRedDark
 $footer.Controls.Add($overallBar)
 
@@ -344,18 +267,18 @@ $lblPct.Text      = "0%"
 $lblPct.Font      = New-Object System.Drawing.Font("Consolas", 13, [System.Drawing.FontStyle]::Bold)
 $lblPct.ForeColor = $cRed
 $lblPct.AutoSize  = $true
-$lblPct.Location  = New-Object System.Drawing.Point(600, 2)
+$lblPct.Location  = New-Object System.Drawing.Point(560, 2)
 $footer.Controls.Add($lblPct)
 
 $btnRestart = New-Object System.Windows.Forms.Button
 $btnRestart.Text      = "RESTART PC"
 $btnRestart.Font      = $fMonoBold
 $btnRestart.ForeColor = $cRedDim
-$btnRestart.BackColor = $cDarkBg
+$btnRestart.BackColor = [System.Drawing.Color]::FromArgb(20,0,0)
 $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cRedDark
 $btnRestart.Size      = New-Object System.Drawing.Size(110, 32)
-$btnRestart.Location  = New-Object System.Drawing.Point(646, 0)
+$btnRestart.Location  = New-Object System.Drawing.Point(620, 0)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({ Restart-Computer -Force })
 $footer.Controls.Add($btnRestart)
@@ -366,66 +289,187 @@ $btnRun.Font      = New-Object System.Drawing.Font("Consolas", 11, [System.Drawi
 $btnRun.ForeColor = $cWhite
 $btnRun.BackColor = $cRed
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
-$btnRun.FlatAppearance.BorderSize  = 0
+$btnRun.FlatAppearance.BorderSize = 0
 $btnRun.Size      = New-Object System.Drawing.Size(130, 36)
 $btnRun.Location  = New-Object System.Drawing.Point(760, 0)
 $footer.Controls.Add($btnRun)
 
-# ── TASK LIST PANEL ────────────────────────────────────────────────────────
+# ── TASK LIST PANEL (Fill → goes between top sections and footer) ──────────
+# ใช้ Panel เดียว วาด task ทั้งหมดด้วย absolute Location แทน Dock::Top
+# เพื่อให้ลำดับถูกต้องเสมอ
 $taskPanel = New-Object System.Windows.Forms.Panel
 $taskPanel.Dock       = [System.Windows.Forms.DockStyle]::Fill
-$taskPanel.BackColor  = $cBlack
+$taskPanel.BackColor  = [System.Drawing.Color]::Transparent
 $taskPanel.AutoScroll = $true
-$taskPanel.Padding    = New-Object System.Windows.Forms.Padding(16,10,16,10)
 $form.Controls.Add($taskPanel)
 
-$lblSectionTitle = New-Object System.Windows.Forms.Label
-$lblSectionTitle.Text      = "  OPTIMIZATION MODULES"
-$lblSectionTitle.Font      = $fMono9
-$lblSectionTitle.ForeColor = $cRedDim    # แดงสดขึ้น
-$lblSectionTitle.AutoSize  = $false
-$lblSectionTitle.Dock      = [System.Windows.Forms.DockStyle]::Top
-$lblSectionTitle.Height    = 24
-$lblSectionTitle.BackColor = $cPanelBg
-$taskPanel.Controls.Add($lblSectionTitle)
+# ── SYS INFO BAR ──────────────────────────────────────────────────────────
+$sepSys = New-Object System.Windows.Forms.Panel
+$sepSys.Dock      = [System.Windows.Forms.DockStyle]::Top
+$sepSys.Height    = 1
+$sepSys.BackColor = $cRedDark
+$form.Controls.Add($sepSys)
 
+$sysBar = New-Object System.Windows.Forms.Panel
+$sysBar.Dock      = [System.Windows.Forms.DockStyle]::Top
+$sysBar.Height    = 40
+$sysBar.BackColor = [System.Drawing.Color]::FromArgb(210,10,0,0)
+$form.Controls.Add($sysBar)
+
+$cpuShort = if ($CPU.Length -gt 38) { $CPU.Substring(0,38)+"..." } else { $CPU }
+$osShort  = if ($OSName.Length -gt 30) { $OSName.Substring(0,30)+"..." } else { $OSName }
+
+$lblSys = New-Object System.Windows.Forms.Label
+$lblSys.Text      = "CPU: $cpuShort   |   RAM: $RAMUsed / $RAMTotal GB  ($RAMPct%)   |   OS: $osShort"
+$lblSys.Font      = $fMono9
+$lblSys.ForeColor = $cRedDim
+$lblSys.Dock      = [System.Windows.Forms.DockStyle]::Fill
+$lblSys.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+$lblSys.BackColor = [System.Drawing.Color]::Transparent
+$sysBar.Controls.Add($lblSys)
+
+# ── HERO PANEL ─────────────────────────────────────────────────────────────
+$sepHero = New-Object System.Windows.Forms.Panel
+$sepHero.Dock      = [System.Windows.Forms.DockStyle]::Top
+$sepHero.Height    = 1
+$sepHero.BackColor = $cRedDark
+$form.Controls.Add($sepHero)
+
+$heroPanel = New-Object System.Windows.Forms.Panel
+$heroPanel.Dock      = [System.Windows.Forms.DockStyle]::Top
+$heroPanel.Height    = 150
+$heroPanel.BackColor = [System.Drawing.Color]::Transparent
+$form.Controls.Add($heroPanel)
+
+$heroPanel.Add_Paint({
+    param($s,$e)
+    $g = $e.Graphics
+    $g.SmoothingMode     = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
+
+    # dark overlay so logo is readable even over bg image
+    $overlay = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(160,0,0,0))
+    $g.FillRectangle($overlay, 0, 0, $s.Width, $s.Height)
+    $overlay.Dispose()
+
+    # scanlines
+    for ($y = 0; $y -lt $s.Height; $y += 4) {
+        $g.DrawLine([System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(12,120,0,0)), 0, $y, $s.Width, $y)
+    }
+
+    $logoFont = New-Object System.Drawing.Font("Consolas", 68, [System.Drawing.FontStyle]::Bold)
+    $logoText = "G O A T"
+    $sz = $g.MeasureString($logoText, $logoFont)
+    $lx = ($s.Width - $sz.Width) / 2
+    $ly = ($s.Height - $sz.Height) / 2 - 10
+
+    foreach ($off in @(6,4,2)) {
+        $gb = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(25,255,40,40))
+        $g.DrawString($logoText, $logoFont, $gb, ($lx-$off), ($ly-$off/2))
+        $g.DrawString($logoText, $logoFont, $gb, ($lx+$off), ($ly+$off/2))
+        $gb.Dispose()
+    }
+    $mb = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(220,30,30))
+    $g.DrawString($logoText, $logoFont, $mb, $lx, $ly)
+    $mb.Dispose(); $logoFont.Dispose()
+
+    $sf = New-Object System.Drawing.Font("Consolas", 9)
+    $st = "·  G R E A T E S T   O F   A L L   T W E A K S  ·"
+    $sz2 = $g.MeasureString($st, $sf)
+    $sb = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(180,210,60,60))
+    $g.DrawString($st, $sf, $sb, ($s.Width-$sz2.Width)/2, $ly+$sz.Height-10)
+    $sb.Dispose(); $sf.Dispose()
+})
+
+# ── TOP BAR ────────────────────────────────────────────────────────────────
+$sepTop = New-Object System.Windows.Forms.Panel
+$sepTop.Dock      = [System.Windows.Forms.DockStyle]::Top
+$sepTop.Height    = 2
+$sepTop.BackColor = $cRed
+$form.Controls.Add($sepTop)
+
+$topBar = New-Object System.Windows.Forms.Panel
+$topBar.Dock      = [System.Windows.Forms.DockStyle]::Top
+$topBar.Height    = 30
+$topBar.BackColor = [System.Drawing.Color]::FromArgb(220,10,0,0)
+$form.Controls.Add($topBar)
+
+$lblTitle = New-Object System.Windows.Forms.Label
+$lblTitle.Text      = "GOAT  //  GREATEST OF ALL TWEAKS  //  v2.2"
+$lblTitle.Font      = $fMono9
+$lblTitle.ForeColor = $cRedDim
+$lblTitle.AutoSize  = $false
+$lblTitle.Dock      = [System.Windows.Forms.DockStyle]::Fill
+$lblTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+$lblTitle.BackColor = [System.Drawing.Color]::Transparent
+$topBar.Controls.Add($lblTitle)
+
+# ══════════════════════════════════════════════════════════════════════════
+# ── BUILD TASK ROWS ด้วย absolute Y position (แก้ปัญหาลำดับสลับ) ─────────
+# ══════════════════════════════════════════════════════════════════════════
 $script:TaskRows = @{}
+$taskKeys  = @($script:Tasks.Keys)
+$rowHeight = 36
+$headerH   = 28
+$yPos      = $headerH   # เริ่มต้นหลัง header
 
-$taskKeys = @($script:Tasks.Keys)
-for ($i = $taskKeys.Count - 1; $i -ge 0; $i--) {
-    $key   = $taskKeys[$i]
+# inner container ที่ scrollable — ต้องกำหนดขนาดตรงๆ
+$innerH = $headerH + ($taskKeys.Count * $rowHeight) + 10
+$innerPanel = New-Object System.Windows.Forms.Panel
+$innerPanel.Size      = New-Object System.Drawing.Size(870, $innerH)
+$innerPanel.Location  = New-Object System.Drawing.Point(0, 0)
+$innerPanel.BackColor = [System.Drawing.Color]::Transparent
+$taskPanel.Controls.Add($innerPanel)
+
+# header label
+$lblSectionTitle = New-Object System.Windows.Forms.Label
+$lblSectionTitle.Text      = "  OPTIMIZATION MODULES  ($($taskKeys.Count) tweaks)"
+$lblSectionTitle.Font      = $fMono9
+$lblSectionTitle.ForeColor = $cRedDim
+$lblSectionTitle.AutoSize  = $false
+$lblSectionTitle.Size      = New-Object System.Drawing.Size(860, $headerH)
+$lblSectionTitle.Location  = New-Object System.Drawing.Point(10, 0)
+$lblSectionTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
+$lblSectionTitle.BackColor = [System.Drawing.Color]::FromArgb(180,15,0,0)
+$innerPanel.Controls.Add($lblSectionTitle)
+
+# วน loop ตามลำดับปกติ (index 0 → สุดท้าย) แล้วกำหนด Y โดยตรง
+foreach ($key in $taskKeys) {
     $label = $script:Tasks[$key]
 
     $row = New-Object System.Windows.Forms.Panel
-    $row.Dock      = [System.Windows.Forms.DockStyle]::Top
-    $row.Height    = 36
-    $row.BackColor = $cBlack
-    $row.Padding   = New-Object System.Windows.Forms.Padding(0,0,0,1)
+    $row.Size      = New-Object System.Drawing.Size(860, $rowHeight)
+    $row.Location  = New-Object System.Drawing.Point(10, $yPos)
+    $row.BackColor = [System.Drawing.Color]::FromArgb(150,8,0,0)
+    $innerPanel.Controls.Add($row)
 
+    # icon
     $icn = New-Object System.Windows.Forms.Label
     $icn.Text      = "--"
     $icn.Font      = $fMono10
-    $icn.ForeColor = $cRedDim            # แดงสดขึ้น
-    $icn.Width     = 36
-    $icn.Height    = 34
+    $icn.ForeColor = $cRedDim
+    $icn.Size      = New-Object System.Drawing.Size(36, $rowHeight)
     $icn.Location  = New-Object System.Drawing.Point(4, 0)
     $icn.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+    $icn.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($icn)
 
+    # name
     $nm = New-Object System.Windows.Forms.Label
     $nm.Text      = $label
     $nm.Font      = $fMono10
-    $nm.ForeColor = $cRedDim             # แดงสดขึ้น
-    $nm.Width     = 260
-    $nm.Height    = 34
+    $nm.ForeColor = $cRedDim
+    $nm.Size      = New-Object System.Drawing.Size(270, $rowHeight)
     $nm.Location  = New-Object System.Drawing.Point(44, 0)
     $nm.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
+    $nm.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($nm)
 
+    # progress bar track
     $barTrack = New-Object System.Windows.Forms.Panel
-    $barTrack.BackColor = [System.Drawing.Color]::FromArgb(30,0,0)
-    $barTrack.Size      = New-Object System.Drawing.Size(360, 3)
-    $barTrack.Location  = New-Object System.Drawing.Point(318, 16)
+    $barTrack.BackColor = [System.Drawing.Color]::FromArgb(60,80,0,0)
+    $barTrack.Size      = New-Object System.Drawing.Size(370, 3)
+    $barTrack.Location  = New-Object System.Drawing.Point(325, 16)
     $row.Controls.Add($barTrack)
 
     $barFill = New-Object System.Windows.Forms.Panel
@@ -434,24 +478,26 @@ for ($i = $taskKeys.Count - 1; $i -ge 0; $i--) {
     $barFill.Location  = New-Object System.Drawing.Point(0, 0)
     $barTrack.Controls.Add($barFill)
 
+    # status
     $st = New-Object System.Windows.Forms.Label
     $st.Text      = "PENDING"
     $st.Font      = $fMono9
-    $st.ForeColor = $cRedDim             # แดงสดขึ้น
-    $st.Width     = 90
-    $st.Height    = 34
-    $st.Location  = New-Object System.Drawing.Point(686, 0)
+    $st.ForeColor = $cRedDim
+    $st.Size      = New-Object System.Drawing.Size(90, $rowHeight)
+    $st.Location  = New-Object System.Drawing.Point(706, 0)
     $st.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
+    $st.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($st)
 
+    # separator line
     $sep = New-Object System.Windows.Forms.Panel
-    $sep.BackColor = [System.Drawing.Color]::FromArgb(25,0,0)
-    $sep.Dock      = [System.Windows.Forms.DockStyle]::Bottom
-    $sep.Height    = 1
+    $sep.BackColor = [System.Drawing.Color]::FromArgb(40,80,0,0)
+    $sep.Size      = New-Object System.Drawing.Size(860, 1)
+    $sep.Location  = New-Object System.Drawing.Point(0, $rowHeight - 1)
     $row.Controls.Add($sep)
 
-    $taskPanel.Controls.Add($row)
     $script:TaskRows[$key] = @{ Row=$row; Icon=$icn; Name=$nm; Bar=$barFill; BarTrack=$barTrack; Status=$st }
+    $yPos += $rowHeight
 }
 
 # ── BLINK TIMER ────────────────────────────────────────────────────────────
@@ -467,7 +513,7 @@ $blinkTimer.Add_Tick({
     }
 })
 
-# ── UPDATE TASK HELPER ─────────────────────────────────────────────────────
+# ── UPDATE TASK STATE ──────────────────────────────────────────────────────
 function Set-TaskState ($key, $state) {
     if (-not $script:TaskRows.ContainsKey($key)) { return }
     $r = $script:TaskRows[$key]
@@ -478,8 +524,8 @@ function Set-TaskState ($key, $state) {
             $r.Name.ForeColor   = $cWhite
             $r.Status.Text      = "RUNNING..."
             $r.Status.ForeColor = $cRedBright
-            $r.Bar.Width        = 120
-            $r.Row.BackColor    = [System.Drawing.Color]::FromArgb(20,0,0)
+            $r.Bar.Width        = 100
+            $r.Row.BackColor    = [System.Drawing.Color]::FromArgb(180,25,0,0)
             $script:CurrentKey  = $key
             $blinkTimer.Start()
         }
@@ -491,28 +537,25 @@ function Set-TaskState ($key, $state) {
             $r.Status.ForeColor = $cGreen
             $r.Bar.Width        = $r.BarTrack.Width
             $r.Bar.BackColor    = $cGreen
-            $r.Row.BackColor    = $cBlack
+            $r.Row.BackColor    = [System.Drawing.Color]::FromArgb(120,5,0,0)
             $script:CurrentKey  = $null
         }
     }
 }
 
-# ── RUN BUTTON (แก้ให้รันบน UI thread ด้วย Timer แทน BackgroundWorker) ────
-$script:RunIndex = 0
+# ── RUN TIMER (Job-based, UI stays responsive) ────────────────────────────
+$script:RunIndex    = 0
 $script:TaskKeyList = @()
 $script:TotalTasks  = 0
 $script:IsRunning   = $false
+$script:JobWorker   = $null
 
 $runTimer = New-Object System.Windows.Forms.Timer
-$runTimer.Interval = 50   # ตรวจสอบทุก 50ms
-
-$script:JobWorker = $null
+$runTimer.Interval = 80
 
 $runTimer.Add_Tick({
-    # ถ้า Job ยังรันอยู่ รอต่อ
     if ($script:JobWorker -and $script:JobWorker.State -eq 'Running') { return }
 
-    # Job เสร็จแล้ว หรือไม่มี Job → ทำ "done" สำหรับ task ที่เพิ่งรัน
     if ($script:RunIndex -gt 0) {
         $prevKey = $script:TaskKeyList[$script:RunIndex - 1]
         Set-TaskState $prevKey "done"
@@ -522,33 +565,32 @@ $runTimer.Add_Tick({
         $form.Refresh()
     }
 
-    # ทุก task เสร็จแล้ว
     if ($script:RunIndex -ge $script:TotalTasks) {
         $runTimer.Stop()
         if ($script:JobWorker) { $script:JobWorker | Remove-Job -Force -ErrorAction SilentlyContinue }
         $blinkTimer.Stop()
-        $overallFill.Width = $overallBar.Width
-        $lblPct.Text       = "100%"
-        $lblPct.ForeColor  = $cGreen
+        $overallFill.Width  = $overallBar.Width
+        $lblPct.Text        = "100%"
+        $lblPct.ForeColor   = $cGreen
         $btnRestart.Visible = $true
-        $btnRun.Text      = "COMPLETED"
-        $btnRun.BackColor = $cGreen
-        $btnRun.ForeColor = $cBlack
+        $btnRun.Text        = "COMPLETED"
+        $btnRun.BackColor   = $cGreen
+        $btnRun.ForeColor   = $cBlack
         return
     }
 
-    # เริ่ม task ถัดไป
     $key = $script:TaskKeyList[$script:RunIndex]
     Set-TaskState $key "running"
+
+    # scroll to show current task
+    $r = $script:TaskRows[$key].Row
+    $taskPanel.AutoScrollPosition = New-Object System.Drawing.Point(0, [Math]::Max(0, $r.Top - 50))
     $form.Refresh()
     $script:RunIndex++
 
     $fnName = $script:FnMap[$key]
-
-    # รัน function ใน background Job เพื่อให้ UI ไม่ค้าง
     $script:JobWorker = Start-Job -ScriptBlock {
         param($fn)
-        # ต้องกำหนด function ทั้งหมดใน Job เพราะ Job เป็น process ใหม่
         function Invoke-Kernel {
             bcdedit /set useplatformclock no    2>$null | Out-Null
             bcdedit /set useplatformtick yes    2>$null | Out-Null
@@ -674,9 +716,7 @@ $runTimer.Add_Tick({
             Start-Service -Name wuauserv -ErrorAction SilentlyContinue
             wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" 2>$null }
         }
-
         try { & $fn } catch {}
-
     } -ArgumentList $fnName
 })
 
@@ -686,12 +726,10 @@ $btnRun.Add_Click({
     $script:RunIndex    = 0
     $script:TaskKeyList = @($script:Tasks.Keys)
     $script:TotalTasks  = $script:TaskKeyList.Count
-
-    $btnRun.Enabled   = $false
-    $btnRun.Text      = "RUNNING..."
-    $btnRun.BackColor = $cRedDim
-    $btnRun.ForeColor = $cWhite
-
+    $btnRun.Enabled     = $false
+    $btnRun.Text        = "RUNNING..."
+    $btnRun.BackColor   = [System.Drawing.Color]::FromArgb(140,20,20)
+    $btnRun.ForeColor   = $cWhite
     $runTimer.Start()
 })
 
