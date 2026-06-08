@@ -413,7 +413,7 @@ $footer.Add_Paint({
 # Progress Area (Left)
 $overallTrack = New-Object System.Windows.Forms.Panel
 $overallTrack.Location  = New-Object System.Drawing.Point(24, 18)
-$overallTrack.Size      = New-Object System.Drawing.Size(520, 8)
+$overallTrack.Size      = New-Object System.Drawing.Size(500, 8)
 $overallTrack.BackColor = $cBorderDim
 $footer.Controls.Add($overallTrack)
 
@@ -428,7 +428,7 @@ $lblPct.Text      = "PROGRESS  0%  ·  READY"
 $lblPct.Font      = $fMono8
 $lblPct.ForeColor = $cWhiteDim
 $lblPct.AutoSize  = $false
-$lblPct.Size      = New-Object System.Drawing.Size(520, 18)
+$lblPct.Size      = New-Object System.Drawing.Size(500, 18)
 $lblPct.Location  = New-Object System.Drawing.Point(24, 36)
 $lblPct.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 $lblPct.BackColor = [System.Drawing.Color]::Transparent
@@ -439,7 +439,7 @@ $lblFooterHint.Text      = "Run GOAT to apply performance tweaks. Restart is rec
 $lblFooterHint.Font      = $fMono8
 $lblFooterHint.ForeColor = $cGrayDim
 $lblFooterHint.AutoSize  = $false
-$lblFooterHint.Size      = New-Object System.Drawing.Size(520, 18)
+$lblFooterHint.Size      = New-Object System.Drawing.Size(500, 18)
 $lblFooterHint.Location  = New-Object System.Drawing.Point(24, 56)
 $lblFooterHint.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 $lblFooterHint.BackColor = [System.Drawing.Color]::Transparent
@@ -455,7 +455,7 @@ $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cBorder
 $btnRestart.FlatAppearance.BorderSize  = 1
 $btnRestart.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRestart.Location  = New-Object System.Drawing.Point(564, 26)
+$btnRestart.Location  = New-Object System.Drawing.Point(548, 26)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({
     $answer = [System.Windows.Forms.MessageBox]::Show("Restart this PC now?", "GOAT Complete", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
@@ -471,7 +471,7 @@ $btnRun.BackColor = $cWhite
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize  = 0
 $btnRun.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRun.Location  = New-Object System.Drawing.Point(686, 26)
+$btnRun.Location      = New-Object System.Drawing.Point(670, 26)
 $footer.Controls.Add($btnRun)
 
 # ── TASK SCROLL PANEL ──────────────────────────────────────────────────────
@@ -611,7 +611,7 @@ foreach ($key in $taskKeys) {
     $lblStatus.ForeColor = $cGrayDim
     $lblStatus.AutoSize  = $false
     $lblStatus.Size      = New-Object System.Drawing.Size(72, $rowH)
-    $lblStatus.Location  = New-Object System.Drawing.Point(716, 0)
+    $lblStatus.Location  = New-Object System.Drawing.Point(708, 0)
     $lblStatus.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
     $lblStatus.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($lblStatus)
