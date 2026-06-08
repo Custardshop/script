@@ -400,7 +400,7 @@ $sectionBar.Add_Paint({
 # ── FOOTER ─────────────────────────────────────────────────────────────────
 $footer = New-Object System.Windows.Forms.Panel
 $footer.Dock      = [System.Windows.Forms.DockStyle]::Bottom
-$footer.Height    = 90
+$footer.Height    = 120
 $footer.BackColor = $cSurface
 
 $footer.Add_Paint({
@@ -411,8 +411,8 @@ $footer.Add_Paint({
 })
 
 $overallTrack = New-Object System.Windows.Forms.Panel
-$overallTrack.Location  = New-Object System.Drawing.Point(24, 16)
-$overallTrack.Size      = New-Object System.Drawing.Size(740, 14)
+$overallTrack.Location  = New-Object System.Drawing.Point(24, 12)
+$overallTrack.Size      = New-Object System.Drawing.Size(760, 16)
 $overallTrack.BackColor = [System.Drawing.Color]::FromArgb(35,35,35)
 $footer.Controls.Add($overallTrack)
 
@@ -439,7 +439,7 @@ $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cBorder
 $btnRestart.FlatAppearance.BorderSize  = 1
 $btnRestart.Size      = New-Object System.Drawing.Size(170, 46)
-$btnRestart.Location  = New-Object System.Drawing.Point(400, 18)
+$btnRestart.Location  = New-Object System.Drawing.Point(420, 60)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({ Restart-Computer -Force })
 $footer.Controls.Add($btnRestart)
@@ -452,7 +452,7 @@ $btnRun.BackColor = $cWhite
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize  = 0
 $btnRun.Size      = New-Object System.Drawing.Size(170, 46)
-$btnRun.Location  = New-Object System.Drawing.Point(600, 18)
+$btnRun.Location  = New-Object System.Drawing.Point(610, 60)
 $footer.Controls.Add($btnRun)
 
 # ── TASK SCROLL PANEL ──────────────────────────────────────────────────────
