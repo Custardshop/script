@@ -1,11 +1,15 @@
 <#
     GOAT - GREATEST OF ALL TWEAKS (FULL INTEGRATED)
-    Banner: Cyber Edition v2.0 â€” Red/Black Theme
+    Banner: Cyber Edition v2.0 — Red/Black Theme
 #>
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 1 ] ADMIN PRIVILEGE CHECK
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
+
+# Force UTF-8 output so box-drawing chars render correctly via irm|iex
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
     Write-Host "`n  [!] ADMINISTRATIVE PRIVILEGES REQUIRED" -ForegroundColor Red
@@ -26,9 +30,9 @@ try {
     $Host.UI.RawUI.WindowSize = $w
 } catch {}
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 2 ] BANNER HELPERS
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 function W ($text, $color = 'Red', [switch]$NoNewline) {
     if ($NoNewline) { Write-Host $text -ForegroundColor $color -NoNewline }
     else            { Write-Host $text -ForegroundColor $color }
@@ -42,34 +46,34 @@ function Center ($text, $width = 98) {
 function Bar ($pct, $width = 28, $fillColor = 'Red', $emptyColor = 'DarkGray') {
     $f = [math]::Round($pct / 100 * $width)
     $e = $width - $f
-    Write-Host ('â–ˆ' * $f) -ForegroundColor $fillColor  -NoNewline
-    Write-Host ('â–‘' * $e) -ForegroundColor $emptyColor -NoNewline
+    Write-Host ('█' * $f) -ForegroundColor $fillColor  -NoNewline
+    Write-Host ('░' * $e) -ForegroundColor $emptyColor -NoNewline
 }
 
 function SysRow ($label, $detail, $pct, $fillColor) {
     $pctSafe = if ($null -ne $pct) { [int]$pct } else { 0 }
-    W "  â•‘" DarkRed -NoNewline
+    W "  ║" DarkRed -NoNewline
     Write-Host "  " -NoNewline
     Write-Host $label.PadRight(6) -NoNewline -ForegroundColor DarkRed
-    Write-Host "â”‚ " -NoNewline -ForegroundColor DarkGray
+    Write-Host "│ " -NoNewline -ForegroundColor DarkGray
     Write-Host $detail.PadRight(36) -NoNewline -ForegroundColor Gray
     Write-Host " [" -NoNewline -ForegroundColor DarkGray
     Bar $pctSafe 28 $fillColor DarkGray
     Write-Host "] " -NoNewline -ForegroundColor DarkGray
     Write-Host "$($pctSafe.ToString().PadLeft(3))%" -NoNewline -ForegroundColor $fillColor
     Write-Host (' ' * 2) -NoNewline
-    W "â•‘" DarkRed
+    W "║" DarkRed
 }
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 3 ] TUI PROGRESS HELPERS
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 $script:TaskList  = @()
 $script:TaskDone  = @()
 $script:TotalTask = 14
 $script:TaskIdx   = 0
 $W    = 96
-$edge = 'â•' * $W
+$edge = '═' * $W
 
 function Draw-TaskBox {
     param([string]$CurrentName = '', [bool]$Done = $false)
@@ -78,23 +82,23 @@ function Draw-TaskBox {
     $innerW = $boxW - 4
 
     Write-Host ""
-    Write-Host "  " -NoNewline; W "â•”$('â•' * $boxW)â•—" DarkRed
-    Write-Host "  " -NoNewline; W "â•‘" DarkRed -NoNewline
+    Write-Host "  " -NoNewline; W "╔$('═' * $boxW)╗" DarkRed
+    Write-Host "  " -NoNewline; W "║" DarkRed -NoNewline
     $title = " RUNNING OPTIMIZATIONS"
     Write-Host $title.PadRight($boxW) -NoNewline -ForegroundColor Red
-    W "â•‘" DarkRed
-    Write-Host "  " -NoNewline; W "â• $('â•' * $boxW)â•£" DarkRed
+    W "║" DarkRed
+    Write-Host "  " -NoNewline; W "╠$('═' * $boxW)╣" DarkRed
 
     foreach ($i in 0..($script:TaskList.Count - 1)) {
         $name = $script:TaskList[$i]
-        Write-Host "  " -NoNewline; W "â•‘" DarkRed -NoNewline
+        Write-Host "  " -NoNewline; W "║" DarkRed -NoNewline
         Write-Host "  " -NoNewline
         if ($i -lt $script:TaskIdx) {
-            Write-Host "âœ” " -NoNewline -ForegroundColor Green
+            Write-Host "✔ " -NoNewline -ForegroundColor Green
             Write-Host $name.PadRight($innerW - 6) -NoNewline -ForegroundColor DarkGray
             Write-Host "DONE" -NoNewline -ForegroundColor DarkGreen
         } elseif ($i -eq $script:TaskIdx -and -not $Done) {
-            Write-Host "â–º " -NoNewline -ForegroundColor Red
+            Write-Host "► " -NoNewline -ForegroundColor Red
             Write-Host $name.PadRight($innerW - 10) -NoNewline -ForegroundColor White
             Write-Host "RUNNING..." -NoNewline -ForegroundColor Yellow
         } else {
@@ -102,26 +106,26 @@ function Draw-TaskBox {
             Write-Host $name.PadRight($innerW - 4) -NoNewline -ForegroundColor DarkGray
             Write-Host "    " -NoNewline
         }
-        W "â•‘" DarkRed
+        W "║" DarkRed
     }
 
-    Write-Host "  " -NoNewline; W "â• $('â•' * $boxW)â•£" DarkRed
+    Write-Host "  " -NoNewline; W "╠$('═' * $boxW)╣" DarkRed
 
     $pct     = [math]::Round($script:TaskIdx / $script:TotalTask * 100)
     $barW    = $boxW - 18
     $filled  = [math]::Round($pct / 100 * $barW)
     $empty   = $barW - $filled
 
-    Write-Host "  " -NoNewline; W "â•‘" DarkRed -NoNewline
+    Write-Host "  " -NoNewline; W "║" DarkRed -NoNewline
     Write-Host "  OVERALL [" -NoNewline -ForegroundColor DarkGray
-    Write-Host ('â–ˆ' * $filled) -NoNewline -ForegroundColor Red
-    Write-Host ('â–‘' * $empty)  -NoNewline -ForegroundColor DarkGray
+    Write-Host ('█' * $filled) -NoNewline -ForegroundColor Red
+    Write-Host ('░' * $empty)  -NoNewline -ForegroundColor DarkGray
     Write-Host "] " -NoNewline -ForegroundColor DarkGray
     Write-Host "$($pct.ToString().PadLeft(3))%" -NoNewline -ForegroundColor Red
     Write-Host "  " -NoNewline
-    W "â•‘" DarkRed
+    W "║" DarkRed
 
-    Write-Host "  " -NoNewline; W "â•š$('â•' * $boxW)â•" DarkRed
+    Write-Host "  " -NoNewline; W "╚$('═' * $boxW)╝" DarkRed
     Write-Host ""
 
     Write-Progress -Activity "GOAT Optimization" -Status "$($script:TaskIdx)/$($script:TotalTask) modules" -PercentComplete $pct
@@ -141,9 +145,9 @@ function Finish-Task {
     Draw-TaskBox
 }
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 4 ] SYSTEM INFO
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 $CPU      = (Get-CimInstance Win32_Processor).Name
 $CPULoad  = (Get-CimInstance Win32_Processor).LoadPercentage
 if ($null -eq $CPULoad) { $CPULoad = 0 }
@@ -155,47 +159,47 @@ $RAMUsed  = [math]::Round($RAMTotal - $RAMFree, 1)
 $RAMPct   = [math]::Round(($RAMUsed / $RAMTotal) * 100)
 $OSName   = (Get-CimInstance Win32_OperatingSystem).Caption
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-#  [ 5 ] BANNER DRAW FUNCTION (à¹€à¸£à¸µà¸¢à¸à¸‹à¹‰à¸³à¹„à¸”à¹‰)
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
+#  [ 5 ] BANNER DRAW FUNCTION (เรียกซ้ำได้)
+# ══════════════════════════════════════════════════════════════════════════
 function Draw-Banner {
     W ""
-    W "  â•”$edgeâ•—" DarkRed
-    W "  â•‘" DarkRed -NoNewline; W ('â–“' * $W) Red -NoNewline; W "â•‘" DarkRed
-    W "  â•‘" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "â•‘" DarkRed
+    W "  ╔$edge╗" DarkRed
+    W "  ║" DarkRed -NoNewline; W ('▓' * $W) Red -NoNewline; W "║" DarkRed
+    W "  ║" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkRed
 
     $logo = @(
-        '    â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—    ',
-        '   â–ˆâ–ˆâ•”â•â•â•â•â• â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â•šâ•â•â–ˆâ–ˆâ•”â•â•â•    ',
-        '   â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘        ',
-        '   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘        ',
-        '   â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘        ',
-        '    â•šâ•â•â•â•â•â•  â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â•   â•šâ•â•        '
+        '    ██████╗  ██████╗  █████╗ ████████╗    ',
+        '   ██╔════╝ ██╔═══██╗██╔══██╗╚══██╔══╝    ',
+        '   ██║  ███╗██║   ██║███████║   ██║        ',
+        '   ██║   ██║██║   ██║██╔══██║   ██║        ',
+        '   ╚██████╔╝╚██████╔╝██║  ██║   ██║        ',
+        '    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝        '
     )
     $logoColors = @('Red','Red','DarkRed','DarkRed','Red','DarkRed')
     foreach ($i in 0..($logo.Count - 1)) {
-        W "  â•‘" DarkRed -NoNewline
+        W "  ║" DarkRed -NoNewline
         Write-Host (Center $logo[$i] $W).PadRight($W) -NoNewline -ForegroundColor $logoColors[$i]
-        W "â•‘" DarkRed
+        W "║" DarkRed
     }
 
-    W "  â•‘" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "â•‘" DarkRed
-    W "  â•‘" DarkRed -NoNewline
-    Write-Host (Center "Â·  G R E A T E S T   O F   A L L   T W E A K S  Â·" $W).PadRight($W) -NoNewline -ForegroundColor DarkYellow
-    W "â•‘" DarkRed
-    W "  â•‘" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "â•‘" DarkRed
+    W "  ║" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkRed
+    W "  ║" DarkRed -NoNewline
+    Write-Host (Center "·  G R E A T E S T   O F   A L L   T W E A K S  ·" $W).PadRight($W) -NoNewline -ForegroundColor DarkYellow
+    W "║" DarkRed
+    W "  ║" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkRed
 
-    W "  â• $edgeâ•£" DarkRed
-    W "  â•‘" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "â•‘" DarkRed
+    W "  ╠$edge╣" DarkRed
+    W "  ║" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkRed
     SysRow "CPU" ($CPU.Substring(0, [math]::Min(36, $CPU.Length))) $CPULoad 'Red'
-    W "  â•‘" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "â•‘" DarkRed
+    W "  ║" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkRed
     SysRow "RAM" "$RAMUsed GB / $RAMTotal GB DDR" $RAMPct 'DarkYellow'
-    W "  â•‘" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "â•‘" DarkRed
+    W "  ║" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkRed
     SysRow "OS " ($OSName.Substring(0, [math]::Min(36, $OSName.Length))) 100 'DarkRed'
-    W "  â•‘" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "â•‘" DarkRed
+    W "  ║" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkRed
 
-    W "  â• $edgeâ•£" DarkRed
-    W "  â•‘" DarkRed -NoNewline
+    W "  ╠$edge╣" DarkRed
+    W "  ║" DarkRed -NoNewline
     $mods = @('KERNEL','MEMORY','INPUT','NETWORK','IRQ/MSI','POWER','SERVICES','CLEANER')
     Write-Host "  " -NoNewline
     foreach ($m in $mods) {
@@ -205,67 +209,67 @@ function Draw-Banner {
     }
     $modLen = 2 + ($mods | ForEach-Object { "[ $_ ] ".Length } | Measure-Object -Sum).Sum
     Write-Host (' ' * [math]::Max(0, $W - $modLen)) -NoNewline
-    W "â•‘" DarkRed
-    W "  â• $edgeâ•£" DarkRed
+    W "║" DarkRed
+    W "  ╠$edge╣" DarkRed
 }
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 6 ] DRAW INITIAL BANNER + LOADING BAR
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 Draw-Banner
 
-W "  â•‘" DarkRed -NoNewline
+W "  ║" DarkRed -NoNewline
 Write-Host "  INITIALIZING  [" -NoNewline -ForegroundColor DarkYellow
 $total  = 50
 $colors = @('DarkRed','DarkRed','Red','Red','Yellow','Red','Red','DarkRed','DarkRed')
 for ($b = 0; $b -lt $total; $b++) {
     $ci = [math]::Min($b * ($colors.Count - 1) / ($total - 1), $colors.Count - 1)
-    Write-Host 'â–ˆ' -NoNewline -ForegroundColor $colors[[math]::Floor($ci)]
+    Write-Host '█' -NoNewline -ForegroundColor $colors[[math]::Floor($ci)]
     Start-Sleep -Milliseconds 22
 }
 Write-Host "]" -NoNewline -ForegroundColor DarkYellow
 Write-Host " 100% " -NoNewline -ForegroundColor Red
 $afterLoad = $W - 2 - "  INITIALIZING  [".Length - $total - "] 100% ".Length
 Write-Host (' ' * [math]::Max(0, $afterLoad)) -NoNewline
-W "â•‘" DarkRed
+W "║" DarkRed
 
-W "  â•‘" DarkRed -NoNewline
+W "  ║" DarkRed -NoNewline
 Write-Host "  " -NoNewline
-Write-Host "âœ” " -NoNewline -ForegroundColor Red
+Write-Host "✔ " -NoNewline -ForegroundColor Red
 Write-Host "ALL MODULES READY" -NoNewline -ForegroundColor Red
 Write-Host (' ' * ($W - 22)) -NoNewline
-W "â•‘" DarkRed
-W "  â•‘" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "â•‘" DarkRed
+W "║" DarkRed
+W "  ║" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W "║" DarkRed
 
-W "  â• â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•¦$(('â•' * 46))â•£" DarkRed
-W "  â•‘" DarkRed -NoNewline
-Write-Host "   â–º  READY TO RUN GOAT?                         " -NoNewline -ForegroundColor DarkYellow
-W "â•‘" DarkRed -NoNewline
-Write-Host "  â–¸ Press " -NoNewline -ForegroundColor DarkGray
+W "  ╠═══════════════════════════════════════════════════╦$(('═' * 46))╣" DarkRed
+W "  ║" DarkRed -NoNewline
+Write-Host "   ►  READY TO RUN GOAT?                         " -NoNewline -ForegroundColor DarkYellow
+W "║" DarkRed -NoNewline
+Write-Host "  ▸ Press " -NoNewline -ForegroundColor DarkGray
 Write-Host "Y" -NoNewline -ForegroundColor Red
 Write-Host " to begin optimization           " -NoNewline -ForegroundColor DarkGray
-W "â•‘" DarkRed
+W "║" DarkRed
 
-W "  â•‘" DarkRed -NoNewline
+W "  ║" DarkRed -NoNewline
 Write-Host "                                                  " -NoNewline
-W "â•‘" DarkRed -NoNewline
-Write-Host "  â–¸ Press " -NoNewline -ForegroundColor DarkGray
+W "║" DarkRed -NoNewline
+Write-Host "  ▸ Press " -NoNewline -ForegroundColor DarkGray
 Write-Host "N" -NoNewline -ForegroundColor DarkGray
 Write-Host " to exit                           " -NoNewline -ForegroundColor DarkGray
-W "â•‘" DarkRed
-W "  â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•©$(('â•' * 46))â•" DarkRed
+W "║" DarkRed
+W "  ╚═══════════════════════════════════════════════════╩$(('═' * 46))╝" DarkRed
 
 W ""
 $ts = Get-Date -Format "yyyy-MM-dd  HH:mm:ss"
 Write-Host "  " -NoNewline
-Write-Host "â— " -NoNewline -ForegroundColor Red
+Write-Host "● " -NoNewline -ForegroundColor Red
 Write-Host "SYSTEM ONLINE" -NoNewline -ForegroundColor DarkRed
 Write-Host "   v2.0.0   $ts" -ForegroundColor DarkGray
 W ""
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 7 ] INPUT
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 do {
     Write-Host "  >> " -NoNewline -ForegroundColor DarkRed
     Write-Host "Your choice " -NoNewline -ForegroundColor Gray
@@ -276,15 +280,15 @@ do {
 } while ($choice -notmatch '^[YyNn]$')
 
 if ($choice -match '[Nn]') {
-    W "`n  [âœ–] Aborted â€” Exiting GOAT.`n" DarkGray
+    W "`n  [✖] Aborted — Exiting GOAT.`n" DarkGray
     Exit
 }
 
-W "`n  [âœ”] GOAT is on the run â€” Starting optimization...`n" Red
+W "`n  [✔] GOAT is on the run — Starting optimization...`n" Red
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 8 ] WORKING DIRECTORY & POWER PLAN FILE
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 $WorkingDir = "$env:TEMP\CustardUltimate"
 if (-not (Test-Path $WorkingDir)) { New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null }
 Set-Location $WorkingDir
@@ -295,11 +299,11 @@ if (-not (Test-Path $PowPath)) {
     Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Custardshop/script/main/Custard.pow" -OutFile $PowPath -UseBasicParsing | Out-Null
 }
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 9 ] OPTIMIZATION FUNCTIONS
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 function Optimize-Kernel {
-    Start-Task "Kernel & HPET"
+    Start-Task "Kernel and HPET"
     bcdedit /set useplatformclock no 2>$null | Out-Null
     bcdedit /set useplatformtick yes 2>$null | Out-Null
     bcdedit /set disabledynamictick yes 2>$null | Out-Null
@@ -319,7 +323,7 @@ function Optimize-TimerResolution {
 }
 
 function Optimize-IRQ {
-    Start-Task "IRQ / MSI Mode"
+    Start-Task "IRQ MSI Mode"
     Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI" -ErrorAction SilentlyContinue | ForEach-Object {
         $msiPath = "$($_.PSPath)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"
         if (Test-Path $msiPath) {
@@ -352,7 +356,7 @@ function Optimize-VisualEffects {
 }
 
 function Disable-GameBar {
-    Start-Task "Game Bar & DVR"
+    Start-Task "Game Bar and DVR"
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled"               -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled"                      -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode"               -Value 2 -Type DWord -Force 2>$null
@@ -415,7 +419,7 @@ function Optimize-Memory {
 }
 
 function Optimize-Input {
-    Start-Task "Input & USB"
+    Start-Task "Input and USB"
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize"    -Value 16 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
     $PowerThrottlePath = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
@@ -453,7 +457,7 @@ function Install-CustardPowerPlan {
 }
 
 function Optimize-Network {
-    Start-Task "Network & DNS"
+    Start-Task "Network and DNS"
     netsh int tcp set global rss=enabled            2>$null | Out-Null
     netsh int tcp set global autotuninglevel=normal  2>$null | Out-Null
     netsh int tcp set global timestamps=disabled     2>$null | Out-Null
@@ -508,7 +512,7 @@ function Optimize-Services {
 }
 
 function Clean-TrashAndLogs {
-    Start-Task "Junk & Log Cleanup"
+    Start-Task "Junk and Log Cleanup"
     $JunkPaths = @("$env:USERPROFILE\AppData\Local\Temp\*","C:\Windows\Temp\*","C:\Windows\Prefetch\*")
     foreach ($Path in $JunkPaths) {
         Get-ChildItem -Path $Path -Recurse -ErrorAction SilentlyContinue |
@@ -521,9 +525,9 @@ function Clean-TrashAndLogs {
     Finish-Task
 }
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 10 ] EXECUTION
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 Optimize-Kernel
 Optimize-TimerResolution
 Optimize-Priority
@@ -539,19 +543,19 @@ Optimize-Network
 Optimize-Services
 Clean-TrashAndLogs
 
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 #  [ 11 ] FINALIZATION
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# ══════════════════════════════════════════════════════════════════════════
 Write-Progress -Activity "GOAT Optimization" -Completed
 Clear-Host
 Draw-Banner
 
 W ""
-W "  â•”$edgeâ•—" DarkRed
-W "  â•‘" DarkRed -NoNewline
-Write-Host (Center "âœ”  ALL TWEAKS AND SYSTEM CLEANUP COMPLETED!" $W).PadRight($W) -NoNewline -ForegroundColor Red
-W "â•‘" DarkRed
-W "  â•š$edgeâ•" DarkRed
+W "  ╔$edge╗" DarkRed
+W "  ║" DarkRed -NoNewline
+Write-Host (Center "✔  ALL TWEAKS AND SYSTEM CLEANUP COMPLETED!" $W).PadRight($W) -NoNewline -ForegroundColor Red
+W "║" DarkRed
+W "  ╚$edge╝" DarkRed
 W ""
 
 if ((Read-Host "  Restart your PC now? (Y/N)") -match "[Yy]") { Restart-Computer }
