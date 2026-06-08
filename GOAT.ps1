@@ -25,18 +25,19 @@ try {
     $Host.UI.RawUI.WindowSize = $w
 } catch {}
 
-# ── CHARS (defined as variables to survive encoding issues) ────────────────
-$h  = [char]9552  # ═
-$tl = [char]9556  # ╔
-$tr = [char]9559  # ╗
-$bl = [char]9562  # ╚
-$br = [char]9565  # ╝
-$vl = [char]9553  # ║
-$ml = [char]9568  # ╠
-$mr = [char]9571  # ╣
-$fi = [char]9608  # █
-$em = [char]9617  # ░
-$hd = [char]9580  # ╬ (not used but kept)
+# ── CHARS ──────────────────────────────────────────────────────────────────
+$h  = [string][char]9552  # ═
+$tl = [string][char]9556  # ╔
+$tr = [string][char]9559  # ╗
+$bl = [string][char]9562  # ╚
+$br = [string][char]9565  # ╝
+$vl = [string][char]9553  # ║
+$ml = [string][char]9568  # ╠
+$mr = [string][char]9571  # ╣
+$fi = [string][char]9608  # █
+$em = [string][char]9617  # ░
+$xt = [string][char]9574  # ╦
+$xb = [string][char]9577  # ╩
 
 # ── HELPERS ────────────────────────────────────────────────────────────────
 $W    = 96
@@ -227,9 +228,9 @@ Write-Host (' ' * ($W - 24)) -NoNewline
 W $vl DarkRed
 W "  $vl" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W $vl DarkRed
 
-$half = $h * 51
+$half  = $h * 51
 $half2 = $h * 46
-W "  $ml$half${[char]9574}$half2$mr" DarkRed
+W "  $ml$half$xt$half2$mr" DarkRed
 W "  $vl" DarkRed -NoNewline
 Write-Host "   >> READY TO RUN GOAT?                          " -NoNewline -ForegroundColor DarkYellow
 W $vl DarkRed -NoNewline
@@ -245,7 +246,7 @@ Write-Host "  Press " -NoNewline -ForegroundColor DarkGray
 Write-Host "N" -NoNewline -ForegroundColor DarkGray
 Write-Host " to exit                           " -NoNewline -ForegroundColor DarkGray
 W $vl DarkRed
-W "  $bl$half${[char]9577}$half2$br" DarkRed
+W "  $bl$half$xb$half2$br" DarkRed
 
 W ""
 $ts = Get-Date -Format "yyyy-MM-dd  HH:mm:ss"
