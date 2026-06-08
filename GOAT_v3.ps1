@@ -412,20 +412,20 @@ $footer.Add_Paint({
 
 $overallTrack = New-Object System.Windows.Forms.Panel
 $overallTrack.Location  = New-Object System.Drawing.Point(24, 14)
-$overallTrack.Size      = New-Object System.Drawing.Size(560, 8)
+$overallTrack.Size      = New-Object System.Drawing.Size(440, 6)
 $overallTrack.BackColor = $cBorderDim
 $footer.Controls.Add($overallTrack)
 
 $overallFill = New-Object System.Windows.Forms.Panel
 $overallFill.Location  = New-Object System.Drawing.Point(0, 0)
-$overallFill.Size      = New-Object System.Drawing.Size(0, 8)
+$overallFill.Size      = New-Object System.Drawing.Size(0, 6)
 $overallFill.BackColor = $cWhite
 $overallTrack.Controls.Add($overallFill)
 
 $lblPct = New-Object System.Windows.Forms.Label
 $lblPct.Text      = "progress  0%"
 $lblPct.Font      = $fMono8
-$lblPct.ForeColor = $cGrayDim
+$lblPct.ForeColor = $cWhite
 $lblPct.AutoSize  = $true
 $lblPct.Location  = New-Object System.Drawing.Point(24, 34)
 $footer.Controls.Add($lblPct)
@@ -708,7 +708,7 @@ $runTimer.Add_Tick({
         if ($script:JobWorker) { $script:JobWorker | Remove-Job -Force -ErrorAction SilentlyContinue }
         $overallFill.Width    = $overallTrack.Width
         $lblPct.Text          = "progress  100%"
-        $lblPct.ForeColor     = $cWhiteDim
+        $lblPct.ForeColor     = $cWhite
         $btnRestart.Visible   = $true
         $btnRun.Text          = "COMPLETED"
         $btnRun.BackColor     = $cSurface2
