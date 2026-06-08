@@ -28,10 +28,13 @@ $RAMPct   = [math]::Round(($RAMUsed / $RAMTotal) * 100)
 $OSName   = (Get-CimInstance Win32_OperatingSystem).Caption
 $UserName = $env:USERNAME
 $PCName   = $env:COMPUTERNAME
+$GPU      = (Get-CimInstance Win32_VideoController | Where-Object { $_.Name -notlike "*Microsoft*" -and $_.Name -notlike "*Remote*" } | Select-Object -First 1).Name
+if (-not $GPU) { $GPU = (Get-CimInstance Win32_VideoController | Select-Object -First 1).Name }
 
-$CPUShort  = if ($CPU.Length -gt 32) { $CPU.Substring(0,32)+"…" } else { $CPU }
-$OSShort   = if ($OSName.Length -gt 28) { $OSName.Substring(0,28)+"…" } else { $OSName }
-$UserShort = if ("$UserName @ $PCName".Length -gt 28) { "$UserName @ $PCName".Substring(0,28)+"…" } else { "$UserName @ $PCName" }
+$CPUShort  = if ($CPU.Length -gt 30) { $CPU.Substring(0,30)+"…" } else { $CPU }
+$GPUShort  = if ($GPU.Length -gt 30) { $GPU.Substring(0,30)+"…" } else { $GPU }
+$OSShort   = if ($OSName.Length -gt 30) { $OSName.Substring(0,30)+"…" } else { $OSName }
+$UserShort = if ("$UserName @ $PCName".Length -gt 30) { "$UserName @ $PCName".Substring(0,30)+"…" } else { "$UserName @ $PCName" }
 
 # ── COLORS ─────────────────────────────────────────────────────────────────
 $cBg        = [System.Drawing.Color]::FromArgb(10, 10, 10)
@@ -216,12 +219,11 @@ function Invoke-Cleanup {
 }
 
 # ── FORM ───────────────────────────────────────────────────────────────────
-# Calculate form height so all 13 tasks are visible without scrolling
-# Hero=130, TopBar=36, SectionBar=28, Footer=52, each row=40px, 13 rows + padding
+# Hero=155 (5 info rows), TopBar=36, SectionBar=28, Footer=68, 13 rows * 40px + padding
 [int]$rowH       = 40
 [int]$taskCount  = 13
 [int]$listHeight = ($taskCount * $rowH) + 20   # 540
-[int]$formHeight = 36 + 130 + 28 + $listHeight + 52 + 14  # ~810
+[int]$formHeight = 36 + 155 + 28 + $listHeight + 68 + 14  # ~861
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS v3.0"
@@ -289,10 +291,10 @@ $topBar.Add_Paint({
 })
 
 # ── HERO PANEL ─────────────────────────────────────────────────────────────
-# Taller hero to fit 4 info lines comfortably
+# Taller hero to fit 5 info lines (USER/CPU/GPU/RAM/OS)
 $heroPanel = New-Object System.Windows.Forms.Panel
 $heroPanel.Dock      = [System.Windows.Forms.DockStyle]::Top
-$heroPanel.Height    = 130
+$heroPanel.Height    = 155
 $heroPanel.BackColor = $cSurface
 $form.Controls.Add($heroPanel)
 
@@ -318,11 +320,10 @@ $heroPanel.Add_Paint({
     # subtitle
     $subBr = New-Object System.Drawing.SolidBrush($cGray)
     $subFont = New-Object System.Drawing.Font("Consolas", 8)
-    $g.DrawString("GREATEST OF ALL TWEAKS  ·  v3.0", $subFont, $subBr, 24, 98)
+    $g.DrawString("GREATEST OF ALL TWEAKS  ·  v3.0", $subFont, $subBr, 24, 120)
     $subBr.Dispose(); $subFont.Dispose()
 
-    # ── sys info right — evenly spaced 4 rows ──────────────────────────────
-    # Label column anchored at rightX-152, value column right-aligned at rightX
+    # ── sys info right — evenly spaced 5 rows ──────────────────────────────
     $sysBr  = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(55,55,55))
     $sysVal = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(110,110,110))
     $sf2    = New-Object System.Drawing.StringFormat
@@ -332,28 +333,30 @@ $heroPanel.Add_Paint({
     $sysF   = New-Object System.Drawing.Font("Consolas", 8)
     $rightX = $s.Width - 24
 
-    # row positions — 4 rows spaced evenly starting at y=22
-    $rows = @(22, 40, 58, 76)
+    # 5 rows spaced 20px apart starting at y=18
+    $rows = @(18, 38, 58, 78, 98)
     $lblX = $rightX - 200   # label right edge
-    $valX = $rightX         # value right edge (far-aligned)
 
-    # user
+    # USER
     $g.DrawString("USER", $sysF, $sysBr, $lblX, $rows[0], $sf2)
     $g.DrawString($UserShort, $sysF, $sysVal, $rightX, $rows[0], $sf2)
-    # cpu
-    $g.DrawString("CPU", $sysF, $sysBr, $lblX, $rows[1], $sf2)
+    # CPU
+    $g.DrawString("CPU",  $sysF, $sysBr, $lblX, $rows[1], $sf2)
     $g.DrawString($CPUShort, $sysF, $sysVal, $rightX, $rows[1], $sf2)
-    # ram  — show used/total and % inline, consistent width
-    $g.DrawString("RAM", $sysF, $sysBr, $lblX, $rows[2], $sf2)
+    # GPU
+    $g.DrawString("GPU",  $sysF, $sysBr, $lblX, $rows[2], $sf2)
+    $g.DrawString($GPUShort, $sysF, $sysVal, $rightX, $rows[2], $sf2)
+    # RAM
+    $g.DrawString("RAM",  $sysF, $sysBr, $lblX, $rows[3], $sf2)
     $ramStr = "$RAMUsed / $($RAMTotal) GB  ($RAMPct%)"
-    $g.DrawString($ramStr, $sysF, $sysVal, $rightX, $rows[2], $sf2)
-    # os
-    $g.DrawString("OS", $sysF, $sysBr, $lblX, $rows[3], $sf2)
-    $g.DrawString($OSShort, $sysF, $sysVal, $rightX, $rows[3], $sf2)
+    $g.DrawString($ramStr, $sysF, $sysVal, $rightX, $rows[3], $sf2)
+    # OS
+    $g.DrawString("OS",   $sysF, $sysBr, $lblX, $rows[4], $sf2)
+    $g.DrawString($OSShort, $sysF, $sysVal, $rightX, $rows[4], $sf2)
 
     # vertical divider between logo area and info area
     $divPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(30,30,30), 1)
-    $g.DrawLine($divPen, $s.Width - 300, 14, $s.Width - 300, $s.Height - 18)
+    $g.DrawLine($divPen, $s.Width - 300, 10, $s.Width - 300, $s.Height - 14)
     $divPen.Dispose()
 
     $sysBr.Dispose(); $sysVal.Dispose(); $sysF.Dispose(); $sf2.Dispose(); $sf3.Dispose()
@@ -418,7 +421,7 @@ $form.Controls.Add($scrollPanel)
 # ── FOOTER ─────────────────────────────────────────────────────────────────
 $footer = New-Object System.Windows.Forms.Panel
 $footer.Dock      = [System.Windows.Forms.DockStyle]::Bottom
-$footer.Height    = 52
+$footer.Height    = 68
 $footer.BackColor = $cSurface
 $form.Controls.Add($footer)
 
@@ -430,14 +433,14 @@ $footer.Add_Paint({
 })
 
 $overallTrack = New-Object System.Windows.Forms.Panel
-$overallTrack.Location  = New-Object System.Drawing.Point(24, 20)
-$overallTrack.Size      = New-Object System.Drawing.Size(480, 2)
+$overallTrack.Location  = New-Object System.Drawing.Point(24, 14)
+$overallTrack.Size      = New-Object System.Drawing.Size(560, 8)
 $overallTrack.BackColor = $cBorderDim
 $footer.Controls.Add($overallTrack)
 
 $overallFill = New-Object System.Windows.Forms.Panel
 $overallFill.Location  = New-Object System.Drawing.Point(0, 0)
-$overallFill.Size      = New-Object System.Drawing.Size(0, 2)
+$overallFill.Size      = New-Object System.Drawing.Size(0, 8)
 $overallFill.BackColor = $cWhite
 $overallTrack.Controls.Add($overallFill)
 
@@ -446,7 +449,7 @@ $lblPct.Text      = "progress  0%"
 $lblPct.Font      = $fMono8
 $lblPct.ForeColor = $cGrayDim
 $lblPct.AutoSize  = $true
-$lblPct.Location  = New-Object System.Drawing.Point(24, 28)
+$lblPct.Location  = New-Object System.Drawing.Point(24, 34)
 $footer.Controls.Add($lblPct)
 
 $btnRestart = New-Object System.Windows.Forms.Button
@@ -457,8 +460,8 @@ $btnRestart.BackColor = $cSurface2
 $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cBorder
 $btnRestart.FlatAppearance.BorderSize  = 1
-$btnRestart.Size      = New-Object System.Drawing.Size(110, 30)
-$btnRestart.Location  = New-Object System.Drawing.Point(570, 10)
+$btnRestart.Size      = New-Object System.Drawing.Size(110, 34)
+$btnRestart.Location  = New-Object System.Drawing.Point(570, 17)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({ Restart-Computer -Force })
 $footer.Controls.Add($btnRestart)
@@ -470,8 +473,8 @@ $btnRun.ForeColor = $cBg
 $btnRun.BackColor = $cWhite
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize  = 0
-$btnRun.Size      = New-Object System.Drawing.Size(110, 30)
-$btnRun.Location  = New-Object System.Drawing.Point(692, 10)
+$btnRun.Size      = New-Object System.Drawing.Size(110, 34)
+$btnRun.Location  = New-Object System.Drawing.Point(692, 17)
 $footer.Controls.Add($btnRun)
 
 # ── BUILD TASK ROWS ────────────────────────────────────────────────────────
@@ -576,16 +579,16 @@ foreach ($key in $taskKeys) {
     $lblName.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($lblName)
 
-    # bar track
+    # bar track — 4px tall, centered vertically in the 40px row
     $barTrack = New-Object System.Windows.Forms.Panel
-    $barTrack.Location  = New-Object System.Drawing.Point(316, 20)
-    $barTrack.Size      = New-Object System.Drawing.Size(360, 1)
+    $barTrack.Location  = New-Object System.Drawing.Point(316, 18)
+    $barTrack.Size      = New-Object System.Drawing.Size(360, 4)
     $barTrack.BackColor = $cBorderDim
     $row.Controls.Add($barTrack)
 
     $barFill = New-Object System.Windows.Forms.Panel
     $barFill.Location  = New-Object System.Drawing.Point(0, 0)
-    $barFill.Size      = New-Object System.Drawing.Size(0, 1)
+    $barFill.Size      = New-Object System.Drawing.Size(0, 4)
     $barFill.BackColor = $cWhite
     $barTrack.Controls.Add($barFill)
 
