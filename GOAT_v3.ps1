@@ -219,7 +219,6 @@ function Invoke-Cleanup {
 }
 
 # ── FORM ───────────────────────────────────────────────────────────────────
-# Hero=155 (5 info rows), TopBar=36, SectionBar=28, Footer=68, 13 rows * 40px + padding
 [int]$rowH       = 40
 [int]$taskCount  = 13
 [int]$listHeight = ($taskCount * $rowH) + 20   # 540
@@ -245,7 +244,6 @@ $topBar = New-Object System.Windows.Forms.Panel
 $topBar.Dock      = [System.Windows.Forms.DockStyle]::Top
 $topBar.Height    = 36
 $topBar.BackColor = $cSurface
-$form.Controls.Add($topBar)
 
 $topBar.Add_Paint({
     param($s,$e)
@@ -291,12 +289,10 @@ $topBar.Add_Paint({
 })
 
 # ── HERO PANEL ─────────────────────────────────────────────────────────────
-# Taller hero to fit 5 info lines (USER/CPU/GPU/RAM/OS)
 $heroPanel = New-Object System.Windows.Forms.Panel
 $heroPanel.Dock      = [System.Windows.Forms.DockStyle]::Top
 $heroPanel.Height    = 155
 $heroPanel.BackColor = $cSurface
-$form.Controls.Add($heroPanel)
 
 $heroPanel.Add_Paint({
     param($s,$e)
@@ -323,7 +319,7 @@ $heroPanel.Add_Paint({
     $g.DrawString("GREATEST OF ALL TWEAKS  ·  v3.0", $subFont, $subBr, 24, 120)
     $subBr.Dispose(); $subFont.Dispose()
 
-    # ── sys info right — evenly spaced 5 rows ──────────────────────────────
+    # sys info right
     $sysBr  = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(55,55,55))
     $sysVal = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(110,110,110))
     $sf2    = New-Object System.Drawing.StringFormat
@@ -333,35 +329,27 @@ $heroPanel.Add_Paint({
     $sysF   = New-Object System.Drawing.Font("Consolas", 8)
     $rightX = $s.Width - 24
 
-    # 5 rows spaced 20px apart starting at y=18
     $rows = @(18, 38, 58, 78, 98)
-    $lblX = $rightX - 200   # label right edge
+    $lblX = $rightX - 200
 
-    # USER
     $g.DrawString("USER", $sysF, $sysBr, $lblX, $rows[0], $sf2)
     $g.DrawString($UserShort, $sysF, $sysVal, $rightX, $rows[0], $sf2)
-    # CPU
     $g.DrawString("CPU",  $sysF, $sysBr, $lblX, $rows[1], $sf2)
     $g.DrawString($CPUShort, $sysF, $sysVal, $rightX, $rows[1], $sf2)
-    # GPU
     $g.DrawString("GPU",  $sysF, $sysBr, $lblX, $rows[2], $sf2)
     $g.DrawString($GPUShort, $sysF, $sysVal, $rightX, $rows[2], $sf2)
-    # RAM
     $g.DrawString("RAM",  $sysF, $sysBr, $lblX, $rows[3], $sf2)
     $ramStr = "$RAMUsed / $($RAMTotal) GB  ($RAMPct%)"
     $g.DrawString($ramStr, $sysF, $sysVal, $rightX, $rows[3], $sf2)
-    # OS
     $g.DrawString("OS",   $sysF, $sysBr, $lblX, $rows[4], $sf2)
     $g.DrawString($OSShort, $sysF, $sysVal, $rightX, $rows[4], $sf2)
 
-    # vertical divider between logo area and info area
     $divPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(30,30,30), 1)
     $g.DrawLine($divPen, $s.Width - 300, 10, $s.Width - 300, $s.Height - 14)
     $divPen.Dispose()
 
     $sysBr.Dispose(); $sysVal.Dispose(); $sysF.Dispose(); $sf2.Dispose(); $sf3.Dispose()
 
-    # bottom border
     $pen = New-Object System.Drawing.Pen($cBorder, 1)
     $g.DrawLine($pen, 0, $s.Height-1, $s.Width, $s.Height-1)
     $pen.Dispose()
@@ -379,7 +367,6 @@ $sectionBar = New-Object System.Windows.Forms.Panel
 $sectionBar.Dock      = [System.Windows.Forms.DockStyle]::Top
 $sectionBar.Height    = 28
 $sectionBar.BackColor = $cBg
-$form.Controls.Add($sectionBar)
 
 $lblSection = New-Object System.Windows.Forms.Label
 $lblSection.Text      = "OPTIMIZATION MODULES"
@@ -410,20 +397,11 @@ $sectionBar.Add_Paint({
     $pen.Dispose()
 })
 
-# ── TASK SCROLL PANEL ──────────────────────────────────────────────────────
-# AutoScroll stays enabled as fallback but form is tall enough to show all 13
-$scrollPanel = New-Object System.Windows.Forms.Panel
-$scrollPanel.Dock        = [System.Windows.Forms.DockStyle]::Fill
-$scrollPanel.BackColor   = $cBg
-$scrollPanel.AutoScroll  = $true
-$form.Controls.Add($scrollPanel)
-
 # ── FOOTER ─────────────────────────────────────────────────────────────────
 $footer = New-Object System.Windows.Forms.Panel
 $footer.Dock      = [System.Windows.Forms.DockStyle]::Bottom
 $footer.Height    = 68
 $footer.BackColor = $cSurface
-$form.Controls.Add($footer)
 
 $footer.Add_Paint({
     param($s,$e)
@@ -476,6 +454,21 @@ $btnRun.FlatAppearance.BorderSize  = 0
 $btnRun.Size      = New-Object System.Drawing.Size(110, 34)
 $btnRun.Location  = New-Object System.Drawing.Point(692, 17)
 $footer.Controls.Add($btnRun)
+
+# ── TASK SCROLL PANEL ──────────────────────────────────────────────────────
+$scrollPanel = New-Object System.Windows.Forms.Panel
+$scrollPanel.Dock        = [System.Windows.Forms.DockStyle]::Fill
+$scrollPanel.BackColor   = $cBg
+$scrollPanel.AutoScroll  = $true
+
+# ── ADD CONTROLS TO FORM — ORDER MATTERS FOR DOCKING ──────────────────────
+# Bottom and Fill must be added before Top panels.
+# Top panels stack in reverse add order (last added = topmost).
+$form.Controls.Add($footer)      # Bottom  — add first
+$form.Controls.Add($scrollPanel) # Fill    — add second
+$form.Controls.Add($sectionBar)  # Top     — appears below heroPanel
+$form.Controls.Add($heroPanel)   # Top     — appears below topBar
+$form.Controls.Add($topBar)      # Top     — add last = sits at very top
 
 # ── BUILD TASK ROWS ────────────────────────────────────────────────────────
 $script:TaskRows = @{}
@@ -579,7 +572,7 @@ foreach ($key in $taskKeys) {
     $lblName.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($lblName)
 
-    # bar track — 4px tall, centered vertically in the 40px row
+    # bar track
     $barTrack = New-Object System.Windows.Forms.Panel
     $barTrack.Location  = New-Object System.Drawing.Point(316, 18)
     $barTrack.Size      = New-Object System.Drawing.Size(360, 4)
@@ -733,7 +726,6 @@ $runTimer.Add_Tick({
     $script:TaskRows[$key].Bar.Width = 0
     $animTimer.Start()
 
-    # Auto-scroll to keep the active row visible
     $r = $script:TaskRows[$key].Row
     $scrollPanel.AutoScrollPosition = New-Object System.Drawing.Point(0, [Math]::Max(0, $r.Top - 60))
     $form.Refresh()
