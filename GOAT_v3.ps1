@@ -412,13 +412,13 @@ $footer.Add_Paint({
 
 $overallTrack = New-Object System.Windows.Forms.Panel
 $overallTrack.Location  = New-Object System.Drawing.Point(24, 16)
-$overallTrack.Size      = New-Object System.Drawing.Size(520, 12)
+$overallTrack.Size      = New-Object System.Drawing.Size(740, 14)
 $overallTrack.BackColor = [System.Drawing.Color]::FromArgb(35,35,35)
 $footer.Controls.Add($overallTrack)
 
 $overallFill = New-Object System.Windows.Forms.Panel
 $overallFill.Location  = New-Object System.Drawing.Point(0, 0)
-$overallFill.Size      = New-Object System.Drawing.Size(0, 6)
+$overallFill.Size      = New-Object System.Drawing.Size(0, 14)
 $overallFill.BackColor = [System.Drawing.Color]::FromArgb(70,140,255)
 $overallTrack.Controls.Add($overallFill)
 
