@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
     GOAT - GREATEST OF ALL TWEAKS
-    GUI Edition v2.0 - WinForms Red/Black Theme
+    GUI Edition v2.1 - WinForms Red/Black Theme (Fixed)
 #>
 
 # ── ADMIN AUTO-ELEVATE ─────────────────────────────────────────────────────
@@ -20,7 +20,6 @@ Add-Type -AssemblyName System.Drawing
 
 # ── SYSTEM INFO ────────────────────────────────────────────────────────────
 $CPU      = (Get-CimInstance Win32_Processor).Name
-$CPULoad  = [int](Get-CimInstance Win32_Processor).LoadPercentage
 $RAMTotal = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
 $RAMFree  = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 1)
 $RAMUsed  = [math]::Round($RAMTotal - $RAMFree, 1)
@@ -28,23 +27,20 @@ $RAMPct   = [math]::Round(($RAMUsed / $RAMTotal) * 100)
 $OSName   = (Get-CimInstance Win32_OperatingSystem).Caption
 
 # ── COLORS & FONTS ─────────────────────────────────────────────────────────
-$cBlack    = [System.Drawing.Color]::FromArgb(0,0,0)
-$cDarkBg   = [System.Drawing.Color]::FromArgb(8,0,0)
-$cPanelBg  = [System.Drawing.Color]::FromArgb(12,0,0)
-$cRed      = [System.Drawing.Color]::FromArgb(192,57,43)
-$cRedDim   = [System.Drawing.Color]::FromArgb(100,20,10)
-$cRedDark  = [System.Drawing.Color]::FromArgb(40,0,0)
-$cGreen    = [System.Drawing.Color]::FromArgb(30,120,30)
-$cGray     = [System.Drawing.Color]::FromArgb(60,60,60)
-$cWhite    = [System.Drawing.Color]::FromArgb(220,220,220)
-$cYellow   = [System.Drawing.Color]::FromArgb(180,140,0)
+$cBlack    = [System.Drawing.Color]::FromArgb(0, 0, 0)
+$cDarkBg   = [System.Drawing.Color]::FromArgb(10, 0, 0)
+$cPanelBg  = [System.Drawing.Color]::FromArgb(15, 0, 0)
+$cRed      = [System.Drawing.Color]::FromArgb(220, 30, 30)      # สีแดงสดหลัก
+$cRedBright= [System.Drawing.Color]::FromArgb(255, 50, 50)      # สีแดงสว่างสุด
+$cRedDim   = [System.Drawing.Color]::FromArgb(200, 40, 40)      # สีแดงสำหรับ text ทั่วไป
+$cRedDark  = [System.Drawing.Color]::FromArgb(80, 10, 10)       # สีแดงเข้มสำหรับ bg
+$cGreen    = [System.Drawing.Color]::FromArgb(40, 200, 40)
+$cGray     = [System.Drawing.Color]::FromArgb(160, 140, 140)
+$cWhite    = [System.Drawing.Color]::FromArgb(240, 220, 220)    # ขาวอมชมพูนิดๆ
 
 $fMono9    = New-Object System.Drawing.Font("Consolas", 9)
 $fMono10   = New-Object System.Drawing.Font("Consolas", 10)
-$fMono11   = New-Object System.Drawing.Font("Consolas", 11)
 $fMonoBold = New-Object System.Drawing.Font("Consolas", 10, [System.Drawing.FontStyle]::Bold)
-$fLogo     = New-Object System.Drawing.Font("Consolas", 52, [System.Drawing.FontStyle]::Bold)
-$fSub      = New-Object System.Drawing.Font("Consolas", 9)
 
 # ── TASK DEFINITIONS ───────────────────────────────────────────────────────
 $script:Tasks = [ordered]@{
@@ -65,17 +61,18 @@ $script:Tasks = [ordered]@{
 
 # ── OPTIMIZATION FUNCTIONS ─────────────────────────────────────────────────
 function Invoke-Kernel {
-    bcdedit /set useplatformclock no 2>$null | Out-Null
-    bcdedit /set useplatformtick yes 2>$null | Out-Null
-    bcdedit /set disabledynamictick yes 2>$null | Out-Null
-    bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
-    bcdedit /set nx OptOut 2>$null | Out-Null
-    bcdedit /set synthetictimers yes 2>$null | Out-Null
-    $hpet = Get-PnpDevice | Where-Object { $_.FriendlyName -like "*High Precision*" } -ErrorAction SilentlyContinue
+    bcdedit /set useplatformclock no       2>$null | Out-Null
+    bcdedit /set useplatformtick yes       2>$null | Out-Null
+    bcdedit /set disabledynamictick yes    2>$null | Out-Null
+    bcdedit /set tscsyncpolicy Enhanced   2>$null | Out-Null
+    bcdedit /set nx OptOut                2>$null | Out-Null
+    bcdedit /set synthetictimers yes      2>$null | Out-Null
+    $hpet = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*High Precision*" }
     if ($hpet) { Disable-PnpDevice -InstanceId $hpet.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }
 }
 function Invoke-TimerResolution {
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" `
+        -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null
 }
 function Invoke-IRQ {
     Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI" -ErrorAction SilentlyContinue | ForEach-Object {
@@ -95,15 +92,17 @@ function Invoke-VisualEffects {
     $vp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"
     if (-not (Test-Path $vp)) { New-Item -Path $vp -Force | Out-Null }
     Set-ItemProperty -Path $vp -Name "VisualFXSetting" -Value 2 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" `
+        -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" `
+        -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null
 }
 function Invoke-GameBar {
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode" -Value 1 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled"              -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled"                       -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode"                -Value 2 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode"       -Value 1 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord -Force 2>$null
     $gp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
     if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
@@ -182,9 +181,7 @@ function Invoke-Services {
 }
 function Invoke-Cleanup {
     @("$env:USERPROFILE\AppData\Local\Temp\*","C:\Windows\Temp\*","C:\Windows\Prefetch\*") | ForEach-Object {
-        Get-ChildItem -Path $_ -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-            Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-        }
+        Get-ChildItem -Path $_ -Recurse -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     }
     Stop-Service -Name wuauserv,UsoSvc -Force -ErrorAction SilentlyContinue
     Remove-Item -Path "C:\Windows\SoftwareDistribution\*" -Recurse -Force -ErrorAction SilentlyContinue
@@ -192,20 +189,21 @@ function Invoke-Cleanup {
     wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" 2>$null }
 }
 
-$script:FnMap = @{
-    "kernel"   = { Invoke-Kernel }
-    "timer"    = { Invoke-TimerResolution }
-    "priority" = { Invoke-Priority }
-    "irq"      = { Invoke-IRQ }
-    "memory"   = { Invoke-Memory }
-    "input"    = { Invoke-Input }
-    "nagle"    = { Invoke-Nagle }
-    "visual"   = { Invoke-VisualEffects }
-    "gamebar"  = { Invoke-GameBar }
-    "power"    = { Invoke-ProcessorPower }
-    "network"  = { Invoke-Network }
-    "services" = { Invoke-Services }
-    "cleanup"  = { Invoke-Cleanup }
+# Map key → function (ใช้ string แล้ว invoke ตอน run เพื่อหลีกเลี่ยง scope issue)
+$script:FnMap = [ordered]@{
+    "kernel"   = "Invoke-Kernel"
+    "timer"    = "Invoke-TimerResolution"
+    "priority" = "Invoke-Priority"
+    "irq"      = "Invoke-IRQ"
+    "memory"   = "Invoke-Memory"
+    "input"    = "Invoke-Input"
+    "nagle"    = "Invoke-Nagle"
+    "visual"   = "Invoke-VisualEffects"
+    "gamebar"  = "Invoke-GameBar"
+    "power"    = "Invoke-ProcessorPower"
+    "network"  = "Invoke-Network"
+    "services" = "Invoke-Services"
+    "cleanup"  = "Invoke-Cleanup"
 }
 
 # ── FORM ───────────────────────────────────────────────────────────────────
@@ -226,9 +224,9 @@ $topBar.BackColor = $cDarkBg
 $form.Controls.Add($topBar)
 
 $lblTitle = New-Object System.Windows.Forms.Label
-$lblTitle.Text      = "GOAT  //  GREATEST OF ALL TWEAKS  //  v2.0"
+$lblTitle.Text      = "GOAT  //  GREATEST OF ALL TWEAKS  //  v2.1"
 $lblTitle.Font      = $fMono9
-$lblTitle.ForeColor = $cRedDim
+$lblTitle.ForeColor = $cRedDim           # แดงสดขึ้น
 $lblTitle.AutoSize  = $false
 $lblTitle.Dock      = [System.Windows.Forms.DockStyle]::Fill
 $lblTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
@@ -240,7 +238,7 @@ $sepTop.Height    = 2
 $sepTop.BackColor = $cRed
 $form.Controls.Add($sepTop)
 
-# ── HERO PANEL (GOAT logo centered) ───────────────────────────────────────
+# ── HERO PANEL ─────────────────────────────────────────────────────────────
 $heroPanel = New-Object System.Windows.Forms.Panel
 $heroPanel.Dock      = [System.Windows.Forms.DockStyle]::Top
 $heroPanel.Height    = 160
@@ -250,40 +248,35 @@ $form.Controls.Add($heroPanel)
 $heroPanel.Add_Paint({
     param($s, $e)
     $g = $e.Graphics
-    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.SmoothingMode     = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
 
-    # background scan lines subtle effect
     for ($y = 0; $y -lt $s.Height; $y += 4) {
-        $g.DrawLine([System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(8,80,0,0)), 0, $y, $s.Width, $y)
+        $g.DrawLine([System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(10,100,0,0)), 0, $y, $s.Width, $y)
     }
 
-    # GOAT text centered
     $logoFont = New-Object System.Drawing.Font("Consolas", 72, [System.Drawing.FontStyle]::Bold)
     $logoText = "G O A T"
     $sz = $g.MeasureString($logoText, $logoFont)
     $x  = ($s.Width - $sz.Width) / 2
     $y  = ($s.Height - $sz.Height) / 2 - 12
 
-    # glow layers
     foreach ($offset in @(6,4,2)) {
-        $glowBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(18, 192, 57, 43))
+        $glowBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(30, 255, 40, 40))
         $g.DrawString($logoText, $logoFont, $glowBrush, ($x - $offset), ($y - $offset/2))
         $g.DrawString($logoText, $logoFont, $glowBrush, ($x + $offset), ($y + $offset/2))
         $glowBrush.Dispose()
     }
 
-    # main text
-    $mainBrush = New-Object System.Drawing.SolidBrush($cRed)
+    $mainBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(220,30,30))
     $g.DrawString($logoText, $logoFont, $mainBrush, $x, $y)
     $mainBrush.Dispose()
     $logoFont.Dispose()
 
-    # subtitle
     $subFont = New-Object System.Drawing.Font("Consolas", 9)
     $subText = "·  G R E A T E S T   O F   A L L   T W E A K S  ·"
     $sz2 = $g.MeasureString($subText, $subFont)
-    $subBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(120,150,50,30))
+    $subBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(160,200,50,50))
     $g.DrawString($subText, $subFont, $subBrush, ($s.Width - $sz2.Width)/2, $y + $sz.Height - 8)
     $subBrush.Dispose()
     $subFont.Dispose()
@@ -309,7 +302,7 @@ $osShort  = if ($OSName.Length -gt 28) { $OSName.Substring(0,28)+"..." } else { 
 $lblSys = New-Object System.Windows.Forms.Label
 $lblSys.Text      = "CPU: $cpuShort   |   RAM: $RAMUsed GB / $RAMTotal GB  ($RAMPct%)   |   OS: $osShort"
 $lblSys.Font      = $fMono9
-$lblSys.ForeColor = $cRedDim
+$lblSys.ForeColor = $cRedDim             # แดงสดขึ้น
 $lblSys.Dock      = [System.Windows.Forms.DockStyle]::Fill
 $lblSys.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 $sysBar.Controls.Add($lblSys)
@@ -334,7 +327,6 @@ $sepFoot.Height    = 1
 $sepFoot.BackColor = $cRedDark
 $form.Controls.Add($sepFoot)
 
-# overall progress bar
 $overallBar = New-Object System.Windows.Forms.Panel
 $overallBar.Location  = New-Object System.Drawing.Point(14, 10)
 $overallBar.Size      = New-Object System.Drawing.Size(580, 6)
@@ -371,7 +363,7 @@ $footer.Controls.Add($btnRestart)
 $btnRun = New-Object System.Windows.Forms.Button
 $btnRun.Text      = "RUN GOAT"
 $btnRun.Font      = New-Object System.Drawing.Font("Consolas", 11, [System.Drawing.FontStyle]::Bold)
-$btnRun.ForeColor = $cBlack
+$btnRun.ForeColor = $cWhite
 $btnRun.BackColor = $cRed
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize  = 0
@@ -381,23 +373,22 @@ $footer.Controls.Add($btnRun)
 
 # ── TASK LIST PANEL ────────────────────────────────────────────────────────
 $taskPanel = New-Object System.Windows.Forms.Panel
-$taskPanel.Dock        = [System.Windows.Forms.DockStyle]::Fill
-$taskPanel.BackColor   = $cBlack
-$taskPanel.AutoScroll  = $true
-$taskPanel.Padding     = New-Object System.Windows.Forms.Padding(16,10,16,10)
+$taskPanel.Dock       = [System.Windows.Forms.DockStyle]::Fill
+$taskPanel.BackColor  = $cBlack
+$taskPanel.AutoScroll = $true
+$taskPanel.Padding    = New-Object System.Windows.Forms.Padding(16,10,16,10)
 $form.Controls.Add($taskPanel)
 
 $lblSectionTitle = New-Object System.Windows.Forms.Label
 $lblSectionTitle.Text      = "  OPTIMIZATION MODULES"
 $lblSectionTitle.Font      = $fMono9
-$lblSectionTitle.ForeColor = $cRedDim
+$lblSectionTitle.ForeColor = $cRedDim    # แดงสดขึ้น
 $lblSectionTitle.AutoSize  = $false
 $lblSectionTitle.Dock      = [System.Windows.Forms.DockStyle]::Top
 $lblSectionTitle.Height    = 24
 $lblSectionTitle.BackColor = $cPanelBg
 $taskPanel.Controls.Add($lblSectionTitle)
 
-# task row controls storage
 $script:TaskRows = @{}
 
 $taskKeys = @($script:Tasks.Keys)
@@ -411,31 +402,28 @@ for ($i = $taskKeys.Count - 1; $i -ge 0; $i--) {
     $row.BackColor = $cBlack
     $row.Padding   = New-Object System.Windows.Forms.Padding(0,0,0,1)
 
-    # icon label
     $icn = New-Object System.Windows.Forms.Label
     $icn.Text      = "--"
     $icn.Font      = $fMono10
-    $icn.ForeColor = $cRedDark
+    $icn.ForeColor = $cRedDim            # แดงสดขึ้น
     $icn.Width     = 36
     $icn.Height    = 34
     $icn.Location  = New-Object System.Drawing.Point(4, 0)
     $icn.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
     $row.Controls.Add($icn)
 
-    # name label
     $nm = New-Object System.Windows.Forms.Label
     $nm.Text      = $label
     $nm.Font      = $fMono10
-    $nm.ForeColor = $cRedDark
+    $nm.ForeColor = $cRedDim             # แดงสดขึ้น
     $nm.Width     = 260
     $nm.Height    = 34
     $nm.Location  = New-Object System.Drawing.Point(44, 0)
     $nm.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
     $row.Controls.Add($nm)
 
-    # bar track
     $barTrack = New-Object System.Windows.Forms.Panel
-    $barTrack.BackColor = [System.Drawing.Color]::FromArgb(20,0,0)
+    $barTrack.BackColor = [System.Drawing.Color]::FromArgb(30,0,0)
     $barTrack.Size      = New-Object System.Drawing.Size(360, 3)
     $barTrack.Location  = New-Object System.Drawing.Point(318, 16)
     $row.Controls.Add($barTrack)
@@ -446,20 +434,18 @@ for ($i = $taskKeys.Count - 1; $i -ge 0; $i--) {
     $barFill.Location  = New-Object System.Drawing.Point(0, 0)
     $barTrack.Controls.Add($barFill)
 
-    # status label
     $st = New-Object System.Windows.Forms.Label
     $st.Text      = "PENDING"
     $st.Font      = $fMono9
-    $st.ForeColor = $cRedDark
+    $st.ForeColor = $cRedDim             # แดงสดขึ้น
     $st.Width     = 90
     $st.Height    = 34
     $st.Location  = New-Object System.Drawing.Point(686, 0)
     $st.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
     $row.Controls.Add($st)
 
-    # separator line
     $sep = New-Object System.Windows.Forms.Panel
-    $sep.BackColor = [System.Drawing.Color]::FromArgb(18,0,0)
+    $sep.BackColor = [System.Drawing.Color]::FromArgb(25,0,0)
     $sep.Dock      = [System.Windows.Forms.DockStyle]::Bottom
     $sep.Height    = 1
     $row.Controls.Add($sep)
@@ -468,15 +454,15 @@ for ($i = $taskKeys.Count - 1; $i -ge 0; $i--) {
     $script:TaskRows[$key] = @{ Row=$row; Icon=$icn; Name=$nm; Bar=$barFill; BarTrack=$barTrack; Status=$st }
 }
 
-# ── BLINK TIMER for running state ─────────────────────────────────────────
-$script:BlinkState  = $true
-$script:CurrentKey  = $null
+# ── BLINK TIMER ────────────────────────────────────────────────────────────
+$script:BlinkState = $true
+$script:CurrentKey = $null
 $blinkTimer = New-Object System.Windows.Forms.Timer
 $blinkTimer.Interval = 500
 $blinkTimer.Add_Tick({
     if ($script:CurrentKey -and $script:TaskRows.ContainsKey($script:CurrentKey)) {
         $st = $script:TaskRows[$script:CurrentKey].Status
-        $st.ForeColor = if ($script:BlinkState) { $cRed } else { $cRedDark }
+        $st.ForeColor = if ($script:BlinkState) { $cRedBright } else { $cRedDark }
         $script:BlinkState = -not $script:BlinkState
     }
 })
@@ -487,13 +473,13 @@ function Set-TaskState ($key, $state) {
     $r = $script:TaskRows[$key]
     switch ($state) {
         "running" {
-            $r.Icon.ForeColor   = $cRed
+            $r.Icon.ForeColor   = $cRedBright
             $r.Icon.Text        = ">>"
             $r.Name.ForeColor   = $cWhite
             $r.Status.Text      = "RUNNING..."
-            $r.Status.ForeColor = $cRed
+            $r.Status.ForeColor = $cRedBright
             $r.Bar.Width        = 120
-            $r.Row.BackColor    = [System.Drawing.Color]::FromArgb(14,0,0)
+            $r.Row.BackColor    = [System.Drawing.Color]::FromArgb(20,0,0)
             $script:CurrentKey  = $key
             $blinkTimer.Start()
         }
@@ -511,59 +497,202 @@ function Set-TaskState ($key, $state) {
     }
 }
 
-# ── RUN BUTTON ─────────────────────────────────────────────────────────────
+# ── RUN BUTTON (แก้ให้รันบน UI thread ด้วย Timer แทน BackgroundWorker) ────
+$script:RunIndex = 0
+$script:TaskKeyList = @()
+$script:TotalTasks  = 0
+$script:IsRunning   = $false
+
+$runTimer = New-Object System.Windows.Forms.Timer
+$runTimer.Interval = 50   # ตรวจสอบทุก 50ms
+
+$script:JobWorker = $null
+
+$runTimer.Add_Tick({
+    # ถ้า Job ยังรันอยู่ รอต่อ
+    if ($script:JobWorker -and $script:JobWorker.State -eq 'Running') { return }
+
+    # Job เสร็จแล้ว หรือไม่มี Job → ทำ "done" สำหรับ task ที่เพิ่งรัน
+    if ($script:RunIndex -gt 0) {
+        $prevKey = $script:TaskKeyList[$script:RunIndex - 1]
+        Set-TaskState $prevKey "done"
+        $pct = [math]::Round($script:RunIndex / $script:TotalTasks * 100)
+        $overallFill.Width = [math]::Round($overallBar.Width * $pct / 100)
+        $lblPct.Text = "$pct%"
+        $form.Refresh()
+    }
+
+    # ทุก task เสร็จแล้ว
+    if ($script:RunIndex -ge $script:TotalTasks) {
+        $runTimer.Stop()
+        if ($script:JobWorker) { $script:JobWorker | Remove-Job -Force -ErrorAction SilentlyContinue }
+        $blinkTimer.Stop()
+        $overallFill.Width = $overallBar.Width
+        $lblPct.Text       = "100%"
+        $lblPct.ForeColor  = $cGreen
+        $btnRestart.Visible = $true
+        $btnRun.Text      = "COMPLETED"
+        $btnRun.BackColor = $cGreen
+        $btnRun.ForeColor = $cBlack
+        return
+    }
+
+    # เริ่ม task ถัดไป
+    $key = $script:TaskKeyList[$script:RunIndex]
+    Set-TaskState $key "running"
+    $form.Refresh()
+    $script:RunIndex++
+
+    $fnName = $script:FnMap[$key]
+
+    # รัน function ใน background Job เพื่อให้ UI ไม่ค้าง
+    $script:JobWorker = Start-Job -ScriptBlock {
+        param($fn)
+        # ต้องกำหนด function ทั้งหมดใน Job เพราะ Job เป็น process ใหม่
+        function Invoke-Kernel {
+            bcdedit /set useplatformclock no    2>$null | Out-Null
+            bcdedit /set useplatformtick yes    2>$null | Out-Null
+            bcdedit /set disabledynamictick yes 2>$null | Out-Null
+            bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
+            bcdedit /set nx OptOut              2>$null | Out-Null
+            bcdedit /set synthetictimers yes    2>$null | Out-Null
+            $h = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*High Precision*" }
+            if ($h) { Disable-PnpDevice -InstanceId $h.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }
+        }
+        function Invoke-TimerResolution {
+            Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null
+        }
+        function Invoke-IRQ {
+            Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI" -ErrorAction SilentlyContinue | ForEach-Object {
+                $p = "$($_.PSPath)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"
+                if (Test-Path $p) { Set-ItemProperty -Path $p -Name "MSISupported" -Value 1 -Type DWord -Force 2>$null }
+            }
+        }
+        function Invoke-Nagle {
+            $iP = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces"
+            Get-ChildItem $iP -ErrorAction SilentlyContinue | ForEach-Object {
+                Set-ItemProperty -Path $_.PSPath -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null
+                Set-ItemProperty -Path $_.PSPath -Name "TCPNoDelay"      -Value 1 -Type DWord -Force 2>$null
+                Set-ItemProperty -Path $_.PSPath -Name "TcpDelAckTicks"  -Value 0 -Type DWord -Force 2>$null
+            }
+        }
+        function Invoke-VisualEffects {
+            $vp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"
+            if (-not (Test-Path $vp)) { New-Item -Path $vp -Force | Out-Null }
+            Set-ItemProperty -Path $vp -Name "VisualFXSetting" -Value 2 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null
+        }
+        function Invoke-GameBar {
+            Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled"                       -Value 0 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode"                -Value 2 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode"       -Value 1 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord -Force 2>$null
+            $gp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
+            if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
+            Set-ItemProperty -Path $gp -Name "AllowGameDVR" -Value 0 -Type DWord -Force 2>$null
+        }
+        function Invoke-ProcessorPower {
+            powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100 2>$null | Out-Null
+            powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 2>$null | Out-Null
+            powercfg /setactive SCHEME_CURRENT 2>$null | Out-Null
+        }
+        function Invoke-Priority {
+            $pp = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
+            $sp = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
+            $gp = "$sp\Tasks\Games"
+            $ep = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Executive"
+            Set-ItemProperty -Path $pp -Name "Win32PrioritySeparation" -Value 0x2a -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path $sp -Name "SystemResponsiveness"   -Value 0          -Type DWord -Force 2>$null
+            Set-ItemProperty -Path $sp -Name "NetworkThrottlingIndex" -Value 0xFFFFFFFF -Type DWord -Force 2>$null
+            Set-ItemProperty -Path $ep -Name "AdditionalCriticalWorkerThreads" -Value 2 -Type DWord -Force 2>$null
+            if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
+            Set-ItemProperty -Path $gp -Name "GPU Priority"        -Value 8      -Type DWord  -Force 2>$null
+            Set-ItemProperty -Path $gp -Name "Priority"            -Value 6      -Type DWord  -Force 2>$null
+            Set-ItemProperty -Path $gp -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null
+            Set-ItemProperty -Path $gp -Name "SFIO Priority"       -Value "High" -Type String -Force 2>$null
+        }
+        function Invoke-Memory {
+            $mp = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
+            Set-ItemProperty -Path $mp -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path $mp -Name "ClearPageFileAtShutdown"       -Value 0 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null
+            powercfg -h off 2>$null | Out-Null
+            taskkill /f /im OneDrive.exe 2>$null | Out-Null
+            Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue
+        }
+        function Invoke-Input {
+            Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize"    -Value 16 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
+            $pt = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
+            if (-not (Test-Path $pt)) { New-Item -Path $pt -Force | Out-Null }
+            Set-ItemProperty -Path $pt -Name "PowerThrottlingOff" -Value 1 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseSpeed"      -Value "0"  -Type String -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseThreshold1" -Value "0"  -Type String -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseThreshold2" -Value "0"  -Type String -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay"   -Value "0"  -Type String -Force 2>$null
+            Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed"   -Value "31" -Type String -Force 2>$null
+            Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB"    -Name "DisableSelectiveSuspend" -Value 1 -Type DWord -Force 2>$null
+            Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HidUsb" -Name "IdleEnable"              -Value 0 -Type DWord -Force 2>$null
+        }
+        function Invoke-Network {
+            netsh int tcp set global rss=enabled           2>$null | Out-Null
+            netsh int tcp set global autotuninglevel=normal 2>$null | Out-Null
+            netsh int tcp set global timestamps=disabled    2>$null | Out-Null
+            netsh int tcp set global chimney=disabled       2>$null | Out-Null
+            $tp = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"
+            Set-ItemProperty -Path $tp -Name "TCPNoDelay"      -Value 1  -Type DWord -Force 2>$null
+            Set-ItemProperty -Path $tp -Name "TcpAckFrequency" -Value 1  -Type DWord -Force 2>$null
+            Set-ItemProperty -Path $tp -Name "DefaultTTL"      -Value 64 -Type DWord -Force 2>$null
+            Clear-DnsClientCache -ErrorAction SilentlyContinue | Out-Null
+            netsh winsock reset 2>$null | Out-Null
+            netsh int ip reset  2>$null | Out-Null
+            ipconfig /release   2>$null | Out-Null
+            ipconfig /renew     2>$null | Out-Null
+            Get-NetAdapter | Where-Object { $_.Physical } | Restart-NetAdapter -ErrorAction SilentlyContinue
+        }
+        function Invoke-Services {
+            @('DiagTrack','WSearch','MapsBroker','XblAuthManager','XblGameSave','XboxNetApiSvc','Fax','RetailDemo','RemoteRegistry','WerSvc') | ForEach-Object {
+                Stop-Service -Name $_ -Force -ErrorAction SilentlyContinue
+                Set-Service  -Name $_ -StartupType Disabled -ErrorAction SilentlyContinue
+            }
+            @('Audiosrv','AudioEndpointBuilder','Dhcp','NlaSvc','Netman','WlanSvc','RpcSs','EventLog','PlugPlay','LanmanWorkstation','LanmanServer') | ForEach-Object {
+                Set-Service   -Name $_ -StartupType Automatic -ErrorAction SilentlyContinue
+                Start-Service -Name $_ -ErrorAction SilentlyContinue
+            }
+        }
+        function Invoke-Cleanup {
+            @("$env:USERPROFILE\AppData\Local\Temp\*","C:\Windows\Temp\*","C:\Windows\Prefetch\*") | ForEach-Object {
+                Get-ChildItem -Path $_ -Recurse -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            Stop-Service -Name wuauserv,UsoSvc -Force -ErrorAction SilentlyContinue
+            Remove-Item -Path "C:\Windows\SoftwareDistribution\*" -Recurse -Force -ErrorAction SilentlyContinue
+            Start-Service -Name wuauserv -ErrorAction SilentlyContinue
+            wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" 2>$null }
+        }
+
+        try { & $fn } catch {}
+
+    } -ArgumentList $fnName
+})
+
 $btnRun.Add_Click({
+    if ($script:IsRunning) { return }
+    $script:IsRunning   = $true
+    $script:RunIndex    = 0
+    $script:TaskKeyList = @($script:Tasks.Keys)
+    $script:TotalTasks  = $script:TaskKeyList.Count
+
     $btnRun.Enabled   = $false
     $btnRun.Text      = "RUNNING..."
     $btnRun.BackColor = $cRedDim
+    $btnRun.ForeColor = $cWhite
 
-    $taskKeys  = @($script:Tasks.Keys)
-    $totalTask = $taskKeys.Count
-
-    $bg = New-Object System.ComponentModel.BackgroundWorker
-    $bg.WorkerReportsProgress = $true
-
-    $bg.Add_DoWork({
-        param($sender, $e)
-        $keys = @($script:Tasks.Keys)
-        $done = 0
-        foreach ($key in $keys) {
-            $sender.ReportProgress($done, @{ key=$key; state='running' })
-            Start-Sleep -Milliseconds 80
-            try { & $script:FnMap[$key] } catch {}
-            $done++
-            $sender.ReportProgress($done, @{ key=$key; state='done' })
-            Start-Sleep -Milliseconds 60
-        }
-        $sender.ReportProgress($keys.Count, "ALLDONE")
-    })
-
-    $bg.Add_ProgressChanged({
-        param($sender, $e)
-        $data = $e.UserState
-        if ($data -eq "ALLDONE") {
-            $blinkTimer.Stop()
-            $overallFill.Width = $overallBar.Width
-            $lblPct.Text       = "100%"
-            $lblPct.ForeColor  = $cGreen
-            $btnRestart.Visible = $true
-            $btnRun.Text      = "COMPLETED"
-            $btnRun.BackColor = $cGreen
-            $btnRun.ForeColor = $cBlack
-        } else {
-            Set-TaskState $data.key $data.state
-            if ($data.state -eq 'done') {
-                $pct = [math]::Round($e.ProgressPercentage / $totalTask * 100)
-                $overallFill.Width = [math]::Round($overallBar.Width * $pct / 100)
-                $lblPct.Text = "$pct%"
-            }
-        }
-    })
-
-    $bg.RunWorkerAsync()
+    $runTimer.Start()
 })
-
-$blinkTimer.Start()
-$blinkTimer.Stop()
 
 [System.Windows.Forms.Application]::Run($form)
