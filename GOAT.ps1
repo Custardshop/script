@@ -1,407 +1,145 @@
 #Requires -Version 5.1
 <#
     GOAT - GREATEST OF ALL TWEAKS
-    Terminal Edition v2.0 - Red/Black Theme
+    GUI Edition v2.0 - WebView2 / Red-Black Theme
 #>
 
 # ── ADMIN CHECK ────────────────────────────────────────────────────────────
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Host "`n  [!] ADMINISTRATIVE PRIVILEGES REQUIRED" -ForegroundColor Red
-    Write-Host "  Restart PowerShell as Administrator.`n" -ForegroundColor DarkGray
-    Read-Host "Press Enter to exit"
+    $ps = New-Object System.Diagnostics.ProcessStartInfo "powershell"
+    $ps.Arguments = "-ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    $ps.Verb = "runas"
+    try { [System.Diagnostics.Process]::Start($ps) | Out-Null } catch {}
     Exit
 }
 
-$Host.UI.RawUI.WindowTitle = "GOAT // GREATEST OF ALL TWEAKS"
-$Host.UI.RawUI.BackgroundColor = 'Black'
-$Host.UI.RawUI.ForegroundColor = 'Red'
-Clear-Host
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
 
-try {
-    $w = $Host.UI.RawUI.WindowSize; $w.Width = 100
-    $b = $Host.UI.RawUI.BufferSize; $b.Width = 100
-    $Host.UI.RawUI.BufferSize = $b
-    $Host.UI.RawUI.WindowSize = $w
-} catch {}
-
-# ── CHARS ──────────────────────────────────────────────────────────────────
-$h  = [string][char]9552  # ═
-$tl = [string][char]9556  # ╔
-$tr = [string][char]9559  # ╗
-$bl = [string][char]9562  # ╚
-$br = [string][char]9565  # ╝
-$vl = [string][char]9553  # ║
-$ml = [string][char]9568  # ╠
-$mr = [string][char]9571  # ╣
-$fi = [string][char]9608  # █
-$em = [string][char]9617  # ░
-$xt = [string][char]9574  # ╦
-$xb = [string][char]9577  # ╩
-
-# ── HELPERS ────────────────────────────────────────────────────────────────
-$W    = 96
-$edge = $h * $W
-
-function W ($text, $color = 'Red', [switch]$NoNewline) {
-    if ($NoNewline) { Write-Host $text -ForegroundColor $color -NoNewline }
-    else            { Write-Host $text -ForegroundColor $color }
+# ── WEBVIEW2 CHECK & LOAD ──────────────────────────────────────────────────
+$wv2Dll = $null
+$searchPaths = @(
+    "$env:ProgramFiles\Microsoft\EdgeWebView\Application",
+    "$env:ProgramFiles(x86)\Microsoft\EdgeWebView\Application",
+    "$env:LOCALAPPDATA\Microsoft\EdgeWebView\Application",
+    "$env:ProgramFiles\Microsoft\Edge\Application",
+    "$env:ProgramFiles(x86)\Microsoft\Edge\Application"
+)
+foreach ($base in $searchPaths) {
+    if (Test-Path $base) {
+        $found = Get-ChildItem $base -Recurse -Filter "Microsoft.Web.WebView2.WinForms.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($found) { $wv2Dll = $found.FullName; break }
+    }
 }
+# Also check NuGet / script dir
+$nugetPaths = @(
+    "$PSScriptRoot\Microsoft.Web.WebView2.WinForms.dll",
+    "$env:TEMP\WebView2\Microsoft.Web.WebView2.WinForms.dll"
+)
+foreach ($p in $nugetPaths) { if (Test-Path $p) { $wv2Dll = $p; break } }
 
-function Center ($text, $width = 98) {
-    $pad = [math]::Max(0, [math]::Floor(($width - $text.Length) / 2))
-    return (' ' * $pad) + $text
-}
-
-function Bar ($pct, $width = 28, $fillColor = 'Red', $emptyColor = 'DarkGray') {
-    $f = [math]::Round($pct / 100 * $width)
-    $e = $width - $f
-    Write-Host ($fi * $f) -ForegroundColor $fillColor  -NoNewline
-    Write-Host ($em * $e) -ForegroundColor $emptyColor -NoNewline
-}
-
-function SysRow ($label, $detail, $pct, $fillColor) {
-    $pctSafe = if ($null -ne $pct) { [int]$pct } else { 0 }
-    W "  $vl" DarkRed -NoNewline
-    Write-Host "  " -NoNewline
-    Write-Host $label.PadRight(6) -NoNewline -ForegroundColor DarkRed
-    Write-Host "$([char]9474) " -NoNewline -ForegroundColor DarkGray
-    Write-Host $detail.PadRight(36) -NoNewline -ForegroundColor Gray
-    Write-Host " [" -NoNewline -ForegroundColor DarkGray
-    Bar $pctSafe 28 $fillColor DarkGray
-    Write-Host "] " -NoNewline -ForegroundColor DarkGray
-    Write-Host "$($pctSafe.ToString().PadLeft(3))%" -NoNewline -ForegroundColor $fillColor
-    Write-Host (' ' * 2) -NoNewline
-    W $vl DarkRed
+$useWebView2 = $false
+if ($wv2Dll) {
+    try {
+        Add-Type -Path $wv2Dll -ErrorAction Stop
+        $useWebView2 = $true
+    } catch { $useWebView2 = $false }
 }
 
 # ── SYSTEM INFO ────────────────────────────────────────────────────────────
 $CPU      = (Get-CimInstance Win32_Processor).Name
-$CPULoad  = (Get-CimInstance Win32_Processor).LoadPercentage
-if ($null -eq $CPULoad) { $CPULoad = 0 }
-$CPULoad  = [int]$CPULoad
+$CPULoad  = [int](Get-CimInstance Win32_Processor).LoadPercentage
 $RAMTotal = [math]::Round((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory / 1GB)
 $RAMFree  = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 1)
 $RAMUsed  = [math]::Round($RAMTotal - $RAMFree, 1)
 $RAMPct   = [math]::Round(($RAMUsed / $RAMTotal) * 100)
 $OSName   = (Get-CimInstance Win32_OperatingSystem).Caption
 
-# ── TASK TRACKING ──────────────────────────────────────────────────────────
-$script:TaskList  = @()
-$script:TaskIdx   = 0
-$script:TotalTask = 14
-
-function Draw-TaskBox {
-    $boxW   = 62
-    $innerW = $boxW - 4
-    Write-Host ""
-    Write-Host "  " -NoNewline; W "$tl$($h * $boxW)$tr" DarkRed
-    Write-Host "  " -NoNewline; W $vl DarkRed -NoNewline
-    Write-Host " RUNNING OPTIMIZATIONS".PadRight($boxW) -NoNewline -ForegroundColor Red
-    W $vl DarkRed
-    Write-Host "  " -NoNewline; W "$ml$($h * $boxW)$mr" DarkRed
-
-    foreach ($i in 0..($script:TaskList.Count - 1)) {
-        $name = $script:TaskList[$i]
-        Write-Host "  " -NoNewline; W $vl DarkRed -NoNewline
-        Write-Host "  " -NoNewline
-        if ($i -lt $script:TaskIdx) {
-            Write-Host "OK " -NoNewline -ForegroundColor Green
-            Write-Host $name.PadRight($innerW - 8) -NoNewline -ForegroundColor DarkGray
-            Write-Host "DONE    " -NoNewline -ForegroundColor DarkGreen
-        } elseif ($i -eq $script:TaskIdx) {
-            Write-Host ">> " -NoNewline -ForegroundColor Red
-            Write-Host $name.PadRight($innerW - 12) -NoNewline -ForegroundColor White
-            Write-Host "RUNNING..." -NoNewline -ForegroundColor Yellow
-        } else {
-            Write-Host ("   " + $name).PadRight($innerW) -NoNewline -ForegroundColor DarkGray
-        }
-        W $vl DarkRed
-    }
-
-    Write-Host "  " -NoNewline; W "$ml$($h * $boxW)$mr" DarkRed
-
-    $pct    = [math]::Round($script:TaskIdx / $script:TotalTask * 100)
-    $barW   = $boxW - 20
-    $filled = [math]::Round($pct / 100 * $barW)
-    $empty  = $barW - $filled
-
-    Write-Host "  " -NoNewline; W $vl DarkRed -NoNewline
-    Write-Host "  OVERALL [" -NoNewline -ForegroundColor DarkGray
-    Write-Host ($fi * $filled) -NoNewline -ForegroundColor Red
-    Write-Host ($em * $empty)  -NoNewline -ForegroundColor DarkGray
-    Write-Host "] " -NoNewline -ForegroundColor DarkGray
-    Write-Host "$($pct.ToString().PadLeft(3))%  " -NoNewline -ForegroundColor Red
-    W $vl DarkRed
-
-    Write-Host "  " -NoNewline; W "$bl$($h * $boxW)$br" DarkRed
-    Write-Host ""
-    Write-Progress -Activity "GOAT Optimization" -Status "$($script:TaskIdx)/$($script:TotalTask) modules" -PercentComplete $pct
-}
-
-function Start-Task ([string]$Name) {
-    $script:TaskList += $Name
-    Clear-Host
-    Draw-Banner
-    Draw-TaskBox
-}
-
-function Finish-Task {
-    $script:TaskIdx++
-    Clear-Host
-    Draw-Banner
-    Draw-TaskBox
-}
-
-# ── BANNER ─────────────────────────────────────────────────────────────────
-function Draw-Banner {
-    W ""
-    W "  $tl$edge$tr" DarkRed
-    W "  $vl" DarkRed -NoNewline; W ($fi * $W) Red -NoNewline; W $vl DarkRed
-    W "  $vl" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W $vl DarkRed
-
-    $logo = @(
-        '    ######   ######   #####  ########    ',
-        '   ##       ##   ## ##   ##    ##        ',
-        '   ##  ###  ##   ## #######   ##         ',
-        '   ##   ##  ##   ## ##   ##   ##         ',
-        '    ######   ######  ##   ##  ##         ',
-        '                                         '
-    )
-    $logoColors = @('Red','Red','DarkRed','DarkRed','Red','DarkRed')
-    foreach ($i in 0..($logo.Count - 1)) {
-        W "  $vl" DarkRed -NoNewline
-        Write-Host (Center $logo[$i] $W).PadRight($W) -NoNewline -ForegroundColor $logoColors[$i]
-        W $vl DarkRed
-    }
-
-    W "  $vl" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W $vl DarkRed
-    W "  $vl" DarkRed -NoNewline
-    Write-Host (Center "·  G R E A T E S T   O F   A L L   T W E A K S  ·" $W).PadRight($W) -NoNewline -ForegroundColor DarkYellow
-    W $vl DarkRed
-    W "  $vl" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W $vl DarkRed
-
-    W "  $ml$edge$mr" DarkRed
-    W "  $vl" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W $vl DarkRed
-    SysRow "CPU" ($CPU.Substring(0, [math]::Min(36, $CPU.Length))) $CPULoad 'Red'
-    W "  $vl" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W $vl DarkRed
-    SysRow "RAM" "$RAMUsed GB / $RAMTotal GB DDR" $RAMPct 'DarkYellow'
-    W "  $vl" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W $vl DarkRed
-    SysRow "OS " ($OSName.Substring(0, [math]::Min(36, $OSName.Length))) 100 'DarkRed'
-    W "  $vl" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W $vl DarkRed
-
-    W "  $ml$edge$mr" DarkRed
-    W "  $vl" DarkRed -NoNewline
-    $mods = @('KERNEL','MEMORY','INPUT','NETWORK','IRQ/MSI','POWER','SERVICES','CLEANER')
-    Write-Host "  " -NoNewline
-    foreach ($m in $mods) {
-        Write-Host "[ " -NoNewline -ForegroundColor DarkGray
-        Write-Host $m   -NoNewline -ForegroundColor Red
-        Write-Host " ] " -NoNewline -ForegroundColor DarkGray
-    }
-    $modLen = 2 + ($mods | ForEach-Object { "[ $_ ] ".Length } | Measure-Object -Sum).Sum
-    Write-Host (' ' * [math]::Max(0, $W - $modLen)) -NoNewline
-    W $vl DarkRed
-    W "  $ml$edge$mr" DarkRed
-}
-
-# ── DRAW BANNER + LOADING BAR ──────────────────────────────────────────────
-Draw-Banner
-
-W "  $vl" DarkRed -NoNewline
-Write-Host "  INITIALIZING  [" -NoNewline -ForegroundColor DarkYellow
-$total  = 50
-$colors = @('DarkRed','DarkRed','Red','Red','Yellow','Red','Red','DarkRed','DarkRed')
-for ($b = 0; $b -lt $total; $b++) {
-    $ci = [math]::Min($b * ($colors.Count - 1) / ($total - 1), $colors.Count - 1)
-    Write-Host $fi -NoNewline -ForegroundColor $colors[[math]::Floor($ci)]
-    Start-Sleep -Milliseconds 22
-}
-Write-Host "] 100%" -NoNewline -ForegroundColor Green
-$after = $W - 2 - "  INITIALIZING  [".Length - $total - "] 100%".Length
-Write-Host (' ' * [math]::Max(0, $after)) -NoNewline
-W $vl DarkRed
-
-W "  $vl" DarkRed -NoNewline
-Write-Host "  OK ALL MODULES READY" -NoNewline -ForegroundColor Green
-Write-Host (' ' * ($W - 24)) -NoNewline
-W $vl DarkRed
-W "  $vl" DarkRed -NoNewline; W (' ' * $W) -NoNewline; W $vl DarkRed
-
-$half  = $h * 51
-$half2 = $h * 46
-W "  $ml$half$xt$half2$mr" DarkRed
-W "  $vl" DarkRed -NoNewline
-Write-Host "   >> READY TO RUN GOAT?                          " -NoNewline -ForegroundColor DarkYellow
-W $vl DarkRed -NoNewline
-Write-Host "  Press " -NoNewline -ForegroundColor DarkGray
-Write-Host "Y" -NoNewline -ForegroundColor Red
-Write-Host " to begin optimization           " -NoNewline -ForegroundColor DarkGray
-W $vl DarkRed
-
-W "  $vl" DarkRed -NoNewline
-Write-Host (' ' * 52) -NoNewline
-W $vl DarkRed -NoNewline
-Write-Host "  Press " -NoNewline -ForegroundColor DarkGray
-Write-Host "N" -NoNewline -ForegroundColor DarkGray
-Write-Host " to exit                           " -NoNewline -ForegroundColor DarkGray
-W $vl DarkRed
-W "  $bl$half$xb$half2$br" DarkRed
-
-W ""
-$ts = Get-Date -Format "yyyy-MM-dd  HH:mm:ss"
-Write-Host "  * " -NoNewline -ForegroundColor Red
-Write-Host "SYSTEM ONLINE" -NoNewline -ForegroundColor DarkRed
-Write-Host "   v2.0.0   $ts" -ForegroundColor DarkGray
-W ""
-
-# ── INPUT ──────────────────────────────────────────────────────────────────
-do {
-    Write-Host "  >> " -NoNewline -ForegroundColor DarkRed
-    Write-Host "Your choice " -NoNewline -ForegroundColor Gray
-    Write-Host "[Y/N]" -NoNewline -ForegroundColor DarkYellow
-    Write-Host " : " -NoNewline -ForegroundColor Gray
-    $choice = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown").Character
-    Write-Host $choice -ForegroundColor Red
-} while ($choice -notmatch '^[YyNn]$')
-
-if ($choice -match '[Nn]') { W "`n  [X] Aborted.`n" DarkGray; Exit }
-W "`n  [OK] Starting optimization...`n" Red
-
-# ── WORKING DIR ────────────────────────────────────────────────────────────
-$WorkingDir = "$env:TEMP\CustardUltimate"
-if (-not (Test-Path $WorkingDir)) { New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null }
-Set-Location $WorkingDir
-$PowPath = Join-Path $WorkingDir "Custard.pow"
-if (-not (Test-Path $PowPath)) {
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Custardshop/script/main/Custard.pow" -OutFile $PowPath -UseBasicParsing | Out-Null
-}
-
 # ── OPTIMIZATION FUNCTIONS ─────────────────────────────────────────────────
-function Optimize-Kernel {
-    Start-Task "Kernel and HPET"
+function Invoke-Kernel {
     bcdedit /set useplatformclock no 2>$null | Out-Null
     bcdedit /set useplatformtick yes 2>$null | Out-Null
     bcdedit /set disabledynamictick yes 2>$null | Out-Null
     bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
     bcdedit /set nx OptOut 2>$null | Out-Null
-    bcdedit /set synthetictimers yes 2>$null | Out-Null
     $hpet = Get-PnpDevice | Where-Object { $_.FriendlyName -like "*High Precision*" } -ErrorAction SilentlyContinue
     if ($hpet) { Disable-PnpDevice -InstanceId $hpet.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }
-    Finish-Task
 }
-function Optimize-TimerResolution {
-    Start-Task "Timer Resolution"
+function Invoke-TimerResolution {
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null
-    Finish-Task
 }
-function Optimize-IRQ {
-    Start-Task "IRQ MSI Mode"
+function Invoke-IRQ {
     Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI" -ErrorAction SilentlyContinue | ForEach-Object {
-        $msiPath = "$($_.PSPath)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"
-        if (Test-Path $msiPath) { Set-ItemProperty -Path $msiPath -Name "MSISupported" -Value 1 -Type DWord -Force 2>$null }
+        $p = "$($_.PSPath)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"
+        if (Test-Path $p) { Set-ItemProperty -Path $p -Name "MSISupported" -Value 1 -Type DWord -Force 2>$null }
     }
-    Finish-Task
 }
-function Optimize-Nagle {
-    Start-Task "Nagle Algorithm"
+function Invoke-Nagle {
     $iP = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces"
     Get-ChildItem $iP -ErrorAction SilentlyContinue | ForEach-Object {
         Set-ItemProperty -Path $_.PSPath -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null
         Set-ItemProperty -Path $_.PSPath -Name "TCPNoDelay"      -Value 1 -Type DWord -Force 2>$null
         Set-ItemProperty -Path $_.PSPath -Name "TcpDelAckTicks"  -Value 0 -Type DWord -Force 2>$null
     }
-    Finish-Task
 }
-function Optimize-VisualEffects {
-    Start-Task "Visual Effects"
+function Invoke-VisualEffects {
     $vp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"
     if (-not (Test-Path $vp)) { New-Item -Path $vp -Force | Out-Null }
     Set-ItemProperty -Path $vp -Name "VisualFXSetting" -Value 2 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null
-    Finish-Task
 }
-function Disable-GameBar {
-    Start-Task "Game Bar and DVR"
+function Invoke-GameBar {
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode" -Value 1 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord -Force 2>$null
     $gp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
     if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
     Set-ItemProperty -Path $gp -Name "AllowGameDVR" -Value 0 -Type DWord -Force 2>$null
-    Finish-Task
 }
-function Optimize-ProcessorPower {
-    Start-Task "Processor Power"
+function Invoke-ProcessorPower {
     powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100 2>$null | Out-Null
     powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 2>$null | Out-Null
     powercfg /setactive SCHEME_CURRENT 2>$null | Out-Null
-    Finish-Task
 }
-function Optimize-Priority {
-    Start-Task "Process Priority"
-    $pp = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
+function Invoke-Priority {
     $sp = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
     $gp = "$sp\Tasks\Games"
-    $ep = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Executive"
-    Set-ItemProperty -Path $pp -Name "Win32PrioritySeparation" -Value 0x2a -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -Value 0x2a -Type DWord -Force 2>$null
     Set-ItemProperty -Path $sp -Name "SystemResponsiveness"   -Value 0          -Type DWord -Force 2>$null
     Set-ItemProperty -Path $sp -Name "NetworkThrottlingIndex" -Value 0xFFFFFFFF -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $ep -Name "AdditionalCriticalWorkerThreads" -Value 2 -Type DWord -Force 2>$null
     if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
     Set-ItemProperty -Path $gp -Name "GPU Priority"        -Value 8      -Type DWord  -Force 2>$null
     Set-ItemProperty -Path $gp -Name "Priority"            -Value 6      -Type DWord  -Force 2>$null
     Set-ItemProperty -Path $gp -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null
     Set-ItemProperty -Path $gp -Name "SFIO Priority"       -Value "High" -Type String -Force 2>$null
-    Finish-Task
 }
-function Optimize-Memory {
-    Start-Task "Memory Management"
+function Invoke-Memory {
     $mp = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
-    $pp = "$mp\PrefetchParameters"
-    Set-ItemProperty -Path $mp -Name "SystemCacheDirtyPageThreshold" -Value 0  -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $mp -Name "ClearPageFileAtShutdown"       -Value 0  -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $pp -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $pp -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $mp -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $mp -Name "ClearPageFileAtShutdown"       -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null
     powercfg -h off 2>$null | Out-Null
     taskkill /f /im OneDrive.exe 2>$null | Out-Null
     Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue
-    Finish-Task
 }
-function Optimize-Input {
-    Start-Task "Input and USB"
+function Invoke-Input {
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize"    -Value 16 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
     $pt = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
     if (-not (Test-Path $pt)) { New-Item -Path $pt -Force | Out-Null }
     Set-ItemProperty -Path $pt -Name "PowerThrottlingOff" -Value 1 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseSpeed"       -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseThreshold1"  -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseThreshold2"  -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay"    -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed"    -Value "31" -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed"      -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold1" -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold2" -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed" -Value "31" -Type String -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB"    -Name "DisableSelectiveSuspend" -Value 1 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HidUsb" -Name "IdleEnable"              -Value 0 -Type DWord -Force 2>$null
-    Finish-Task
 }
-function Install-CustardPowerPlan {
-    Start-Task "Custard Power Plan"
-    $Guid = "4e2cd77e-229e-484e-b077-c63e8b092ec8"
-    if (Test-Path $PowPath) {
-        powercfg /delete $Guid 2>$null
-        powercfg /import $PowPath $Guid 2>$null | Out-Null
-        powercfg /setactive $Guid 2>$null | Out-Null
-    }
-    Finish-Task
-}
-function Optimize-Network {
-    Start-Task "Network and DNS"
+function Invoke-Network {
     netsh int tcp set global rss=enabled           2>$null | Out-Null
     netsh int tcp set global autotuninglevel=normal 2>$null | Out-Null
     netsh int tcp set global timestamps=disabled    2>$null | Out-Null
@@ -416,10 +154,8 @@ function Optimize-Network {
     ipconfig /release   2>$null | Out-Null
     ipconfig /renew     2>$null | Out-Null
     Get-NetAdapter | Where-Object { $_.Physical } | Restart-NetAdapter -ErrorAction SilentlyContinue
-    Finish-Task
 }
-function Optimize-Services {
-    Start-Task "Windows Services"
+function Invoke-Services {
     @('DiagTrack','WSearch','MapsBroker','XblAuthManager','XblGameSave','XboxNetApiSvc','Fax','RetailDemo','RemoteRegistry','WerSvc') | ForEach-Object {
         Stop-Service -Name $_ -Force -ErrorAction SilentlyContinue
         Set-Service  -Name $_ -StartupType Disabled -ErrorAction SilentlyContinue
@@ -428,49 +164,391 @@ function Optimize-Services {
         Set-Service   -Name $_ -StartupType Automatic -ErrorAction SilentlyContinue
         Start-Service -Name $_ -ErrorAction SilentlyContinue
     }
-    Finish-Task
 }
-function Clean-TrashAndLogs {
-    Start-Task "Junk and Log Cleanup"
+function Invoke-Cleanup {
     @("$env:USERPROFILE\AppData\Local\Temp\*","C:\Windows\Temp\*","C:\Windows\Prefetch\*") | ForEach-Object {
         Get-ChildItem -Path $_ -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
             Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
         }
     }
-    Stop-Service -Name wuauserv, UsoSvc -Force -ErrorAction SilentlyContinue
+    Stop-Service -Name wuauserv,UsoSvc -Force -ErrorAction SilentlyContinue
     Remove-Item -Path "C:\Windows\SoftwareDistribution\*" -Recurse -Force -ErrorAction SilentlyContinue
     Start-Service -Name wuauserv -ErrorAction SilentlyContinue
     wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" 2>$null }
-    Finish-Task
 }
 
-# ── EXECUTION ──────────────────────────────────────────────────────────────
-Optimize-Kernel
-Optimize-TimerResolution
-Optimize-Priority
-Optimize-IRQ
-Optimize-Memory
-Optimize-Input
-Optimize-Nagle
-Optimize-VisualEffects
-Disable-GameBar
-Optimize-ProcessorPower
-Install-CustardPowerPlan
-Optimize-Network
-Optimize-Services
-Clean-TrashAndLogs
+# ── TASK MAP ───────────────────────────────────────────────────────────────
+$script:Tasks = [ordered]@{
+    "kernel"     = @{ Label="Kernel and HPET";    Fn={ Invoke-Kernel } }
+    "timer"      = @{ Label="Timer Resolution";   Fn={ Invoke-TimerResolution } }
+    "priority"   = @{ Label="Process Priority";   Fn={ Invoke-Priority } }
+    "irq"        = @{ Label="IRQ MSI Mode";       Fn={ Invoke-IRQ } }
+    "memory"     = @{ Label="Memory Management";  Fn={ Invoke-Memory } }
+    "input"      = @{ Label="Input and USB";      Fn={ Invoke-Input } }
+    "nagle"      = @{ Label="Nagle Algorithm";    Fn={ Invoke-Nagle } }
+    "visual"     = @{ Label="Visual Effects";     Fn={ Invoke-VisualEffects } }
+    "gamebar"    = @{ Label="Game Bar and DVR";   Fn={ Invoke-GameBar } }
+    "power"      = @{ Label="Processor Power";    Fn={ Invoke-ProcessorPower } }
+    "network"    = @{ Label="Network and DNS";    Fn={ Invoke-Network } }
+    "services"   = @{ Label="Windows Services";   Fn={ Invoke-Services } }
+    "cleanup"    = @{ Label="Junk and Log Cleanup"; Fn={ Invoke-Cleanup } }
+}
 
-# ── FINALIZATION ───────────────────────────────────────────────────────────
-Write-Progress -Activity "GOAT Optimization" -Completed
-Clear-Host
-Draw-Banner
+# ── HTML UI ────────────────────────────────────────────────────────────────
+$taskRowsHtml = ""
+foreach ($key in $script:Tasks.Keys) {
+    $label = $script:Tasks[$key].Label
+    $taskRowsHtml += @"
+<div class="task-row" id="row-$key">
+  <span class="task-icon" id="icon-$key">--</span>
+  <span class="task-name" id="name-$key">$label</span>
+  <div class="task-bar-track"><div class="task-bar-fill" id="bar-$key"></div></div>
+  <span class="task-status" id="status-$key">PENDING</span>
+</div>
+"@
+}
 
-W ""
-W "  $tl$edge$tr" DarkRed
-W "  $vl" DarkRed -NoNewline
-Write-Host (Center "OK  ALL TWEAKS AND SYSTEM CLEANUP COMPLETED!" $W).PadRight($W) -NoNewline -ForegroundColor Red
-W $vl DarkRed
-W "  $bl$edge$br" DarkRed
-W ""
+$cpuShort = if ($CPU.Length -gt 38) { $CPU.Substring(0,38) + "..." } else { $CPU }
+$osShort  = if ($OSName.Length -gt 28) { $OSName.Substring(0,28) + "..." } else { $OSName }
 
-if ((Read-Host "  Restart your PC now? (Y/N)") -match "[Yy]") { Restart-Computer }
+$html = @"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GOAT</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;background:#000;color:#cc2200;font-family:'Share Tech Mono',monospace;overflow:hidden;}
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-track{background:#0a0000;}
+  ::-webkit-scrollbar-thumb{background:#500;}
+
+  .topbar{background:#080000;border-bottom:1px solid #3a0000;padding:5px 14px;display:flex;align-items:center;gap:8px;-webkit-app-region:drag;user-select:none;}
+  .dot{width:11px;height:11px;border-radius:50%;cursor:pointer;-webkit-app-region:no-drag;}
+  .dot-r{background:#c0392b;} .dot-y{background:#2c2c2c;} .dot-g{background:#2c2c2c;}
+  .dot-r:hover{background:#e74c3c;}
+  .topbar-title{flex:1;text-align:center;font-size:10px;color:#500;letter-spacing:3px;}
+  .version-badge{font-size:10px;color:#600;border:1px solid #300;padding:1px 8px;-webkit-app-region:no-drag;}
+
+  .header{background:#050000;border-bottom:2px solid #c0392b;padding:14px 18px 10px;display:flex;justify-content:space-between;align-items:center;}
+  .logo{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:#cc2200;letter-spacing:6px;}
+  .logo-sub{font-size:9px;color:#600;letter-spacing:3px;margin-top:1px;}
+  .header-right{text-align:right;}
+  .ts{font-size:10px;color:#500;letter-spacing:1px;}
+
+  .sysbar{background:#060000;border-bottom:1px solid #2a0000;padding:8px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .sys-item .sys-label{font-size:9px;color:#600;letter-spacing:2px;}
+  .sys-item .sys-val{font-size:11px;color:#cc2200;margin:2px 0;}
+  .sys-bar-track{height:2px;background:#1a0000;}
+  .sys-bar-fill{height:2px;background:#c0392b;transition:width 1s;}
+
+  .modules{padding:7px 18px;display:flex;flex-wrap:wrap;gap:5px;border-bottom:1px solid #200;background:#040000;}
+  .mod{border:1px solid #300;color:#600;font-size:9px;letter-spacing:2px;padding:2px 8px;cursor:default;}
+  .mod.active{border-color:#c0392b;color:#cc2200;background:#0d0000;}
+
+  .content{padding:12px 18px;overflow-y:auto;height:calc(100vh - 320px);}
+  .section-label{font-size:9px;color:#500;letter-spacing:3px;margin-bottom:8px;border-left:2px solid #c0392b;padding-left:7px;}
+
+  .task-row{display:grid;grid-template-columns:30px 1fr 90px 70px;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #0d0000;}
+  .task-icon{font-size:11px;color:#400;text-align:center;}
+  .task-icon.done{color:#1a7a1a;} .task-icon.running{color:#c0392b;} .task-icon.waiting{color:#400;}
+  .task-name{font-size:11px;color:#400;}
+  .task-name.done{color:#444;} .task-name.running{color:#fff;} .task-name.waiting{color:#400;}
+  .task-bar-track{height:2px;background:#111;}
+  .task-bar-fill{height:2px;background:#c0392b;width:0%;transition:width 0.4s;}
+  .task-bar-fill.done{background:#1a5c1a;width:100%;}
+  .task-bar-fill.running{background:#c0392b;animation:pulse 1s ease-in-out infinite alternate;}
+  @keyframes pulse{from{width:30%;}to{width:80%;}}
+  .task-status{font-size:9px;text-align:right;letter-spacing:1px;color:#300;}
+  .task-status.done{color:#1a7a1a;} .task-status.running{color:#c0392b;animation:blink 0.7s step-end infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+
+  .footer{padding:10px 18px;border-top:1px solid #200;background:#040000;display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;}
+  .overall-label{font-size:9px;color:#500;letter-spacing:2px;margin-bottom:4px;}
+  .overall-track{height:4px;background:#111;}
+  .overall-fill{height:4px;background:#c0392b;width:0%;transition:width 0.5s;}
+  .overall-pct{font-size:20px;color:#c0392b;font-weight:700;min-width:50px;text-align:right;}
+
+  .btn{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;padding:8px 18px;border:none;cursor:pointer;transition:background 0.2s;}
+  .btn-run{background:#c0392b;color:#000;}
+  .btn-run:hover{background:#e74c3c;}
+  .btn-run:disabled{background:#3a0000;color:#500;cursor:not-allowed;}
+  .btn-restart{background:transparent;color:#600;border:1px solid #400;display:none;}
+  .btn-restart:hover{border-color:#c0392b;color:#c0392b;}
+
+  .done-banner{display:none;background:#0a0000;border:1px solid #c0392b;color:#c0392b;text-align:center;padding:10px;margin:10px 0;font-size:13px;letter-spacing:3px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="dot dot-r" onclick="window.chrome && window.chrome.webview ? window.chrome.webview.postMessage('close') : window.close()" title="Close"></div>
+  <div class="dot dot-y"></div>
+  <div class="dot dot-g"></div>
+  <div class="topbar-title">GOAT // GREATEST OF ALL TWEAKS</div>
+  <div class="version-badge">v2.0</div>
+</div>
+
+<div class="header">
+  <div>
+    <div class="logo">G O A T</div>
+    <div class="logo-sub">GREATEST OF ALL TWEAKS // GUI EDITION</div>
+  </div>
+  <div class="header-right">
+    <div class="ts" id="clock">--:--:--</div>
+    <div class="ts" id="datestamp">----/--/--</div>
+  </div>
+</div>
+
+<div class="sysbar">
+  <div class="sys-item">
+    <div class="sys-label">CPU</div>
+    <div class="sys-val">$cpuShort</div>
+    <div class="sys-bar-track"><div class="sys-bar-fill" style="width:$CPULoad%"></div></div>
+  </div>
+  <div class="sys-item">
+    <div class="sys-label">RAM</div>
+    <div class="sys-val">$RAMUsed GB / $RAMTotal GB DDR</div>
+    <div class="sys-bar-track"><div class="sys-bar-fill" style="width:$RAMPct%"></div></div>
+  </div>
+  <div class="sys-item">
+    <div class="sys-label">OS</div>
+    <div class="sys-val">$osShort</div>
+    <div class="sys-bar-track"><div class="sys-bar-fill" style="width:100%"></div></div>
+  </div>
+</div>
+
+<div class="modules" id="modbar">
+  <div class="mod active">KERNEL</div>
+  <div class="mod active">MEMORY</div>
+  <div class="mod active">INPUT</div>
+  <div class="mod active">NETWORK</div>
+  <div class="mod active">IRQ/MSI</div>
+  <div class="mod active">POWER</div>
+  <div class="mod active">SERVICES</div>
+  <div class="mod active">CLEANER</div>
+</div>
+
+<div class="content">
+  <div class="section-label">OPTIMIZATION MODULES</div>
+  <div id="task-list">
+$taskRowsHtml
+  </div>
+  <div class="done-banner" id="done-banner">== ALL TWEAKS COMPLETED ==</div>
+</div>
+
+<div class="footer">
+  <div>
+    <div class="overall-label">OVERALL PROGRESS</div>
+    <div class="overall-track"><div class="overall-fill" id="overall-fill"></div></div>
+  </div>
+  <div class="overall-pct" id="overall-pct">0%</div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn-restart" id="btn-restart" onclick="restartPC()">RESTART PC</button>
+    <button class="btn btn-run" id="btn-run" onclick="startOpt()">RUN GOAT</button>
+  </div>
+</div>
+
+<script>
+  const taskKeys = [$(($script:Tasks.Keys | ForEach-Object { "'$_'" }) -join ',')];
+  const total = taskKeys.length;
+
+  function tick(){
+    const n=new Date();
+    document.getElementById('clock').textContent=n.toLocaleTimeString('en-GB');
+    document.getElementById('datestamp').textContent=n.toLocaleDateString('en-CA');
+  }
+  tick(); setInterval(tick,1000);
+
+  function setTask(key, state){
+    const icon=document.getElementById('icon-'+key);
+    const name=document.getElementById('name-'+key);
+    const bar=document.getElementById('bar-'+key);
+    const status=document.getElementById('status-'+key);
+    icon.className='task-icon '+state;
+    name.className='task-name '+state;
+    bar.className='task-bar-fill '+state;
+    if(state==='done'){icon.textContent='OK';status.textContent='DONE';status.className='task-status done';}
+    else if(state==='running'){icon.textContent='>>';status.textContent='RUNNING...';status.className='task-status running';}
+    else{icon.textContent='--';status.textContent='PENDING';status.className='task-status';}
+  }
+
+  function setProgress(done){
+    const pct=Math.round(done/total*100);
+    document.getElementById('overall-fill').style.width=pct+'%';
+    document.getElementById('overall-pct').textContent=pct+'%';
+  }
+
+  function startOpt(){
+    document.getElementById('btn-run').disabled=true;
+    if(window.chrome && window.chrome.webview){
+      window.chrome.webview.postMessage('start');
+    }
+  }
+
+  function restartPC(){
+    if(window.chrome && window.chrome.webview){
+      window.chrome.webview.postMessage('restart');
+    }
+  }
+
+  window.updateTask = function(key, state){ setTask(key, state); };
+  window.updateProgress = function(done){ setProgress(done); };
+  window.showDone = function(){
+    document.getElementById('done-banner').style.display='block';
+    document.getElementById('btn-restart').style.display='inline-block';
+  };
+</script>
+</body>
+</html>
+"@
+
+# ── FORM ───────────────────────────────────────────────────────────────────
+$form = New-Object System.Windows.Forms.Form
+$form.Text            = "GOAT // GREATEST OF ALL TWEAKS"
+$form.Size            = New-Object System.Drawing.Size(860, 680)
+$form.StartPosition   = "CenterScreen"
+$form.BackColor       = [System.Drawing.Color]::Black
+$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
+$form.Icon            = [System.Drawing.SystemIcons]::Application
+
+# drag support for borderless window
+$script:dragging = $false
+$script:dragStart = [System.Drawing.Point]::Empty
+
+if ($useWebView2) {
+    # ── WEBVIEW2 PATH ──────────────────────────────────────────────────────
+    $wv = New-Object Microsoft.Web.WebView2.WinForms.WebView2
+    $wv.Dock = [System.Windows.Forms.DockStyle]::Fill
+    $form.Controls.Add($wv)
+
+    $wv.add_CoreWebView2InitializationCompleted({
+        $wv.CoreWebView2.NavigateToString($html)
+    })
+
+    $wv.add_WebMessageReceived({
+        param($s, $e)
+        $msg = $e.TryGetWebMessageAsString()
+        if ($msg -eq 'close') { $form.Close() }
+        elseif ($msg -eq 'restart') { Restart-Computer -Force }
+        elseif ($msg -eq 'start') {
+            $bg = [System.ComponentModel.BackgroundWorker]::new()
+            $bg.WorkerReportsProgress = $true
+            $bg.add_DoWork({
+                $done = 0
+                foreach ($key in $script:Tasks.Keys) {
+                    $bg.ReportProgress(0, @{ key=$key; state='running'; done=$done })
+                    try { & $script:Tasks[$key].Fn } catch {}
+                    $done++
+                    $bg.ReportProgress(0, @{ key=$key; state='done'; done=$done })
+                }
+                $bg.ReportProgress(100, $null)
+            })
+            $bg.add_ProgressChanged({
+                param($s2, $e2)
+                if ($e2.ProgressPercentage -eq 100) {
+                    $wv.CoreWebView2.ExecuteScriptAsync("window.showDone()") | Out-Null
+                } else {
+                    $d = $e2.UserState
+                    $wv.CoreWebView2.ExecuteScriptAsync("window.updateTask('$($d.key)','$($d.state)')") | Out-Null
+                    $wv.CoreWebView2.ExecuteScriptAsync("window.updateProgress($($d.done))") | Out-Null
+                }
+            })
+            $bg.RunWorkerAsync()
+        }
+    })
+
+    $wv.EnsureCoreWebView2Async($null) | Out-Null
+
+} else {
+    # ── FALLBACK: WinForms UI (ถ้าไม่มี WebView2) ─────────────────────────
+    $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::Sizable
+
+    $panel = New-Object System.Windows.Forms.Panel
+    $panel.Dock = [System.Windows.Forms.DockStyle]::Fill
+    $panel.BackColor = [System.Drawing.Color]::Black
+    $form.Controls.Add($panel)
+
+    $lbl = New-Object System.Windows.Forms.Label
+    $lbl.Text = "G O A T"
+    $lbl.Font = New-Object System.Drawing.Font("Consolas", 28, [System.Drawing.FontStyle]::Bold)
+    $lbl.ForeColor = [System.Drawing.Color]::Firebrick
+    $lbl.AutoSize = $true
+    $lbl.Location = New-Object System.Drawing.Point(30, 20)
+    $panel.Controls.Add($lbl)
+
+    $sub = New-Object System.Windows.Forms.Label
+    $sub.Text = "GREATEST OF ALL TWEAKS // GUI EDITION"
+    $sub.Font = New-Object System.Drawing.Font("Consolas", 9)
+    $sub.ForeColor = [System.Drawing.Color]::DarkRed
+    $sub.AutoSize = $true
+    $sub.Location = New-Object System.Drawing.Point(32, 68)
+    $panel.Controls.Add($sub)
+
+    $sep = New-Object System.Windows.Forms.Panel
+    $sep.BackColor = [System.Drawing.Color]::Firebrick
+    $sep.Size = New-Object System.Drawing.Size(800, 2)
+    $sep.Location = New-Object System.Drawing.Point(30, 90)
+    $panel.Controls.Add($sep)
+
+    $statusBox = New-Object System.Windows.Forms.RichTextBox
+    $statusBox.Size = New-Object System.Drawing.Size(790, 440)
+    $statusBox.Location = New-Object System.Drawing.Point(30, 100)
+    $statusBox.BackColor = [System.Drawing.Color]::Black
+    $statusBox.ForeColor = [System.Drawing.Color]::Firebrick
+    $statusBox.Font = New-Object System.Drawing.Font("Consolas", 10)
+    $statusBox.ReadOnly = $true
+    $statusBox.BorderStyle = [System.Windows.Forms.BorderStyle]::None
+    $panel.Controls.Add($statusBox)
+
+    $btnRun = New-Object System.Windows.Forms.Button
+    $btnRun.Text = "RUN GOAT"
+    $btnRun.Size = New-Object System.Drawing.Size(140, 36)
+    $btnRun.Location = New-Object System.Drawing.Point(680, 560)
+    $btnRun.BackColor = [System.Drawing.Color]::Firebrick
+    $btnRun.ForeColor = [System.Drawing.Color]::Black
+    $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+    $btnRun.Font = New-Object System.Drawing.Font("Consolas", 10, [System.Drawing.FontStyle]::Bold)
+    $panel.Controls.Add($btnRun)
+
+    $progress = New-Object System.Windows.Forms.ProgressBar
+    $progress.Size = New-Object System.Drawing.Size(600, 8)
+    $progress.Location = New-Object System.Drawing.Point(30, 572)
+    $progress.Style = [System.Windows.Forms.ProgressBarStyle]::Continuous
+    $progress.ForeColor = [System.Drawing.Color]::Firebrick
+    $panel.Controls.Add($progress)
+
+    $btnRun.Add_Click({
+        $btnRun.Enabled = $false
+        $statusBox.Clear()
+        $bg = [System.ComponentModel.BackgroundWorker]::new()
+        $bg.WorkerReportsProgress = $true
+        $done = 0
+        $bg.add_DoWork({
+            foreach ($key in $script:Tasks.Keys) {
+                $label = $script:Tasks[$key].Label
+                $bg.ReportProgress([int]($done/$script:Tasks.Count*100), ">> $label...")
+                try { & $script:Tasks[$key].Fn } catch {}
+                $done++
+                $bg.ReportProgress([int]($done/$script:Tasks.Count*100), "OK $label")
+            }
+            $bg.ReportProgress(100, "DONE")
+        })
+        $bg.add_ProgressChanged({
+            param($s2,$e2)
+            $progress.Value = [math]::Min($e2.ProgressPercentage, 100)
+            if ($e2.UserState -eq "DONE") {
+                $statusBox.AppendText("`r`n== ALL TWEAKS COMPLETED ==`r`n")
+            } else {
+                $statusBox.AppendText($e2.UserState + "`r`n")
+                $statusBox.ScrollToCaret()
+            }
+        })
+        $bg.RunWorkerAsync()
+    })
+}
+
+[System.Windows.Forms.Application]::Run($form)
