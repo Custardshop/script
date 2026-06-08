@@ -1,51 +1,22 @@
 #Requires -Version 5.1
 <#
     GOAT - GREATEST OF ALL TWEAKS
-    GUI Edition v2.0 - WebView2 / Red-Black Theme
+    GUI Edition v2.0 - WinForms Red/Black Theme
 #>
 
-# ── ADMIN CHECK ────────────────────────────────────────────────────────────
+# ── ADMIN AUTO-ELEVATE ─────────────────────────────────────────────────────
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    $ps = New-Object System.Diagnostics.ProcessStartInfo "powershell"
-    $ps.Arguments = "-ExecutionPolicy Bypass -File `"$PSCommandPath`""
-    $ps.Verb = "runas"
-    try { [System.Diagnostics.Process]::Start($ps) | Out-Null } catch {}
+    $psi = New-Object System.Diagnostics.ProcessStartInfo "powershell"
+    $psi.Arguments = "-ExecutionPolicy Bypass -File `"$PSCommandPath`""
+    $psi.Verb = "runas"
+    try { [System.Diagnostics.Process]::Start($psi) | Out-Null } catch {}
     Exit
 }
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
-
-# ── WEBVIEW2 CHECK & LOAD ──────────────────────────────────────────────────
-$wv2Dll = $null
-$searchPaths = @(
-    "$env:ProgramFiles\Microsoft\EdgeWebView\Application",
-    "$env:ProgramFiles(x86)\Microsoft\EdgeWebView\Application",
-    "$env:LOCALAPPDATA\Microsoft\EdgeWebView\Application",
-    "$env:ProgramFiles\Microsoft\Edge\Application",
-    "$env:ProgramFiles(x86)\Microsoft\Edge\Application"
-)
-foreach ($base in $searchPaths) {
-    if (Test-Path $base) {
-        $found = Get-ChildItem $base -Recurse -Filter "Microsoft.Web.WebView2.WinForms.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($found) { $wv2Dll = $found.FullName; break }
-    }
-}
-# Also check NuGet / script dir
-$nugetPaths = @(
-    "$PSScriptRoot\Microsoft.Web.WebView2.WinForms.dll",
-    "$env:TEMP\WebView2\Microsoft.Web.WebView2.WinForms.dll"
-)
-foreach ($p in $nugetPaths) { if (Test-Path $p) { $wv2Dll = $p; break } }
-
-$useWebView2 = $false
-if ($wv2Dll) {
-    try {
-        Add-Type -Path $wv2Dll -ErrorAction Stop
-        $useWebView2 = $true
-    } catch { $useWebView2 = $false }
-}
+[System.Windows.Forms.Application]::EnableVisualStyles()
 
 # ── SYSTEM INFO ────────────────────────────────────────────────────────────
 $CPU      = (Get-CimInstance Win32_Processor).Name
@@ -56,6 +27,42 @@ $RAMUsed  = [math]::Round($RAMTotal - $RAMFree, 1)
 $RAMPct   = [math]::Round(($RAMUsed / $RAMTotal) * 100)
 $OSName   = (Get-CimInstance Win32_OperatingSystem).Caption
 
+# ── COLORS & FONTS ─────────────────────────────────────────────────────────
+$cBlack    = [System.Drawing.Color]::FromArgb(0,0,0)
+$cDarkBg   = [System.Drawing.Color]::FromArgb(8,0,0)
+$cPanelBg  = [System.Drawing.Color]::FromArgb(12,0,0)
+$cRed      = [System.Drawing.Color]::FromArgb(192,57,43)
+$cRedDim   = [System.Drawing.Color]::FromArgb(100,20,10)
+$cRedDark  = [System.Drawing.Color]::FromArgb(40,0,0)
+$cGreen    = [System.Drawing.Color]::FromArgb(30,120,30)
+$cGray     = [System.Drawing.Color]::FromArgb(60,60,60)
+$cWhite    = [System.Drawing.Color]::FromArgb(220,220,220)
+$cYellow   = [System.Drawing.Color]::FromArgb(180,140,0)
+
+$fMono9    = New-Object System.Drawing.Font("Consolas", 9)
+$fMono10   = New-Object System.Drawing.Font("Consolas", 10)
+$fMono11   = New-Object System.Drawing.Font("Consolas", 11)
+$fMonoBold = New-Object System.Drawing.Font("Consolas", 10, [System.Drawing.FontStyle]::Bold)
+$fLogo     = New-Object System.Drawing.Font("Consolas", 52, [System.Drawing.FontStyle]::Bold)
+$fSub      = New-Object System.Drawing.Font("Consolas", 9)
+
+# ── TASK DEFINITIONS ───────────────────────────────────────────────────────
+$script:Tasks = [ordered]@{
+    "kernel"   = "Kernel and HPET"
+    "timer"    = "Timer Resolution"
+    "priority" = "Process Priority"
+    "irq"      = "IRQ MSI Mode"
+    "memory"   = "Memory Management"
+    "input"    = "Input and USB"
+    "nagle"    = "Nagle Algorithm"
+    "visual"   = "Visual Effects"
+    "gamebar"  = "Game Bar and DVR"
+    "power"    = "Processor Power"
+    "network"  = "Network and DNS"
+    "services" = "Windows Services"
+    "cleanup"  = "Junk and Log Cleanup"
+}
+
 # ── OPTIMIZATION FUNCTIONS ─────────────────────────────────────────────────
 function Invoke-Kernel {
     bcdedit /set useplatformclock no 2>$null | Out-Null
@@ -63,6 +70,7 @@ function Invoke-Kernel {
     bcdedit /set disabledynamictick yes 2>$null | Out-Null
     bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
     bcdedit /set nx OptOut 2>$null | Out-Null
+    bcdedit /set synthetictimers yes 2>$null | Out-Null
     $hpet = Get-PnpDevice | Where-Object { $_.FriendlyName -like "*High Precision*" } -ErrorAction SilentlyContinue
     if ($hpet) { Disable-PnpDevice -InstanceId $hpet.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }
 }
@@ -94,6 +102,9 @@ function Invoke-VisualEffects {
 function Invoke-GameBar {
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode" -Value 1 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord -Force 2>$null
     $gp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
     if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
     Set-ItemProperty -Path $gp -Name "AllowGameDVR" -Value 0 -Type DWord -Force 2>$null
@@ -104,11 +115,15 @@ function Invoke-ProcessorPower {
     powercfg /setactive SCHEME_CURRENT 2>$null | Out-Null
 }
 function Invoke-Priority {
+    $pp = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
     $sp = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
     $gp = "$sp\Tasks\Games"
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" -Name "Win32PrioritySeparation" -Value 0x2a -Type DWord -Force 2>$null
+    $ep = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Executive"
+    Set-ItemProperty -Path $pp -Name "Win32PrioritySeparation" -Value 0x2a -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $sp -Name "SystemResponsiveness"   -Value 0          -Type DWord -Force 2>$null
     Set-ItemProperty -Path $sp -Name "NetworkThrottlingIndex" -Value 0xFFFFFFFF -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $ep -Name "AdditionalCriticalWorkerThreads" -Value 2 -Type DWord -Force 2>$null
     if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
     Set-ItemProperty -Path $gp -Name "GPU Priority"        -Value 8      -Type DWord  -Force 2>$null
     Set-ItemProperty -Path $gp -Name "Priority"            -Value 6      -Type DWord  -Force 2>$null
@@ -131,11 +146,11 @@ function Invoke-Input {
     $pt = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
     if (-not (Test-Path $pt)) { New-Item -Path $pt -Force | Out-Null }
     Set-ItemProperty -Path $pt -Name "PowerThrottlingOff" -Value 1 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed"      -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold1" -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold2" -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed" -Value "31" -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseSpeed"      -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseThreshold1" -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseThreshold2" -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay"   -Value "0"  -Type String -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed"   -Value "31" -Type String -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB"    -Name "DisableSelectiveSuspend" -Value 1 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HidUsb" -Name "IdleEnable"              -Value 0 -Type DWord -Force 2>$null
 }
@@ -177,378 +192,378 @@ function Invoke-Cleanup {
     wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" 2>$null }
 }
 
-# ── TASK MAP ───────────────────────────────────────────────────────────────
-$script:Tasks = [ordered]@{
-    "kernel"     = @{ Label="Kernel and HPET";    Fn={ Invoke-Kernel } }
-    "timer"      = @{ Label="Timer Resolution";   Fn={ Invoke-TimerResolution } }
-    "priority"   = @{ Label="Process Priority";   Fn={ Invoke-Priority } }
-    "irq"        = @{ Label="IRQ MSI Mode";       Fn={ Invoke-IRQ } }
-    "memory"     = @{ Label="Memory Management";  Fn={ Invoke-Memory } }
-    "input"      = @{ Label="Input and USB";      Fn={ Invoke-Input } }
-    "nagle"      = @{ Label="Nagle Algorithm";    Fn={ Invoke-Nagle } }
-    "visual"     = @{ Label="Visual Effects";     Fn={ Invoke-VisualEffects } }
-    "gamebar"    = @{ Label="Game Bar and DVR";   Fn={ Invoke-GameBar } }
-    "power"      = @{ Label="Processor Power";    Fn={ Invoke-ProcessorPower } }
-    "network"    = @{ Label="Network and DNS";    Fn={ Invoke-Network } }
-    "services"   = @{ Label="Windows Services";   Fn={ Invoke-Services } }
-    "cleanup"    = @{ Label="Junk and Log Cleanup"; Fn={ Invoke-Cleanup } }
+$script:FnMap = @{
+    "kernel"   = { Invoke-Kernel }
+    "timer"    = { Invoke-TimerResolution }
+    "priority" = { Invoke-Priority }
+    "irq"      = { Invoke-IRQ }
+    "memory"   = { Invoke-Memory }
+    "input"    = { Invoke-Input }
+    "nagle"    = { Invoke-Nagle }
+    "visual"   = { Invoke-VisualEffects }
+    "gamebar"  = { Invoke-GameBar }
+    "power"    = { Invoke-ProcessorPower }
+    "network"  = { Invoke-Network }
+    "services" = { Invoke-Services }
+    "cleanup"  = { Invoke-Cleanup }
 }
-
-# ── HTML UI ────────────────────────────────────────────────────────────────
-$taskRowsHtml = ""
-foreach ($key in $script:Tasks.Keys) {
-    $label = $script:Tasks[$key].Label
-    $taskRowsHtml += @"
-<div class="task-row" id="row-$key">
-  <span class="task-icon" id="icon-$key">--</span>
-  <span class="task-name" id="name-$key">$label</span>
-  <div class="task-bar-track"><div class="task-bar-fill" id="bar-$key"></div></div>
-  <span class="task-status" id="status-$key">PENDING</span>
-</div>
-"@
-}
-
-$cpuShort = if ($CPU.Length -gt 38) { $CPU.Substring(0,38) + "..." } else { $CPU }
-$osShort  = if ($OSName.Length -gt 28) { $OSName.Substring(0,28) + "..." } else { $OSName }
-
-$html = @"
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>GOAT</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;700&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;background:#000;color:#cc2200;font-family:'Share Tech Mono',monospace;overflow:hidden;}
-  ::-webkit-scrollbar{width:4px;}
-  ::-webkit-scrollbar-track{background:#0a0000;}
-  ::-webkit-scrollbar-thumb{background:#500;}
-
-  .topbar{background:#080000;border-bottom:1px solid #3a0000;padding:5px 14px;display:flex;align-items:center;gap:8px;-webkit-app-region:drag;user-select:none;}
-  .dot{width:11px;height:11px;border-radius:50%;cursor:pointer;-webkit-app-region:no-drag;}
-  .dot-r{background:#c0392b;} .dot-y{background:#2c2c2c;} .dot-g{background:#2c2c2c;}
-  .dot-r:hover{background:#e74c3c;}
-  .topbar-title{flex:1;text-align:center;font-size:10px;color:#500;letter-spacing:3px;}
-  .version-badge{font-size:10px;color:#600;border:1px solid #300;padding:1px 8px;-webkit-app-region:no-drag;}
-
-  .header{background:#050000;border-bottom:2px solid #c0392b;padding:14px 18px 10px;display:flex;justify-content:space-between;align-items:center;}
-  .logo{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:#cc2200;letter-spacing:6px;}
-  .logo-sub{font-size:9px;color:#600;letter-spacing:3px;margin-top:1px;}
-  .header-right{text-align:right;}
-  .ts{font-size:10px;color:#500;letter-spacing:1px;}
-
-  .sysbar{background:#060000;border-bottom:1px solid #2a0000;padding:8px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-  .sys-item .sys-label{font-size:9px;color:#600;letter-spacing:2px;}
-  .sys-item .sys-val{font-size:11px;color:#cc2200;margin:2px 0;}
-  .sys-bar-track{height:2px;background:#1a0000;}
-  .sys-bar-fill{height:2px;background:#c0392b;transition:width 1s;}
-
-  .modules{padding:7px 18px;display:flex;flex-wrap:wrap;gap:5px;border-bottom:1px solid #200;background:#040000;}
-  .mod{border:1px solid #300;color:#600;font-size:9px;letter-spacing:2px;padding:2px 8px;cursor:default;}
-  .mod.active{border-color:#c0392b;color:#cc2200;background:#0d0000;}
-
-  .content{padding:12px 18px;overflow-y:auto;height:calc(100vh - 320px);}
-  .section-label{font-size:9px;color:#500;letter-spacing:3px;margin-bottom:8px;border-left:2px solid #c0392b;padding-left:7px;}
-
-  .task-row{display:grid;grid-template-columns:30px 1fr 90px 70px;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #0d0000;}
-  .task-icon{font-size:11px;color:#400;text-align:center;}
-  .task-icon.done{color:#1a7a1a;} .task-icon.running{color:#c0392b;} .task-icon.waiting{color:#400;}
-  .task-name{font-size:11px;color:#400;}
-  .task-name.done{color:#444;} .task-name.running{color:#fff;} .task-name.waiting{color:#400;}
-  .task-bar-track{height:2px;background:#111;}
-  .task-bar-fill{height:2px;background:#c0392b;width:0%;transition:width 0.4s;}
-  .task-bar-fill.done{background:#1a5c1a;width:100%;}
-  .task-bar-fill.running{background:#c0392b;animation:pulse 1s ease-in-out infinite alternate;}
-  @keyframes pulse{from{width:30%;}to{width:80%;}}
-  .task-status{font-size:9px;text-align:right;letter-spacing:1px;color:#300;}
-  .task-status.done{color:#1a7a1a;} .task-status.running{color:#c0392b;animation:blink 0.7s step-end infinite;}
-  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
-
-  .footer{padding:10px 18px;border-top:1px solid #200;background:#040000;display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;}
-  .overall-label{font-size:9px;color:#500;letter-spacing:2px;margin-bottom:4px;}
-  .overall-track{height:4px;background:#111;}
-  .overall-fill{height:4px;background:#c0392b;width:0%;transition:width 0.5s;}
-  .overall-pct{font-size:20px;color:#c0392b;font-weight:700;min-width:50px;text-align:right;}
-
-  .btn{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:2px;padding:8px 18px;border:none;cursor:pointer;transition:background 0.2s;}
-  .btn-run{background:#c0392b;color:#000;}
-  .btn-run:hover{background:#e74c3c;}
-  .btn-run:disabled{background:#3a0000;color:#500;cursor:not-allowed;}
-  .btn-restart{background:transparent;color:#600;border:1px solid #400;display:none;}
-  .btn-restart:hover{border-color:#c0392b;color:#c0392b;}
-
-  .done-banner{display:none;background:#0a0000;border:1px solid #c0392b;color:#c0392b;text-align:center;padding:10px;margin:10px 0;font-size:13px;letter-spacing:3px;}
-</style>
-</head>
-<body>
-
-<div class="topbar">
-  <div class="dot dot-r" onclick="window.chrome && window.chrome.webview ? window.chrome.webview.postMessage('close') : window.close()" title="Close"></div>
-  <div class="dot dot-y"></div>
-  <div class="dot dot-g"></div>
-  <div class="topbar-title">GOAT // GREATEST OF ALL TWEAKS</div>
-  <div class="version-badge">v2.0</div>
-</div>
-
-<div class="header">
-  <div>
-    <div class="logo">G O A T</div>
-    <div class="logo-sub">GREATEST OF ALL TWEAKS // GUI EDITION</div>
-  </div>
-  <div class="header-right">
-    <div class="ts" id="clock">--:--:--</div>
-    <div class="ts" id="datestamp">----/--/--</div>
-  </div>
-</div>
-
-<div class="sysbar">
-  <div class="sys-item">
-    <div class="sys-label">CPU</div>
-    <div class="sys-val">$cpuShort</div>
-    <div class="sys-bar-track"><div class="sys-bar-fill" style="width:$CPULoad%"></div></div>
-  </div>
-  <div class="sys-item">
-    <div class="sys-label">RAM</div>
-    <div class="sys-val">$RAMUsed GB / $RAMTotal GB DDR</div>
-    <div class="sys-bar-track"><div class="sys-bar-fill" style="width:$RAMPct%"></div></div>
-  </div>
-  <div class="sys-item">
-    <div class="sys-label">OS</div>
-    <div class="sys-val">$osShort</div>
-    <div class="sys-bar-track"><div class="sys-bar-fill" style="width:100%"></div></div>
-  </div>
-</div>
-
-<div class="modules" id="modbar">
-  <div class="mod active">KERNEL</div>
-  <div class="mod active">MEMORY</div>
-  <div class="mod active">INPUT</div>
-  <div class="mod active">NETWORK</div>
-  <div class="mod active">IRQ/MSI</div>
-  <div class="mod active">POWER</div>
-  <div class="mod active">SERVICES</div>
-  <div class="mod active">CLEANER</div>
-</div>
-
-<div class="content">
-  <div class="section-label">OPTIMIZATION MODULES</div>
-  <div id="task-list">
-$taskRowsHtml
-  </div>
-  <div class="done-banner" id="done-banner">== ALL TWEAKS COMPLETED ==</div>
-</div>
-
-<div class="footer">
-  <div>
-    <div class="overall-label">OVERALL PROGRESS</div>
-    <div class="overall-track"><div class="overall-fill" id="overall-fill"></div></div>
-  </div>
-  <div class="overall-pct" id="overall-pct">0%</div>
-  <div style="display:flex;gap:8px;">
-    <button class="btn btn-restart" id="btn-restart" onclick="restartPC()">RESTART PC</button>
-    <button class="btn btn-run" id="btn-run" onclick="startOpt()">RUN GOAT</button>
-  </div>
-</div>
-
-<script>
-  const taskKeys = [$(($script:Tasks.Keys | ForEach-Object { "'$_'" }) -join ',')];
-  const total = taskKeys.length;
-
-  function tick(){
-    const n=new Date();
-    document.getElementById('clock').textContent=n.toLocaleTimeString('en-GB');
-    document.getElementById('datestamp').textContent=n.toLocaleDateString('en-CA');
-  }
-  tick(); setInterval(tick,1000);
-
-  function setTask(key, state){
-    const icon=document.getElementById('icon-'+key);
-    const name=document.getElementById('name-'+key);
-    const bar=document.getElementById('bar-'+key);
-    const status=document.getElementById('status-'+key);
-    icon.className='task-icon '+state;
-    name.className='task-name '+state;
-    bar.className='task-bar-fill '+state;
-    if(state==='done'){icon.textContent='OK';status.textContent='DONE';status.className='task-status done';}
-    else if(state==='running'){icon.textContent='>>';status.textContent='RUNNING...';status.className='task-status running';}
-    else{icon.textContent='--';status.textContent='PENDING';status.className='task-status';}
-  }
-
-  function setProgress(done){
-    const pct=Math.round(done/total*100);
-    document.getElementById('overall-fill').style.width=pct+'%';
-    document.getElementById('overall-pct').textContent=pct+'%';
-  }
-
-  function startOpt(){
-    document.getElementById('btn-run').disabled=true;
-    if(window.chrome && window.chrome.webview){
-      window.chrome.webview.postMessage('start');
-    }
-  }
-
-  function restartPC(){
-    if(window.chrome && window.chrome.webview){
-      window.chrome.webview.postMessage('restart');
-    }
-  }
-
-  window.updateTask = function(key, state){ setTask(key, state); };
-  window.updateProgress = function(done){ setProgress(done); };
-  window.showDone = function(){
-    document.getElementById('done-banner').style.display='block';
-    document.getElementById('btn-restart').style.display='inline-block';
-  };
-</script>
-</body>
-</html>
-"@
 
 # ── FORM ───────────────────────────────────────────────────────────────────
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS"
-$form.Size            = New-Object System.Drawing.Size(860, 680)
+$form.Size            = New-Object System.Drawing.Size(900, 700)
+$form.MinimumSize     = New-Object System.Drawing.Size(900, 700)
 $form.StartPosition   = "CenterScreen"
-$form.BackColor       = [System.Drawing.Color]::Black
-$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
-$form.Icon            = [System.Drawing.SystemIcons]::Application
+$form.BackColor       = $cBlack
+$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::Sizable
+$form.Icon            = [System.Drawing.SystemIcons]::Shield
 
-# drag support for borderless window
-$script:dragging = $false
-$script:dragStart = [System.Drawing.Point]::Empty
+# ── TOP BAR ────────────────────────────────────────────────────────────────
+$topBar = New-Object System.Windows.Forms.Panel
+$topBar.Dock      = [System.Windows.Forms.DockStyle]::Top
+$topBar.Height    = 32
+$topBar.BackColor = $cDarkBg
+$form.Controls.Add($topBar)
 
-if ($useWebView2) {
-    # ── WEBVIEW2 PATH ──────────────────────────────────────────────────────
-    $wv = New-Object Microsoft.Web.WebView2.WinForms.WebView2
-    $wv.Dock = [System.Windows.Forms.DockStyle]::Fill
-    $form.Controls.Add($wv)
+$lblTitle = New-Object System.Windows.Forms.Label
+$lblTitle.Text      = "GOAT  //  GREATEST OF ALL TWEAKS  //  v2.0"
+$lblTitle.Font      = $fMono9
+$lblTitle.ForeColor = $cRedDim
+$lblTitle.AutoSize  = $false
+$lblTitle.Dock      = [System.Windows.Forms.DockStyle]::Fill
+$lblTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+$topBar.Controls.Add($lblTitle)
 
-    $wv.add_CoreWebView2InitializationCompleted({
-        $wv.CoreWebView2.NavigateToString($html)
+$sepTop = New-Object System.Windows.Forms.Panel
+$sepTop.Dock      = [System.Windows.Forms.DockStyle]::Top
+$sepTop.Height    = 2
+$sepTop.BackColor = $cRed
+$form.Controls.Add($sepTop)
+
+# ── HERO PANEL (GOAT logo centered) ───────────────────────────────────────
+$heroPanel = New-Object System.Windows.Forms.Panel
+$heroPanel.Dock      = [System.Windows.Forms.DockStyle]::Top
+$heroPanel.Height    = 160
+$heroPanel.BackColor = $cBlack
+$form.Controls.Add($heroPanel)
+
+$heroPanel.Add_Paint({
+    param($s, $e)
+    $g = $e.Graphics
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
+
+    # background scan lines subtle effect
+    for ($y = 0; $y -lt $s.Height; $y += 4) {
+        $g.DrawLine([System.Drawing.Pen]::new([System.Drawing.Color]::FromArgb(8,80,0,0)), 0, $y, $s.Width, $y)
+    }
+
+    # GOAT text centered
+    $logoFont = New-Object System.Drawing.Font("Consolas", 72, [System.Drawing.FontStyle]::Bold)
+    $logoText = "G O A T"
+    $sz = $g.MeasureString($logoText, $logoFont)
+    $x  = ($s.Width - $sz.Width) / 2
+    $y  = ($s.Height - $sz.Height) / 2 - 12
+
+    # glow layers
+    foreach ($offset in @(6,4,2)) {
+        $glowBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(18, 192, 57, 43))
+        $g.DrawString($logoText, $logoFont, $glowBrush, ($x - $offset), ($y - $offset/2))
+        $g.DrawString($logoText, $logoFont, $glowBrush, ($x + $offset), ($y + $offset/2))
+        $glowBrush.Dispose()
+    }
+
+    # main text
+    $mainBrush = New-Object System.Drawing.SolidBrush($cRed)
+    $g.DrawString($logoText, $logoFont, $mainBrush, $x, $y)
+    $mainBrush.Dispose()
+    $logoFont.Dispose()
+
+    # subtitle
+    $subFont = New-Object System.Drawing.Font("Consolas", 9)
+    $subText = "·  G R E A T E S T   O F   A L L   T W E A K S  ·"
+    $sz2 = $g.MeasureString($subText, $subFont)
+    $subBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(120,150,50,30))
+    $g.DrawString($subText, $subFont, $subBrush, ($s.Width - $sz2.Width)/2, $y + $sz.Height - 8)
+    $subBrush.Dispose()
+    $subFont.Dispose()
+})
+
+$sepHero = New-Object System.Windows.Forms.Panel
+$sepHero.Dock      = [System.Windows.Forms.DockStyle]::Top
+$sepHero.Height    = 2
+$sepHero.BackColor = $cRedDark
+$form.Controls.Add($sepHero)
+
+# ── SYS INFO BAR ──────────────────────────────────────────────────────────
+$sysBar = New-Object System.Windows.Forms.Panel
+$sysBar.Dock      = [System.Windows.Forms.DockStyle]::Top
+$sysBar.Height    = 44
+$sysBar.BackColor = $cDarkBg
+$sysBar.Padding   = New-Object System.Windows.Forms.Padding(14,6,14,6)
+$form.Controls.Add($sysBar)
+
+$cpuShort = if ($CPU.Length -gt 35) { $CPU.Substring(0,35)+"..." } else { $CPU }
+$osShort  = if ($OSName.Length -gt 28) { $OSName.Substring(0,28)+"..." } else { $OSName }
+
+$lblSys = New-Object System.Windows.Forms.Label
+$lblSys.Text      = "CPU: $cpuShort   |   RAM: $RAMUsed GB / $RAMTotal GB  ($RAMPct%)   |   OS: $osShort"
+$lblSys.Font      = $fMono9
+$lblSys.ForeColor = $cRedDim
+$lblSys.Dock      = [System.Windows.Forms.DockStyle]::Fill
+$lblSys.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+$sysBar.Controls.Add($lblSys)
+
+$sepSys = New-Object System.Windows.Forms.Panel
+$sepSys.Dock      = [System.Windows.Forms.DockStyle]::Top
+$sepSys.Height    = 1
+$sepSys.BackColor = $cRedDark
+$form.Controls.Add($sepSys)
+
+# ── FOOTER ─────────────────────────────────────────────────────────────────
+$footer = New-Object System.Windows.Forms.Panel
+$footer.Dock      = [System.Windows.Forms.DockStyle]::Bottom
+$footer.Height    = 54
+$footer.BackColor = $cDarkBg
+$footer.Padding   = New-Object System.Windows.Forms.Padding(14,8,14,8)
+$form.Controls.Add($footer)
+
+$sepFoot = New-Object System.Windows.Forms.Panel
+$sepFoot.Dock      = [System.Windows.Forms.DockStyle]::Bottom
+$sepFoot.Height    = 1
+$sepFoot.BackColor = $cRedDark
+$form.Controls.Add($sepFoot)
+
+# overall progress bar
+$overallBar = New-Object System.Windows.Forms.Panel
+$overallBar.Location  = New-Object System.Drawing.Point(14, 10)
+$overallBar.Size      = New-Object System.Drawing.Size(580, 6)
+$overallBar.BackColor = $cRedDark
+$footer.Controls.Add($overallBar)
+
+$overallFill = New-Object System.Windows.Forms.Panel
+$overallFill.Location  = New-Object System.Drawing.Point(0, 0)
+$overallFill.Size      = New-Object System.Drawing.Size(0, 6)
+$overallFill.BackColor = $cRed
+$overallBar.Controls.Add($overallFill)
+
+$lblPct = New-Object System.Windows.Forms.Label
+$lblPct.Text      = "0%"
+$lblPct.Font      = New-Object System.Drawing.Font("Consolas", 13, [System.Drawing.FontStyle]::Bold)
+$lblPct.ForeColor = $cRed
+$lblPct.AutoSize  = $true
+$lblPct.Location  = New-Object System.Drawing.Point(600, 2)
+$footer.Controls.Add($lblPct)
+
+$btnRestart = New-Object System.Windows.Forms.Button
+$btnRestart.Text      = "RESTART PC"
+$btnRestart.Font      = $fMonoBold
+$btnRestart.ForeColor = $cRedDim
+$btnRestart.BackColor = $cDarkBg
+$btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$btnRestart.FlatAppearance.BorderColor = $cRedDark
+$btnRestart.Size      = New-Object System.Drawing.Size(110, 32)
+$btnRestart.Location  = New-Object System.Drawing.Point(646, 0)
+$btnRestart.Visible   = $false
+$btnRestart.Add_Click({ Restart-Computer -Force })
+$footer.Controls.Add($btnRestart)
+
+$btnRun = New-Object System.Windows.Forms.Button
+$btnRun.Text      = "RUN GOAT"
+$btnRun.Font      = New-Object System.Drawing.Font("Consolas", 11, [System.Drawing.FontStyle]::Bold)
+$btnRun.ForeColor = $cBlack
+$btnRun.BackColor = $cRed
+$btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$btnRun.FlatAppearance.BorderSize  = 0
+$btnRun.Size      = New-Object System.Drawing.Size(130, 36)
+$btnRun.Location  = New-Object System.Drawing.Point(760, 0)
+$footer.Controls.Add($btnRun)
+
+# ── TASK LIST PANEL ────────────────────────────────────────────────────────
+$taskPanel = New-Object System.Windows.Forms.Panel
+$taskPanel.Dock        = [System.Windows.Forms.DockStyle]::Fill
+$taskPanel.BackColor   = $cBlack
+$taskPanel.AutoScroll  = $true
+$taskPanel.Padding     = New-Object System.Windows.Forms.Padding(16,10,16,10)
+$form.Controls.Add($taskPanel)
+
+$lblSectionTitle = New-Object System.Windows.Forms.Label
+$lblSectionTitle.Text      = "  OPTIMIZATION MODULES"
+$lblSectionTitle.Font      = $fMono9
+$lblSectionTitle.ForeColor = $cRedDim
+$lblSectionTitle.AutoSize  = $false
+$lblSectionTitle.Dock      = [System.Windows.Forms.DockStyle]::Top
+$lblSectionTitle.Height    = 24
+$lblSectionTitle.BackColor = $cPanelBg
+$taskPanel.Controls.Add($lblSectionTitle)
+
+# task row controls storage
+$script:TaskRows = @{}
+
+$taskKeys = @($script:Tasks.Keys)
+for ($i = $taskKeys.Count - 1; $i -ge 0; $i--) {
+    $key   = $taskKeys[$i]
+    $label = $script:Tasks[$key]
+
+    $row = New-Object System.Windows.Forms.Panel
+    $row.Dock      = [System.Windows.Forms.DockStyle]::Top
+    $row.Height    = 36
+    $row.BackColor = $cBlack
+    $row.Padding   = New-Object System.Windows.Forms.Padding(0,0,0,1)
+
+    # icon label
+    $icn = New-Object System.Windows.Forms.Label
+    $icn.Text      = "--"
+    $icn.Font      = $fMono10
+    $icn.ForeColor = $cRedDark
+    $icn.Width     = 36
+    $icn.Height    = 34
+    $icn.Location  = New-Object System.Drawing.Point(4, 0)
+    $icn.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
+    $row.Controls.Add($icn)
+
+    # name label
+    $nm = New-Object System.Windows.Forms.Label
+    $nm.Text      = $label
+    $nm.Font      = $fMono10
+    $nm.ForeColor = $cRedDark
+    $nm.Width     = 260
+    $nm.Height    = 34
+    $nm.Location  = New-Object System.Drawing.Point(44, 0)
+    $nm.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
+    $row.Controls.Add($nm)
+
+    # bar track
+    $barTrack = New-Object System.Windows.Forms.Panel
+    $barTrack.BackColor = [System.Drawing.Color]::FromArgb(20,0,0)
+    $barTrack.Size      = New-Object System.Drawing.Size(360, 3)
+    $barTrack.Location  = New-Object System.Drawing.Point(318, 16)
+    $row.Controls.Add($barTrack)
+
+    $barFill = New-Object System.Windows.Forms.Panel
+    $barFill.BackColor = $cRed
+    $barFill.Size      = New-Object System.Drawing.Size(0, 3)
+    $barFill.Location  = New-Object System.Drawing.Point(0, 0)
+    $barTrack.Controls.Add($barFill)
+
+    # status label
+    $st = New-Object System.Windows.Forms.Label
+    $st.Text      = "PENDING"
+    $st.Font      = $fMono9
+    $st.ForeColor = $cRedDark
+    $st.Width     = 90
+    $st.Height    = 34
+    $st.Location  = New-Object System.Drawing.Point(686, 0)
+    $st.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
+    $row.Controls.Add($st)
+
+    # separator line
+    $sep = New-Object System.Windows.Forms.Panel
+    $sep.BackColor = [System.Drawing.Color]::FromArgb(18,0,0)
+    $sep.Dock      = [System.Windows.Forms.DockStyle]::Bottom
+    $sep.Height    = 1
+    $row.Controls.Add($sep)
+
+    $taskPanel.Controls.Add($row)
+    $script:TaskRows[$key] = @{ Row=$row; Icon=$icn; Name=$nm; Bar=$barFill; BarTrack=$barTrack; Status=$st }
+}
+
+# ── BLINK TIMER for running state ─────────────────────────────────────────
+$script:BlinkState  = $true
+$script:CurrentKey  = $null
+$blinkTimer = New-Object System.Windows.Forms.Timer
+$blinkTimer.Interval = 500
+$blinkTimer.Add_Tick({
+    if ($script:CurrentKey -and $script:TaskRows.ContainsKey($script:CurrentKey)) {
+        $st = $script:TaskRows[$script:CurrentKey].Status
+        $st.ForeColor = if ($script:BlinkState) { $cRed } else { $cRedDark }
+        $script:BlinkState = -not $script:BlinkState
+    }
+})
+
+# ── UPDATE TASK HELPER ─────────────────────────────────────────────────────
+function Set-TaskState ($key, $state) {
+    if (-not $script:TaskRows.ContainsKey($key)) { return }
+    $r = $script:TaskRows[$key]
+    switch ($state) {
+        "running" {
+            $r.Icon.ForeColor   = $cRed
+            $r.Icon.Text        = ">>"
+            $r.Name.ForeColor   = $cWhite
+            $r.Status.Text      = "RUNNING..."
+            $r.Status.ForeColor = $cRed
+            $r.Bar.Width        = 120
+            $r.Row.BackColor    = [System.Drawing.Color]::FromArgb(14,0,0)
+            $script:CurrentKey  = $key
+            $blinkTimer.Start()
+        }
+        "done" {
+            $r.Icon.ForeColor   = $cGreen
+            $r.Icon.Text        = "OK"
+            $r.Name.ForeColor   = $cGray
+            $r.Status.Text      = "DONE"
+            $r.Status.ForeColor = $cGreen
+            $r.Bar.Width        = $r.BarTrack.Width
+            $r.Bar.BackColor    = $cGreen
+            $r.Row.BackColor    = $cBlack
+            $script:CurrentKey  = $null
+        }
+    }
+}
+
+# ── RUN BUTTON ─────────────────────────────────────────────────────────────
+$btnRun.Add_Click({
+    $btnRun.Enabled   = $false
+    $btnRun.Text      = "RUNNING..."
+    $btnRun.BackColor = $cRedDim
+
+    $taskKeys  = @($script:Tasks.Keys)
+    $totalTask = $taskKeys.Count
+
+    $bg = New-Object System.ComponentModel.BackgroundWorker
+    $bg.WorkerReportsProgress = $true
+
+    $bg.Add_DoWork({
+        param($sender, $e)
+        $keys = @($script:Tasks.Keys)
+        $done = 0
+        foreach ($key in $keys) {
+            $sender.ReportProgress($done, @{ key=$key; state='running' })
+            Start-Sleep -Milliseconds 80
+            try { & $script:FnMap[$key] } catch {}
+            $done++
+            $sender.ReportProgress($done, @{ key=$key; state='done' })
+            Start-Sleep -Milliseconds 60
+        }
+        $sender.ReportProgress($keys.Count, "ALLDONE")
     })
 
-    $wv.add_WebMessageReceived({
-        param($s, $e)
-        $msg = $e.TryGetWebMessageAsString()
-        if ($msg -eq 'close') { $form.Close() }
-        elseif ($msg -eq 'restart') { Restart-Computer -Force }
-        elseif ($msg -eq 'start') {
-            $bg = [System.ComponentModel.BackgroundWorker]::new()
-            $bg.WorkerReportsProgress = $true
-            $bg.add_DoWork({
-                $done = 0
-                foreach ($key in $script:Tasks.Keys) {
-                    $bg.ReportProgress(0, @{ key=$key; state='running'; done=$done })
-                    try { & $script:Tasks[$key].Fn } catch {}
-                    $done++
-                    $bg.ReportProgress(0, @{ key=$key; state='done'; done=$done })
-                }
-                $bg.ReportProgress(100, $null)
-            })
-            $bg.add_ProgressChanged({
-                param($s2, $e2)
-                if ($e2.ProgressPercentage -eq 100) {
-                    $wv.CoreWebView2.ExecuteScriptAsync("window.showDone()") | Out-Null
-                } else {
-                    $d = $e2.UserState
-                    $wv.CoreWebView2.ExecuteScriptAsync("window.updateTask('$($d.key)','$($d.state)')") | Out-Null
-                    $wv.CoreWebView2.ExecuteScriptAsync("window.updateProgress($($d.done))") | Out-Null
-                }
-            })
-            $bg.RunWorkerAsync()
+    $bg.Add_ProgressChanged({
+        param($sender, $e)
+        $data = $e.UserState
+        if ($data -eq "ALLDONE") {
+            $blinkTimer.Stop()
+            $overallFill.Width = $overallBar.Width
+            $lblPct.Text       = "100%"
+            $lblPct.ForeColor  = $cGreen
+            $btnRestart.Visible = $true
+            $btnRun.Text      = "COMPLETED"
+            $btnRun.BackColor = $cGreen
+            $btnRun.ForeColor = $cBlack
+        } else {
+            Set-TaskState $data.key $data.state
+            if ($data.state -eq 'done') {
+                $pct = [math]::Round($e.ProgressPercentage / $totalTask * 100)
+                $overallFill.Width = [math]::Round($overallBar.Width * $pct / 100)
+                $lblPct.Text = "$pct%"
+            }
         }
     })
 
-    $wv.EnsureCoreWebView2Async($null) | Out-Null
+    $bg.RunWorkerAsync()
+})
 
-} else {
-    # ── FALLBACK: WinForms UI (ถ้าไม่มี WebView2) ─────────────────────────
-    $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::Sizable
-
-    $panel = New-Object System.Windows.Forms.Panel
-    $panel.Dock = [System.Windows.Forms.DockStyle]::Fill
-    $panel.BackColor = [System.Drawing.Color]::Black
-    $form.Controls.Add($panel)
-
-    $lbl = New-Object System.Windows.Forms.Label
-    $lbl.Text = "G O A T"
-    $lbl.Font = New-Object System.Drawing.Font("Consolas", 28, [System.Drawing.FontStyle]::Bold)
-    $lbl.ForeColor = [System.Drawing.Color]::Firebrick
-    $lbl.AutoSize = $true
-    $lbl.Location = New-Object System.Drawing.Point(30, 20)
-    $panel.Controls.Add($lbl)
-
-    $sub = New-Object System.Windows.Forms.Label
-    $sub.Text = "GREATEST OF ALL TWEAKS // GUI EDITION"
-    $sub.Font = New-Object System.Drawing.Font("Consolas", 9)
-    $sub.ForeColor = [System.Drawing.Color]::DarkRed
-    $sub.AutoSize = $true
-    $sub.Location = New-Object System.Drawing.Point(32, 68)
-    $panel.Controls.Add($sub)
-
-    $sep = New-Object System.Windows.Forms.Panel
-    $sep.BackColor = [System.Drawing.Color]::Firebrick
-    $sep.Size = New-Object System.Drawing.Size(800, 2)
-    $sep.Location = New-Object System.Drawing.Point(30, 90)
-    $panel.Controls.Add($sep)
-
-    $statusBox = New-Object System.Windows.Forms.RichTextBox
-    $statusBox.Size = New-Object System.Drawing.Size(790, 440)
-    $statusBox.Location = New-Object System.Drawing.Point(30, 100)
-    $statusBox.BackColor = [System.Drawing.Color]::Black
-    $statusBox.ForeColor = [System.Drawing.Color]::Firebrick
-    $statusBox.Font = New-Object System.Drawing.Font("Consolas", 10)
-    $statusBox.ReadOnly = $true
-    $statusBox.BorderStyle = [System.Windows.Forms.BorderStyle]::None
-    $panel.Controls.Add($statusBox)
-
-    $btnRun = New-Object System.Windows.Forms.Button
-    $btnRun.Text = "RUN GOAT"
-    $btnRun.Size = New-Object System.Drawing.Size(140, 36)
-    $btnRun.Location = New-Object System.Drawing.Point(680, 560)
-    $btnRun.BackColor = [System.Drawing.Color]::Firebrick
-    $btnRun.ForeColor = [System.Drawing.Color]::Black
-    $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
-    $btnRun.Font = New-Object System.Drawing.Font("Consolas", 10, [System.Drawing.FontStyle]::Bold)
-    $panel.Controls.Add($btnRun)
-
-    $progress = New-Object System.Windows.Forms.ProgressBar
-    $progress.Size = New-Object System.Drawing.Size(600, 8)
-    $progress.Location = New-Object System.Drawing.Point(30, 572)
-    $progress.Style = [System.Windows.Forms.ProgressBarStyle]::Continuous
-    $progress.ForeColor = [System.Drawing.Color]::Firebrick
-    $panel.Controls.Add($progress)
-
-    $btnRun.Add_Click({
-        $btnRun.Enabled = $false
-        $statusBox.Clear()
-        $bg = [System.ComponentModel.BackgroundWorker]::new()
-        $bg.WorkerReportsProgress = $true
-        $done = 0
-        $bg.add_DoWork({
-            foreach ($key in $script:Tasks.Keys) {
-                $label = $script:Tasks[$key].Label
-                $bg.ReportProgress([int]($done/$script:Tasks.Count*100), ">> $label...")
-                try { & $script:Tasks[$key].Fn } catch {}
-                $done++
-                $bg.ReportProgress([int]($done/$script:Tasks.Count*100), "OK $label")
-            }
-            $bg.ReportProgress(100, "DONE")
-        })
-        $bg.add_ProgressChanged({
-            param($s2,$e2)
-            $progress.Value = [math]::Min($e2.ProgressPercentage, 100)
-            if ($e2.UserState -eq "DONE") {
-                $statusBox.AppendText("`r`n== ALL TWEAKS COMPLETED ==`r`n")
-            } else {
-                $statusBox.AppendText($e2.UserState + "`r`n")
-                $statusBox.ScrollToCaret()
-            }
-        })
-        $bg.RunWorkerAsync()
-    })
-}
+$blinkTimer.Start()
+$blinkTimer.Stop()
 
 [System.Windows.Forms.Application]::Run($form)
