@@ -400,7 +400,7 @@ $sectionBar.Add_Paint({
 # ── FOOTER ─────────────────────────────────────────────────────────────────
 $footer = New-Object System.Windows.Forms.Panel
 $footer.Dock      = [System.Windows.Forms.DockStyle]::Bottom
-$footer.Height    = 68
+$footer.Height    = 90
 $footer.BackColor = $cSurface
 
 $footer.Add_Paint({
@@ -411,15 +411,15 @@ $footer.Add_Paint({
 })
 
 $overallTrack = New-Object System.Windows.Forms.Panel
-$overallTrack.Location  = New-Object System.Drawing.Point(24, 14)
-$overallTrack.Size      = New-Object System.Drawing.Size(440, 6)
-$overallTrack.BackColor = $cBorderDim
+$overallTrack.Location  = New-Object System.Drawing.Point(24, 16)
+$overallTrack.Size      = New-Object System.Drawing.Size(520, 12)
+$overallTrack.BackColor = [System.Drawing.Color]::FromArgb(35,35,35)
 $footer.Controls.Add($overallTrack)
 
 $overallFill = New-Object System.Windows.Forms.Panel
 $overallFill.Location  = New-Object System.Drawing.Point(0, 0)
 $overallFill.Size      = New-Object System.Drawing.Size(0, 6)
-$overallFill.BackColor = $cWhite
+$overallFill.BackColor = [System.Drawing.Color]::FromArgb(70,140,255)
 $overallTrack.Controls.Add($overallFill)
 
 $lblPct = New-Object System.Windows.Forms.Label
@@ -427,7 +427,7 @@ $lblPct.Text      = "progress  0%"
 $lblPct.Font      = $fMono8
 $lblPct.ForeColor = $cWhite
 $lblPct.AutoSize  = $true
-$lblPct.Location  = New-Object System.Drawing.Point(24, 34)
+$lblPct.Location  = New-Object System.Drawing.Point(24, 42)
 $footer.Controls.Add($lblPct)
 
 $btnRestart = New-Object System.Windows.Forms.Button
@@ -438,8 +438,8 @@ $btnRestart.BackColor = $cSurface2
 $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cBorder
 $btnRestart.FlatAppearance.BorderSize  = 1
-$btnRestart.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRestart.Location  = New-Object System.Drawing.Point(570, 17)
+$btnRestart.Size      = New-Object System.Drawing.Size(170, 46)
+$btnRestart.Location  = New-Object System.Drawing.Point(400, 18)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({ Restart-Computer -Force })
 $footer.Controls.Add($btnRestart)
@@ -451,8 +451,8 @@ $btnRun.ForeColor = $cBg
 $btnRun.BackColor = $cWhite
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize  = 0
-$btnRun.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRun.Location  = New-Object System.Drawing.Point(692, 17)
+$btnRun.Size      = New-Object System.Drawing.Size(170, 46)
+$btnRun.Location  = New-Object System.Drawing.Point(600, 18)
 $footer.Controls.Add($btnRun)
 
 # ── TASK SCROLL PANEL ──────────────────────────────────────────────────────
@@ -710,9 +710,9 @@ $runTimer.Add_Tick({
         $lblPct.Text          = "progress  100%"
         $lblPct.ForeColor     = $cWhite
         $btnRestart.Visible   = $true
-        $btnRun.Text          = "COMPLETED"
-        $btnRun.BackColor     = $cSurface2
-        $btnRun.ForeColor     = $cGray
+        $btnRun.Text          = "✓ COMPLETED"
+        $btnRun.BackColor     = [System.Drawing.Color]::FromArgb(20,50,20)
+        $btnRun.ForeColor     = [System.Drawing.Color]::FromArgb(120,255,120)
         $btnRun.FlatAppearance.BorderColor = $cBorder
         $btnRun.FlatAppearance.BorderSize  = 1
         return
