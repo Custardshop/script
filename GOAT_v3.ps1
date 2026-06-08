@@ -222,7 +222,7 @@ function Invoke-Cleanup {
 [int]$rowH       = 40
 [int]$taskCount  = 13
 [int]$listHeight = ($taskCount * $rowH) + 20   # 540
-[int]$formHeight = 36 + 155 + 28 + $listHeight + 86 + 14  # footer expanded for organized progress/actions
+[int]$formHeight = 36 + 155 + 28 + $listHeight + 86 + 14  # ~861
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS v3.0"
@@ -410,12 +410,10 @@ $footer.Add_Paint({
     $pen.Dispose()
 })
 
-# Footer layout:
-#   left  = loading/progress area
-#   right = final action controls: COMPLETE badge, RESTART PC, RUN GOAT
+# Progress Area (Left)
 $overallTrack = New-Object System.Windows.Forms.Panel
 $overallTrack.Location  = New-Object System.Drawing.Point(24, 18)
-$overallTrack.Size      = New-Object System.Drawing.Size(420, 8)
+$overallTrack.Size      = New-Object System.Drawing.Size(520, 8)
 $overallTrack.BackColor = $cBorderDim
 $footer.Controls.Add($overallTrack)
 
@@ -430,35 +428,24 @@ $lblPct.Text      = "PROGRESS  0%  ·  READY"
 $lblPct.Font      = $fMono8
 $lblPct.ForeColor = $cWhiteDim
 $lblPct.AutoSize  = $false
-$lblPct.Size      = New-Object System.Drawing.Size(420, 18)
+$lblPct.Size      = New-Object System.Drawing.Size(520, 18)
 $lblPct.Location  = New-Object System.Drawing.Point(24, 36)
 $lblPct.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 $lblPct.BackColor = [System.Drawing.Color]::Transparent
 $footer.Controls.Add($lblPct)
 
 $lblFooterHint = New-Object System.Windows.Forms.Label
-$lblFooterHint.Text      = "Run GOAT to apply selected performance tweaks. Restart after completion is recommended."
+$lblFooterHint.Text      = "Run GOAT to apply performance tweaks. Restart is recommended after completion."
 $lblFooterHint.Font      = $fMono8
 $lblFooterHint.ForeColor = $cGrayDim
 $lblFooterHint.AutoSize  = $false
-$lblFooterHint.Size      = New-Object System.Drawing.Size(420, 18)
+$lblFooterHint.Size      = New-Object System.Drawing.Size(520, 18)
 $lblFooterHint.Location  = New-Object System.Drawing.Point(24, 56)
 $lblFooterHint.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 $lblFooterHint.BackColor = [System.Drawing.Color]::Transparent
 $footer.Controls.Add($lblFooterHint)
 
-$lblComplete = New-Object System.Windows.Forms.Label
-$lblComplete.Text      = "COMPLETE"
-$lblComplete.Font      = $fMonoBold
-$lblComplete.ForeColor = $cWhite
-$lblComplete.AutoSize  = $false
-$lblComplete.Size      = New-Object System.Drawing.Size(96, 34)
-$lblComplete.Location  = New-Object System.Drawing.Point(456, 26)
-$lblComplete.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$lblComplete.BackColor = $cSurface2
-$lblComplete.Visible   = $false
-$footer.Controls.Add($lblComplete)
-
+# Action Buttons (Right)
 $btnRestart = New-Object System.Windows.Forms.Button
 $btnRestart.Text      = "RESTART PC"
 $btnRestart.Font      = $fMono9
@@ -468,18 +455,11 @@ $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cBorder
 $btnRestart.FlatAppearance.BorderSize  = 1
 $btnRestart.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRestart.Location  = New-Object System.Drawing.Point(570, 26)
+$btnRestart.Location  = New-Object System.Drawing.Point(564, 26)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({
-    $answer = [System.Windows.Forms.MessageBox]::Show(
-        "Restart this PC now?",
-        "GOAT complete",
-        [System.Windows.Forms.MessageBoxButtons]::YesNo,
-        [System.Windows.Forms.MessageBoxIcon]::Question
-    )
-    if ($answer -eq [System.Windows.Forms.DialogResult]::Yes) {
-        Restart-Computer -Force
-    }
+    $answer = [System.Windows.Forms.MessageBox]::Show("Restart this PC now?", "GOAT Complete", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
+    if ($answer -eq [System.Windows.Forms.DialogResult]::Yes) { Restart-Computer -Force }
 })
 $footer.Controls.Add($btnRestart)
 
@@ -491,17 +471,8 @@ $btnRun.BackColor = $cWhite
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize  = 0
 $btnRun.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRun.Location  = New-Object System.Drawing.Point(692, 26)
+$btnRun.Location  = New-Object System.Drawing.Point(686, 26)
 $footer.Controls.Add($btnRun)
-
-$footer.Add_Paint({
-    param($s,$e)
-    if ($lblComplete.Visible) {
-        $pen = New-Object System.Drawing.Pen($cBorder, 1)
-        $e.Graphics.DrawRectangle($pen, $lblComplete.Left, $lblComplete.Top, $lblComplete.Width - 1, $lblComplete.Height - 1)
-        $pen.Dispose()
-    }
-})
 
 # ── TASK SCROLL PANEL ──────────────────────────────────────────────────────
 $scrollPanel = New-Object System.Windows.Forms.Panel
@@ -793,10 +764,8 @@ $runTimer.Add_Tick({
         Set-OverallProgress $script:TotalTasks $script:TotalTasks "COMPLETE"
         $lblPct.ForeColor    = $cWhite
         $lblFooterHint.Text  = "Optimization complete. Restart your PC to apply all system-level changes."
-        $lblComplete.Visible = $true
         $btnRestart.Visible  = $true
         Set-RunButtonStyle "complete"
-        $footer.Invalidate()
         return
     }
 
@@ -840,12 +809,10 @@ $btnRun.Add_Click({
     $script:DoneCount   = 0
     $script:TaskKeyList = @($script:Tasks.Keys)
     $script:TotalTasks  = $script:TaskKeyList.Count
-    $lblComplete.Visible = $false
     $btnRestart.Visible  = $false
     $lblFooterHint.Text  = "GOAT is running. Please wait until every module is complete."
     Set-OverallProgress 0 $script:TotalTasks "RUNNING"
     Set-RunButtonStyle "running"
-    $footer.Invalidate()
     $runTimer.Start()
 })
 
