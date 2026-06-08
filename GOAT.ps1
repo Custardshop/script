@@ -348,49 +348,31 @@ $heroPanel.Add_Paint({
     $g.SmoothingMode      = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $g.TextRenderingHint  = [System.Drawing.Text.TextRenderingHint]::AntiAlias
 
-    # overlay มืดทึบสไตล์ blood
-    $overlay = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(200,5,0,0))
+    # overlay มืดสไตล์ outline
+    $overlay = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(210,5,0,0))
     $g.FillRectangle($overlay, 0, 0, $s.Width, $s.Height)
     $overlay.Dispose()
 
-    # เส้นขีดบนล่าง (สไตล์ blood frame)
-    $borderPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(180,120,0,0), 2)
-    $g.DrawLine($borderPen, 0, 1, $s.Width, 1)
-    $g.DrawLine($borderPen, 0, $s.Height-2, $s.Width, $s.Height-2)
-    $borderPen.Dispose()
-
-    # blood drip shapes (จุดหยดเลือดบนขอบบน)
-    $dripBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(160,140,0,0))
-    foreach ($dx in @(80, 160, 270, 380, 460, 560, 650, 750, 840)) {
-        $dripH = Get-Random -Minimum 8 -Maximum 24
-        $g.FillEllipse($dripBrush, $dx, 2, 7, $dripH)
-    }
-    $dripBrush.Dispose()
-
-    # ── โลโก้หลัก ──
-    $logoFont = New-Object System.Drawing.Font("Consolas", 72, [System.Drawing.FontStyle]::Bold)
+    # ── โลโก้หลัก สไตล์ ① Outline ──
+    $logoFont = New-Object System.Drawing.Font("Arial Black", 72, [System.Drawing.FontStyle]::Bold)
     $logoText = "G O A T"
     $sz  = $g.MeasureString($logoText, $logoFont)
     $lx  = ($s.Width  - $sz.Width)  / 2
-    $ly  = ($s.Height - $sz.Height) / 2 - 14
+    $ly  = ($s.Height - $sz.Height) / 2 - 10
 
-    # เงาใต้ตัวอักษร (ให้ดูหนักและดุดัน)
-    $shadowBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(180,60,0,0))
-    $g.DrawString($logoText, $logoFont, $shadowBrush, ($lx+4), ($ly+6))
-    $shadowBrush.Dispose()
+    # outline stroke (วาดทับหลายรอบเพื่อให้ขอบหนา)
+    $outlinePen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(255,180,0,0), 2)
+    $gp = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $gp.AddString($logoText, $logoFont.FontFamily, [int][System.Drawing.FontStyle]::Bold, $g.DpiY * 72 / 72, [System.Drawing.PointF]::new($lx, $ly), [System.Drawing.StringFormat]::GenericDefault)
+    $g.DrawPath($outlinePen, $gp)
+    $outlinePen.Dispose(); $gp.Dispose(); $logoFont.Dispose()
 
-    # ตัวหลัก dark red
-    $mainBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255,180,0,0))
-    $g.DrawString($logoText, $logoFont, $mainBrush, $lx, $ly)
-    $mainBrush.Dispose()
-    $logoFont.Dispose()
-
-    # sub text
-    $sf   = New-Object System.Drawing.Font("Consolas", 9)
+    # sub text — ชัด สีขาวอมแดง
+    $sf   = New-Object System.Drawing.Font("Consolas", 10, [System.Drawing.FontStyle]::Regular)
     $st   = "· G R E A T E S T   O F   A L L   T W E A K S ·"
     $sz2  = $g.MeasureString($st, $sf)
-    $subBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(160,160,30,30))
-    $g.DrawString($st, $sf, $subBrush, ($s.Width-$sz2.Width)/2, $ly+$sz.Height-12)
+    $subBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(220,200,60,60))
+    $g.DrawString($st, $sf, $subBrush, ($s.Width-$sz2.Width)/2, $ly+$sz.Height-8)
     $subBrush.Dispose(); $sf.Dispose()
 })
 
