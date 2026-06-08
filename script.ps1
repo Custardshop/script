@@ -30,27 +30,27 @@ function Make-Bar {
     param([int]$Pct, [int]$Width = 32)
     $filled = [math]::Round($Pct / 100 * $Width)
     $empty  = $Width - $filled
-    return ('█' * $filled) + ('░' * $empty)
+    return ('â–ˆ' * $filled) + ('â–‘' * $empty)
 }
 
-$border = '║'
-$line   = '═' * 86
+$border = 'â•‘'
+$line   = 'â•' * 86
 
 # --- [ BANNER ] ---
 Write-Host ""
-Write-Host "  ╔$line╗" -ForegroundColor DarkCyan
+Write-Host "  â•”$lineâ•—" -ForegroundColor DarkCyan
 Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
 Write-Host (' ' * 86) -NoNewline
 Write-Host "$border" -ForegroundColor DarkCyan
 
-# GOAT ASCII — ไล่สี 3 ระดับ
+# GOAT ASCII â€” à¹„à¸¥à¹ˆà¸ªà¸µ 3 à¸£à¸°à¸”à¸±à¸š
 $logo = @(
-    '    ██████╗  ██████╗  █████╗ ████████╗                                              ',
-    '   ██╔════╝ ██╔═══██╗██╔══██╗╚══██╔══╝                                              ',
-    '   ██║  ███╗██║   ██║███████║   ██║                                                  ',
-    '   ██║   ██║██║   ██║██╔══██║   ██║                                                  ',
-    '   ╚██████╔╝╚██████╔╝██║  ██║   ██║                                                  ',
-    '    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝                                                  '
+    '    â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—                                              ',
+    '   â–ˆâ–ˆâ•”â•â•â•â•â• â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â•šâ•â•â–ˆâ–ˆâ•”â•â•â•                                              ',
+    '   â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘                                                  ',
+    '   â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘                                                  ',
+    '   â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘                                                  ',
+    '    â•šâ•â•â•â•â•â•  â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â•   â•šâ•â•                                                  '
 )
 $colors = @('Cyan','Cyan','DarkCyan','DarkCyan','DarkCyan','DarkCyan')
 for ($i = 0; $i -lt $logo.Count; $i++) {
@@ -64,7 +64,7 @@ Write-Host (' ' * 86) -NoNewline
 Write-Host "$border" -ForegroundColor DarkCyan
 
 Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
-$tagline = '─────  G R E A T E S T   O F   A L L   T W E A K S  ─────'
+$tagline = 'â”€â”€â”€â”€â”€  G R E A T E S T   O F   A L L   T W E A K S  â”€â”€â”€â”€â”€'
 $pad = [math]::Floor((86 - $tagline.Length) / 2)
 Write-Host (' ' * $pad) -NoNewline
 Write-Host $tagline -NoNewline -ForegroundColor Yellow
@@ -76,7 +76,7 @@ Write-Host (' ' * 86) -NoNewline
 Write-Host "$border" -ForegroundColor DarkCyan
 
 # --- [ SYSTEM INFO SECTION ] ---
-Write-Host "  ╠$line╣" -ForegroundColor DarkCyan
+Write-Host "  â• $lineâ•£" -ForegroundColor DarkCyan
 
 # CPU
 $cpuBar = Make-Bar -Pct $CPULoad
@@ -104,18 +104,18 @@ Write-Host (' ' * 86) -NoNewline
 Write-Host "$border" -ForegroundColor DarkCyan
 
 # --- [ MODULE BAR ] ---
-Write-Host "  ╠$line╣" -ForegroundColor DarkCyan
+Write-Host "  â• $lineâ•£" -ForegroundColor DarkCyan
 Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
 Write-Host '   [ KERNEL ]      [ MEMORY ]      [ INPUT ]      [ NETWORK ]      [ CLEANER ]   ' -NoNewline -ForegroundColor Green
 Write-Host "$border" -ForegroundColor DarkCyan
-Write-Host "  ╠$line╣" -ForegroundColor DarkCyan
+Write-Host "  â• $lineâ•£" -ForegroundColor DarkCyan
 
 # --- [ LOADING BAR ] ---
 Write-Host "  $border" -NoNewline -ForegroundColor DarkCyan
 Write-Host -NoNewline '   Initializing GOAT  [' -ForegroundColor Yellow
 $totalBlocks = 40
 for ($b = 0; $b -lt $totalBlocks; $b++) {
-    Write-Host -NoNewline '█' -ForegroundColor Cyan
+    Write-Host -NoNewline 'â–ˆ' -ForegroundColor Cyan
     Start-Sleep -Milliseconds 30
 }
 Write-Host -NoNewline '] 100%' -ForegroundColor Green
@@ -127,22 +127,22 @@ Write-Host '   [OK] ALL MODULES READY' -NoNewline -ForegroundColor Green
 Write-Host (' ' * 61) -NoNewline
 Write-Host "$border" -ForegroundColor DarkCyan
 
-Write-Host "  ╚$line╝" -ForegroundColor DarkCyan
-Write-Host "  · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·" -ForegroundColor DarkCyan
+Write-Host "  â•š$lineâ•" -ForegroundColor DarkCyan
+Write-Host "  Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â· Â·" -ForegroundColor DarkCyan
 Write-Host ""
 
-# --- [ PROMPT: ต้องการปรับแต่งหรือไม่ ] ---
-Write-Host "  ┌─────────────────────────────────────────────┐" -ForegroundColor DarkCyan
-Write-Host "  │                                             │" -ForegroundColor DarkCyan
-Write-Host "  │    Ready to run GOAT?                      │" -ForegroundColor Yellow
-Write-Host "  │                                             │" -ForegroundColor DarkCyan
-Write-Host "  │     [Y]  YES — Begin Optimization          │" -ForegroundColor Green
-Write-Host "  │     [N]  NO  — Exit                        │" -ForegroundColor DarkGray
-Write-Host "  │                                             │" -ForegroundColor DarkCyan
-Write-Host "  └─────────────────────────────────────────────┘" -ForegroundColor DarkCyan
+# --- [ PROMPT: à¸•à¹‰à¸­à¸‡à¸à¸²à¸£à¸›à¸£à¸±à¸šà¹à¸•à¹ˆà¸‡à¸«à¸£à¸·à¸­à¹„à¸¡à¹ˆ ] ---
+Write-Host "  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”" -ForegroundColor DarkCyan
+Write-Host "  â”‚                                             â”‚" -ForegroundColor DarkCyan
+Write-Host "  â”‚    Ready to run GOAT?                      â”‚" -ForegroundColor Yellow
+Write-Host "  â”‚                                             â”‚" -ForegroundColor DarkCyan
+Write-Host "  â”‚     [Y]  YES â€” Begin Optimization          â”‚" -ForegroundColor Green
+Write-Host "  â”‚     [N]  NO  â€” Exit                        â”‚" -ForegroundColor DarkGray
+Write-Host "  â”‚                                             â”‚" -ForegroundColor DarkCyan
+Write-Host "  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜" -ForegroundColor DarkCyan
 Write-Host ""
 
-# วนรับ input จนกว่าจะถูกต้อง
+# à¸§à¸™à¸£à¸±à¸š input à¸ˆà¸™à¸à¸§à¹ˆà¸²à¸ˆà¸°à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡
 do {
     Write-Host "  >> Your choice [Y/N]: " -NoNewline -ForegroundColor Yellow
     $choice = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown").Character
@@ -151,16 +151,16 @@ do {
 
 if ($choice -match '[Nn]') {
     Write-Host ""
-    Write-Host "  [!] Aborted — Exiting GOAT." -ForegroundColor DarkGray
+    Write-Host "  [!] Aborted â€” Exiting GOAT." -ForegroundColor DarkGray
     Write-Host ""
     Exit
 }
 
 Write-Host ""
-Write-Host "  [>>] GOAT is on the run — Starting optimization..." -ForegroundColor Green
+Write-Host "  [>>] GOAT is on the run â€” Starting optimization..." -ForegroundColor Green
 Write-Host ""
 
-# ตั้งค่าตำแหน่งทำงาน
+# à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸²à¸•à¸³à¹à¸«à¸™à¹ˆà¸‡à¸—à¸³à¸‡à¸²à¸™
 $WorkingDir = "$env:TEMP\CustardUltimate"
 if (-not (Test-Path $WorkingDir)) { New-Item -ItemType Directory -Path $WorkingDir -Force | Out-Null }
 Set-Location $WorkingDir
@@ -211,7 +211,7 @@ function Optimize-Nagle {
         Set-ItemProperty -Path $_.PSPath -Name "TCPNoDelay"      -Value 1 -Type DWord -Force 2>$null
         Set-ItemProperty -Path $_.PSPath -Name "TcpDelAckTicks"  -Value 0 -Type DWord -Force 2>$null
     }
-    Write-Host "    [VERIFIED] Nagle Disabled — TCP Latency Reduced." -ForegroundColor Green
+    Write-Host "    [VERIFIED] Nagle Disabled â€” TCP Latency Reduced." -ForegroundColor Green
 }
 
 function Optimize-VisualEffects {
@@ -257,7 +257,7 @@ function Optimize-Priority {
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $SystemProfilePath -Name "SystemResponsiveness"   -Value 0          -Type DWord -Force 2>$null
     Set-ItemProperty -Path $SystemProfilePath -Name "NetworkThrottlingIndex" -Value 0xFFFFFFFF -Type DWord -Force 2>$null
-    # Worker threads — server-style CPU scheduling
+    # Worker threads â€” server-style CPU scheduling
     $ExecPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Executive"
     Set-ItemProperty -Path $ExecPath -Name "AdditionalCriticalWorkerThreads" -Value 2 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $ExecPath -Name "AdditionalDelayedWorkerThreads"  -Value 2 -Type DWord -Force 2>$null
@@ -387,7 +387,7 @@ function Optimize-Network {
 function Clean-TrashAndLogs {
     Write-Host " -> Cleaning System Junk, Logs, Updates & EventLogs..." -ForegroundColor Yellow
     
-    # 1. ล้างไฟล์ขยะ (Temp, Prefetch)
+    # 1. à¸¥à¹‰à¸²à¸‡à¹„à¸Ÿà¸¥à¹Œà¸‚à¸¢à¸° (Temp, Prefetch)
     $JunkPaths = @("$env:USERPROFILE\AppData\Local\Temp\*", "C:\Windows\Temp\*", "C:\Windows\Prefetch\*")
     foreach ($Path in $JunkPaths) {
         Get-ChildItem -Path $Path -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
@@ -396,13 +396,13 @@ function Clean-TrashAndLogs {
         }
     }
 
-    # 2. ล้าง Windows Update (SoftwareDistribution)
+    # 2. à¸¥à¹‰à¸²à¸‡ Windows Update (SoftwareDistribution)
     Write-Host "    [CLEANING] Windows Update Cache..." -ForegroundColor Gray
     Stop-Service -Name wuauserv, UsoSvc -Force -ErrorAction SilentlyContinue
     Remove-Item -Path "C:\Windows\SoftwareDistribution\*" -Recurse -Force -ErrorAction SilentlyContinue
     Start-Service -Name wuauserv
 
-    # 3. ล้าง Event Logs
+    # 3. à¸¥à¹‰à¸²à¸‡ Event Logs
     Write-Host "    [CLEANING] Windows Event Logs..." -ForegroundColor Gray
     wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" }
     
@@ -439,20 +439,20 @@ function Optimize-Services {
 function Optimize-GroupPolicy {
     Write-Host " -> Applying Group Policy Tweaks (via Registry)..." -ForegroundColor Yellow
 
-    # 1. Disable Windows Update auto-download (ป้องกัน WU แย่งแบนด์วิธ/disk ระหว่างเล่นเกม)
+    # 1. Disable Windows Update auto-download (à¸›à¹‰à¸­à¸‡à¸à¸±à¸™ WU à¹à¸¢à¹ˆà¸‡à¹à¸šà¸™à¸”à¹Œà¸§à¸´à¸˜/disk à¸£à¸°à¸«à¸§à¹ˆà¸²à¸‡à¹€à¸¥à¹ˆà¸™à¹€à¸à¸¡)
     $WUPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
     if (-not (Test-Path $WUPath)) { New-Item -Path $WUPath -Force | Out-Null }
     Set-ItemProperty -Path $WUPath -Name "NoAutoUpdate"                -Value 1 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $WUPath -Name "AUOptions"                   -Value 1 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $WUPath -Name "NoAutoRebootWithLoggedOnUsers" -Value 1 -Type DWord -Force 2>$null
 
-    # 2. Disable Telemetry ระดับ policy
+    # 2. Disable Telemetry à¸£à¸°à¸”à¸±à¸š policy
     $TelPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
     if (-not (Test-Path $TelPath)) { New-Item -Path $TelPath -Force | Out-Null }
     Set-ItemProperty -Path $TelPath -Name "AllowTelemetry"              -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $TelPath -Name "DisableOneSettingsDownloads" -Value 1 -Type DWord -Force 2>$null
 
-    # 3. Reservable Bandwidth = 0 (คืน bandwidth 20% ที่ Windows กันไว้)
+    # 3. Reservable Bandwidth = 0 (à¸„à¸·à¸™ bandwidth 20% à¸—à¸µà¹ˆ Windows à¸à¸±à¸™à¹„à¸§à¹‰)
     $PschedPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched"
     if (-not (Test-Path $PschedPath)) { New-Item -Path $PschedPath -Force | Out-Null }
     Set-ItemProperty -Path $PschedPath -Name "NonBestEffortLimit" -Value 0 -Type DWord -Force 2>$null
@@ -462,14 +462,14 @@ function Optimize-GroupPolicy {
     if (-not (Test-Path $AppPrivPath)) { New-Item -Path $AppPrivPath -Force | Out-Null }
     Set-ItemProperty -Path $AppPrivPath -Name "LetAppsRunInBackground" -Value 2 -Type DWord -Force 2>$null
 
-    # 5. Disable SysMain / Superfetch ระดับ policy (SSD ไม่จำเป็น)
+    # 5. Disable SysMain / Superfetch à¸£à¸°à¸”à¸±à¸š policy (SSD à¹„à¸¡à¹ˆà¸ˆà¸³à¹€à¸›à¹‡à¸™)
     $SysMainPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\SysMain"
     if (-not (Test-Path $SysMainPath)) { New-Item -Path $SysMainPath -Force | Out-Null }
     Set-ItemProperty -Path $SysMainPath -Name "Enabled" -Value 0 -Type DWord -Force 2>$null
     Stop-Service -Name SysMain -Force -ErrorAction SilentlyContinue
     Set-Service  -Name SysMain -StartupType Disabled -ErrorAction SilentlyContinue
 
-    # 6. Disable Windows Error Reporting ระดับ policy
+    # 6. Disable Windows Error Reporting à¸£à¸°à¸”à¸±à¸š policy
     $WerPolPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting"
     if (-not (Test-Path $WerPolPath)) { New-Item -Path $WerPolPath -Force | Out-Null }
     Set-ItemProperty -Path $WerPolPath -Name "Disabled"              -Value 1 -Type DWord -Force 2>$null
@@ -490,11 +490,11 @@ function Optimize-DPC {
 
 function Optimize-CoreParking {
     Write-Host " -> Disabling CPU Core Parking..." -ForegroundColor Yellow
-    # ปิด Core Parking ผ่าน power plan active
+    # à¸›à¸´à¸” Core Parking à¸œà¹ˆà¸²à¸™ power plan active
     powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100 2>$null | Out-Null
     powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100 2>$null | Out-Null
     powercfg /setactive SCHEME_CURRENT 2>$null | Out-Null
-    # Registry fallback สำหรับทุก power scheme
+    # Registry fallback à¸ªà¸³à¸«à¸£à¸±à¸šà¸—à¸¸à¸ power scheme
     $schemes = powercfg /list 2>$null | Select-String -Pattern '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' |
         ForEach-Object { $_.Matches[0].Value }
     foreach ($guid in $schemes) {
@@ -507,11 +507,11 @@ function Optimize-GPU {
     Write-Host " -> Applying GPU Latency & Stability Tweaks..." -ForegroundColor Yellow
     $GraphicsPath = "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers"
     if (-not (Test-Path $GraphicsPath)) { New-Item -Path $GraphicsPath -Force | Out-Null }
-    # TDR tuning — ลด GPU driver crash ระหว่างโหลดหนัก
+    # TDR tuning â€” à¸¥à¸” GPU driver crash à¸£à¸°à¸«à¸§à¹ˆà¸²à¸‡à¹‚à¸«à¸¥à¸”à¸«à¸™à¸±à¸
     Set-ItemProperty -Path $GraphicsPath -Name "TdrDelay"        -Value 10 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $GraphicsPath -Name "TdrDdiDelay"     -Value 10 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $GraphicsPath -Name "TdrLimitCount"   -Value 60 -Type DWord -Force 2>$null
-    # Disable GPU Preemption (ลด context switch overhead)
+    # Disable GPU Preemption (à¸¥à¸” context switch overhead)
     $SchedulerPath = "$GraphicsPath\Scheduler"
     if (-not (Test-Path $SchedulerPath)) { New-Item -Path $SchedulerPath -Force | Out-Null }
     Set-ItemProperty -Path $SchedulerPath -Name "DisablePreemption" -Value 1 -Type DWord -Force 2>$null
@@ -521,9 +521,9 @@ function Optimize-GPU {
 function Optimize-MemoryAdvanced {
     Write-Host " -> Applying Advanced Memory Tweaks..." -ForegroundColor Yellow
     $MemPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
-    # บังคับ kernel/drivers อยู่ใน RAM ไม่ลง pagefile
+    # à¸šà¸±à¸‡à¸„à¸±à¸š kernel/drivers à¸­à¸¢à¸¹à¹ˆà¹ƒà¸™ RAM à¹„à¸¡à¹ˆà¸¥à¸‡ pagefile
     Set-ItemProperty -Path $MemPath -Name "DisablePagingExecutive" -Value 1 -Type DWord -Force 2>$null
-    # ตั้ง L2 Cache ตาม CPU (default 0 = auto แต่ explicit ดีกว่า)
+    # à¸•à¸±à¹‰à¸‡ L2 Cache à¸•à¸²à¸¡ CPU (default 0 = auto à¹à¸•à¹ˆ explicit à¸”à¸µà¸à¸§à¹ˆà¸²)
     $L2 = (Get-CimInstance Win32_Processor).L2CacheSize
     if ($L2 -gt 0) {
         Set-ItemProperty -Path $MemPath -Name "SecondLevelDataCache" -Value $L2 -Type DWord -Force 2>$null
@@ -536,7 +536,7 @@ function Optimize-ServicesExtra {
     $ExtraDisable = @(
         'lfsvc',          # Geolocation Service
         'TabletInputService', # Tablet / Touch keyboard
-        'PrintSpooler',   # Print Spooler (ปิดถ้าไม่มีปริ้นเตอร์)
+        'PrintSpooler',   # Print Spooler (à¸›à¸´à¸”à¸–à¹‰à¸²à¹„à¸¡à¹ˆà¸¡à¸µà¸›à¸£à¸´à¹‰à¸™à¹€à¸•à¸­à¸£à¹Œ)
         'Spooler',        # Print Spooler alias
         'WMPNetworkSvc',  # Windows Media Player sharing
         'icssvc',         # Mobile Hotspot
@@ -553,7 +553,7 @@ function Optimize-ServicesExtra {
 
 function Optimize-NetworkExtra {
     Write-Host " -> Applying Additional Network Tweaks..." -ForegroundColor Yellow
-    # ป้องกัน Windows Connect Now แย่งเน็ต
+    # à¸›à¹‰à¸­à¸‡à¸à¸±à¸™ Windows Connect Now à¹à¸¢à¹ˆà¸‡à¹€à¸™à¹‡à¸•
     $WcmPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WcmSvc\GroupPolicy"
     if (-not (Test-Path $WcmPath)) { New-Item -Path $WcmPath -Force | Out-Null }
     Set-ItemProperty -Path $WcmPath -Name "fMinimizeConnections"      -Value 1 -Type DWord -Force 2>$null
@@ -562,7 +562,7 @@ function Optimize-NetworkExtra {
     $NlaPath = "HKLM:\SYSTEM\CurrentControlSet\Services\NlaSvc\Parameters\Internet"
     if (-not (Test-Path $NlaPath)) { New-Item -Path $NlaPath -Force | Out-Null }
     Set-ItemProperty -Path $NlaPath -Name "EnableActiveProbing" -Value 0 -Type DWord -Force 2>$null
-    # Disable NCSI active probing (หยุด Windows ping microsoft.com ตลอดเวลา)
+    # Disable NCSI active probing (à¸«à¸¢à¸¸à¸” Windows ping microsoft.com à¸•à¸¥à¸­à¸”à¹€à¸§à¸¥à¸²)
     $NcsiPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\NetworkConnectivityStatusIndicator"
     if (-not (Test-Path $NcsiPath)) { New-Item -Path $NcsiPath -Force | Out-Null }
     Set-ItemProperty -Path $NcsiPath -Name "NoActiveProbe"       -Value 1 -Type DWord -Force 2>$null
@@ -595,7 +595,7 @@ $Tasks = @(
     { Clean-TrashAndLogs }
 )
 
-# ── WPF GUI ──────────────────────────────────────────────────────────────
+# â”€â”€ WPF GUI â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
@@ -604,7 +604,7 @@ Add-Type -AssemblyName WindowsBase
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="GOAT — GREATEST OF ALL TWEAKS  v2.0"
+    Title="GOAT â€” GREATEST OF ALL TWEAKS  v2.0"
     Width="800" Height="620"
     WindowStartupLocation="CenterScreen"
     ResizeMode="CanMinimize"
@@ -663,13 +663,13 @@ Add-Type -AssemblyName WindowsBase
     <!-- HEADER LOGO -->
     <Border Grid.Row="0" Background="#100000" BorderBrush="#5A0000" BorderThickness="1" CornerRadius="4" Padding="14,10" Margin="0,0,0,8">
       <StackPanel>
-        <TextBlock Text="  ██████╗  ██████╗  █████╗ ████████╗" FontFamily="Consolas" FontSize="11" Foreground="#CC0000"/>
-        <TextBlock Text=" ██╔════╝ ██╔═══██╗██╔══██╗╚══██╔══╝" FontFamily="Consolas" FontSize="11" Foreground="#CC0000"/>
-        <TextBlock Text=" ██║  ███╗██║   ██║███████║   ██║    " FontFamily="Consolas" FontSize="11" Foreground="#990000"/>
-        <TextBlock Text=" ██║   ██║██║   ██║██╔══██║   ██║    " FontFamily="Consolas" FontSize="11" Foreground="#990000"/>
-        <TextBlock Text=" ╚██████╔╝╚██████╔╝██║  ██║   ██║    " FontFamily="Consolas" FontSize="11" Foreground="#660000"/>
-        <TextBlock Text="  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝   ╚═╝    " FontFamily="Consolas" FontSize="11" Foreground="#660000"/>
-        <TextBlock Text="─── G R E A T E S T   O F   A L L   T W E A K S ───" FontFamily="Consolas" FontSize="11" Foreground="#FF2222" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+        <TextBlock Text="  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—  â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•— â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•—" FontFamily="Consolas" FontSize="11" Foreground="#CC0000"/>
+        <TextBlock Text=" â–ˆâ–ˆâ•”â•â•â•â•â• â–ˆâ–ˆâ•”â•â•â•â–ˆâ–ˆâ•—â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•—â•šâ•â•â–ˆâ–ˆâ•”â•â•â•" FontFamily="Consolas" FontSize="11" Foreground="#CC0000"/>
+        <TextBlock Text=" â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ–ˆâ•—â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘    " FontFamily="Consolas" FontSize="11" Foreground="#990000"/>
+        <TextBlock Text=" â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘â–ˆâ–ˆâ•”â•â•â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘    " FontFamily="Consolas" FontSize="11" Foreground="#990000"/>
+        <TextBlock Text=" â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â•šâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ•”â•â–ˆâ–ˆâ•‘  â–ˆâ–ˆâ•‘   â–ˆâ–ˆâ•‘    " FontFamily="Consolas" FontSize="11" Foreground="#660000"/>
+        <TextBlock Text="  â•šâ•â•â•â•â•â•  â•šâ•â•â•â•â•â• â•šâ•â•  â•šâ•â•   â•šâ•â•    " FontFamily="Consolas" FontSize="11" Foreground="#660000"/>
+        <TextBlock Text="â”€â”€â”€ G R E A T E S T   O F   A L L   T W E A K S â”€â”€â”€" FontFamily="Consolas" FontSize="11" Foreground="#FF2222" HorizontalAlignment="Center" Margin="0,6,0,0"/>
       </StackPanel>
     </Border>
 
@@ -704,7 +704,7 @@ Add-Type -AssemblyName WindowsBase
       <StackPanel>
         <Grid Margin="0,0,0,5">
           <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-          <TextBlock x:Name="lblTask" Text="WAITING — Press RUN GOAT to begin" FontFamily="Consolas" FontSize="11" Foreground="#FF4444"/>
+          <TextBlock x:Name="lblTask" Text="WAITING â€” Press RUN GOAT to begin" FontFamily="Consolas" FontSize="11" Foreground="#FF4444"/>
           <TextBlock x:Name="lblPct"  Text="0%" Grid.Column="1" FontFamily="Consolas" FontSize="11" Foreground="#CC0000" Margin="10,0,0,0"/>
         </Grid>
         <ProgressBar x:Name="pbMain" Height="10" Maximum="100"/>
@@ -727,16 +727,16 @@ Add-Type -AssemblyName WindowsBase
         <ColumnDefinition Width="10"/>
         <ColumnDefinition Width="*"/>
       </Grid.ColumnDefinitions>
-      <Button x:Name="btnRun"     Grid.Column="0" Content="▶  RUN GOAT"/>
-      <Button x:Name="btnRestart" Grid.Column="2" Content="↺  RESTART PC" IsEnabled="False"/>
-      <Button x:Name="btnExit"    Grid.Column="4" Content="✕  EXIT"/>
+      <Button x:Name="btnRun"     Grid.Column="0" Content="â–¶  RUN GOAT"/>
+      <Button x:Name="btnRestart" Grid.Column="2" Content="â†º  RESTART PC" IsEnabled="False"/>
+      <Button x:Name="btnExit"    Grid.Column="4" Content="âœ•  EXIT"/>
     </Grid>
 
     <!-- STATUS BAR -->
     <Border Grid.Row="5" Background="#0D0000" BorderBrush="#3A0000" BorderThickness="1" CornerRadius="3" Padding="10,5">
       <Grid>
         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-        <TextBlock x:Name="lblStatus" Text="● SYSTEM ONLINE" FontFamily="Consolas" FontSize="10" Foreground="#660000"/>
+        <TextBlock x:Name="lblStatus" Text="â— SYSTEM ONLINE" FontFamily="Consolas" FontSize="10" Foreground="#660000"/>
         <TextBlock x:Name="lblTime"   Text="GOAT v2.0.0" FontFamily="Consolas" FontSize="10" Foreground="#3A0000" Grid.Column="1"/>
       </Grid>
     </Border>
@@ -829,10 +829,10 @@ $uiTimer.Add_Tick({
 $btnRun.Add_Click({
     $btnRun.IsEnabled = $false
     $uiTimer.Start()
-    UI-Log '════════════════════════════════════════' '#2A0000'
+    UI-Log 'â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•' '#2A0000'
     UI-Log '  GOAT OPTIMIZATION SEQUENCE STARTED   ' '#FF2222'
-    UI-Log '════════════════════════════════════════' '#2A0000'
-    UI-Set 'INITIALIZING...' 0 '● RUNNING'
+    UI-Log 'â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•' '#2A0000'
+    UI-Set 'INITIALIZING...' 0 'â— RUNNING'
 
     $total   = $TaskList.Count
     $taskRef = $TaskList
@@ -845,7 +845,7 @@ $btnRun.Add_Click({
             $t   = $using:taskRef[$i]
             $pct = [math]::Round(($i / $using:total) * 100)
             UI-Set "[$($i+1)/$($using:total)]  $($t.Label)..." $pct
-            UI-Log "  → $($t.Label)..." '#FF3333'
+            UI-Log "  â†’ $($t.Label)..." '#FF3333'
             try {
                 & $t.Fn
                 UI-Log "     [OK] Done." '#660000'
@@ -857,11 +857,11 @@ $btnRun.Add_Click({
 
     $worker.Add_RunWorkerCompleted({
         $uiTimer.Stop()
-        UI-Set 'ALL MODULES COMPLETE' 100 '● DONE'
-        UI-Log '════════════════════════════════════════' '#2A0000'
-        UI-Log '  ✔ ALL TWEAKS APPLIED SUCCESSFULLY!   ' '#FF2222'
+        UI-Set 'ALL MODULES COMPLETE' 100 'â— DONE'
+        UI-Log 'â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•' '#2A0000'
+        UI-Log '  âœ” ALL TWEAKS APPLIED SUCCESSFULLY!   ' '#FF2222'
         UI-Log '  Restart PC to finalize all changes.  ' '#660000'
-        UI-Log '════════════════════════════════════════' '#2A0000'
+        UI-Log 'â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•' '#2A0000'
         $window.Dispatcher.Invoke([action]{ $btnRestart.IsEnabled = $true })
     })
 
@@ -870,7 +870,7 @@ $btnRun.Add_Click({
 
 # RESTART button
 $btnRestart.Add_Click({
-    $r = [System.Windows.MessageBox]::Show('Restart your PC now?','GOAT — Restart',[System.Windows.MessageBoxButton]::YesNo,[System.Windows.MessageBoxImage]::Warning)
+    $r = [System.Windows.MessageBox]::Show('Restart your PC now?','GOAT â€” Restart',[System.Windows.MessageBoxButton]::YesNo,[System.Windows.MessageBoxImage]::Warning)
     if ($r -eq 'Yes') { Restart-Computer -Force }
 })
 
