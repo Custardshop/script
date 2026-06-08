@@ -214,8 +214,8 @@ function Invoke-Cleanup {
 # ── FORM ───────────────────────────────────────────────────────────────────
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS v3.0"
-$form.Size            = New-Object System.Drawing.Size(780, 680)
-$form.MinimumSize     = New-Object System.Drawing.Size(780, 680)
+$form.Size            = New-Object System.Drawing.Size(820, 720)
+$form.MinimumSize     = New-Object System.Drawing.Size(820, 720)
 $form.StartPosition   = "CenterScreen"
 $form.BackColor       = $cBg
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -259,7 +259,7 @@ $lblAdminBadge.Font      = $fMono8
 $lblAdminBadge.ForeColor = $cGray
 $lblAdminBadge.AutoSize  = $false
 $lblAdminBadge.Size      = New-Object System.Drawing.Size(60, 18)
-$lblAdminBadge.Location  = New-Object System.Drawing.Point(700, 9)
+$lblAdminBadge.Location  = New-Object System.Drawing.Point(740, 9)
 $lblAdminBadge.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 $lblAdminBadge.BackColor = $cSurface2
 $topBar.Controls.Add($lblAdminBadge)
@@ -268,7 +268,7 @@ $topBar.Add_Paint({
     param($s,$e)
     $g = $e.Graphics
     $pen = New-Object System.Drawing.Pen($cBorder, 1)
-    $g.DrawRectangle($pen, 700, 9, 59, 17)
+    $g.DrawRectangle($pen, 740, 9, 59, 17)
     $pen.Dispose()
     foreach ($pos in @(12, 22, 32)) {
         $br = New-Object System.Drawing.SolidBrush($cGrayDim)
@@ -363,7 +363,7 @@ $lblDoneCount.Font      = $fMono8
 $lblDoneCount.ForeColor = $cGrayDim
 $lblDoneCount.AutoSize  = $false
 $lblDoneCount.Size      = New-Object System.Drawing.Size(50, 18)
-$lblDoneCount.Location  = New-Object System.Drawing.Point(700, 5)
+$lblDoneCount.Location  = New-Object System.Drawing.Point(740, 5)
 $lblDoneCount.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 $lblDoneCount.BackColor = $cSurface2
 $sectionBar.Controls.Add($lblDoneCount)
@@ -371,7 +371,7 @@ $sectionBar.Controls.Add($lblDoneCount)
 $sectionBar.Add_Paint({
     param($s,$e)
     $pen = New-Object System.Drawing.Pen($cBorder, 1)
-    $e.Graphics.DrawRectangle($pen, 700, 5, 49, 17)
+    $e.Graphics.DrawRectangle($pen, 740, 5, 49, 17)
     $pen.Dispose()
 })
 
@@ -398,7 +398,7 @@ $footer.Add_Paint({
 
 $overallTrack = New-Object System.Windows.Forms.Panel
 $overallTrack.Location  = New-Object System.Drawing.Point(24, 20)
-$overallTrack.Size      = New-Object System.Drawing.Size(440, 2)
+$overallTrack.Size      = New-Object System.Drawing.Size(480, 2)
 $overallTrack.BackColor = $cBorderDim
 $footer.Controls.Add($overallTrack)
 
@@ -425,7 +425,7 @@ $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cBorder
 $btnRestart.FlatAppearance.BorderSize  = 1
 $btnRestart.Size      = New-Object System.Drawing.Size(110, 30)
-$btnRestart.Location  = New-Object System.Drawing.Point(530, 10)
+$btnRestart.Location  = New-Object System.Drawing.Point(570, 10)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({ Restart-Computer -Force })
 $footer.Controls.Add($btnRestart)
@@ -438,18 +438,18 @@ $btnRun.BackColor = $cWhite
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize  = 0
 $btnRun.Size      = New-Object System.Drawing.Size(110, 30)
-$btnRun.Location  = New-Object System.Drawing.Point(650, 10)
+$btnRun.Location  = New-Object System.Drawing.Point(692, 10)
 $footer.Controls.Add($btnRun)
 
 # ── BUILD TASK ROWS ────────────────────────────────────────────────────────
 $script:TaskRows = @{}
 $taskKeys        = @($script:Tasks.Keys)
-[int]$rowH       = 38
-[int]$yPos       = 0
-[int]$totalH     = $taskKeys.Count * $rowH + 8
+[int]$rowH       = 40
+[int]$yPos       = 6
+[int]$totalH     = $taskKeys.Count * $rowH + 20
 
 $innerPanel = New-Object System.Windows.Forms.Panel
-$innerPanel.Size      = New-Object System.Drawing.Size(754, $totalH)
+$innerPanel.Size      = New-Object System.Drawing.Size(800, $totalH)
 $innerPanel.Location  = New-Object System.Drawing.Point(0, 0)
 $innerPanel.BackColor = [System.Drawing.Color]::Transparent
 $scrollPanel.Controls.Add($innerPanel)
@@ -460,7 +460,7 @@ foreach ($key in $taskKeys) {
     $idxLabel = ($taskIndex + 1).ToString("00")
 
     $row = New-Object System.Windows.Forms.Panel
-    $row.Size      = New-Object System.Drawing.Size(754, $rowH)
+    $row.Size      = New-Object System.Drawing.Size(800, $rowH)
     $row.Location  = New-Object System.Drawing.Point(0, $yPos)
     $row.BackColor = [System.Drawing.Color]::Transparent
     $row.Tag       = "pending"
@@ -549,8 +549,8 @@ foreach ($key in $taskKeys) {
 
     # bar track
     $barTrack = New-Object System.Windows.Forms.Panel
-    $barTrack.Location  = New-Object System.Drawing.Point(316, 18)
-    $barTrack.Size      = New-Object System.Drawing.Size(280, 1)
+    $barTrack.Location  = New-Object System.Drawing.Point(316, 20)
+    $barTrack.Size      = New-Object System.Drawing.Size(360, 1)
     $barTrack.BackColor = $cBorderDim
     $row.Controls.Add($barTrack)
 
@@ -567,7 +567,7 @@ foreach ($key in $taskKeys) {
     $lblStatus.ForeColor = $cGrayDim
     $lblStatus.AutoSize  = $false
     $lblStatus.Size      = New-Object System.Drawing.Size(72, $rowH)
-    $lblStatus.Location  = New-Object System.Drawing.Point(660, 0)
+    $lblStatus.Location  = New-Object System.Drawing.Point(716, 0)
     $lblStatus.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
     $lblStatus.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($lblStatus)
