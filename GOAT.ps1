@@ -42,16 +42,6 @@ $fMono9    = New-Object System.Drawing.Font("Consolas", 9)
 $fMono10   = New-Object System.Drawing.Font("Consolas", 10)
 $fMonoBold = New-Object System.Drawing.Font("Consolas", 10, [System.Drawing.FontStyle]::Bold)
 
-# ── BACKGROUND IMAGE (optional) ───────────────────────────────────────────
-# วางไฟล์รูปชื่อ "bg.jpg" (หรือ .png) ไว้ในโฟลเดอร์เดียวกับ script นี้
-# ถ้าไม่มีรูป จะใช้สีดำธรรมดา
-$script:BgImage = $null
-$bgPath = Join-Path (Split-Path $MyInvocation.MyCommand.Path) "bg.jpg"
-if (-not (Test-Path $bgPath)) { $bgPath = Join-Path (Split-Path $MyInvocation.MyCommand.Path) "bg.png" }
-if (Test-Path $bgPath) {
-    try { $script:BgImage = [System.Drawing.Image]::FromFile($bgPath) } catch {}
-}
-
 # ── TASK DEFINITIONS ───────────────────────────────────────────────────────
 $script:Tasks = [ordered]@{
     "kernel"   = "Kernel and HPET"
