@@ -26,8 +26,12 @@ $RAMFree  = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMe
 $RAMUsed  = [math]::Round($RAMTotal - $RAMFree, 1)
 $RAMPct   = [math]::Round(($RAMUsed / $RAMTotal) * 100)
 $OSName   = (Get-CimInstance Win32_OperatingSystem).Caption
-$CPUShort = if ($CPU.Length -gt 36) { $CPU.Substring(0,36)+"…" } else { $CPU }
-$OSShort  = if ($OSName.Length -gt 28) { $OSName.Substring(0,28)+"…" } else { $OSName }
+$UserName = $env:USERNAME
+$PCName   = $env:COMPUTERNAME
+
+$CPUShort  = if ($CPU.Length -gt 32) { $CPU.Substring(0,32)+"…" } else { $CPU }
+$OSShort   = if ($OSName.Length -gt 28) { $OSName.Substring(0,28)+"…" } else { $OSName }
+$UserShort = if ("$UserName @ $PCName".Length -gt 28) { "$UserName @ $PCName".Substring(0,28)+"…" } else { "$UserName @ $PCName" }
 
 # ── COLORS ─────────────────────────────────────────────────────────────────
 $cBg        = [System.Drawing.Color]::FromArgb(10, 10, 10)
@@ -212,10 +216,17 @@ function Invoke-Cleanup {
 }
 
 # ── FORM ───────────────────────────────────────────────────────────────────
+# Calculate form height so all 13 tasks are visible without scrolling
+# Hero=130, TopBar=36, SectionBar=28, Footer=52, each row=40px, 13 rows + padding
+[int]$rowH       = 40
+[int]$taskCount  = 13
+[int]$listHeight = ($taskCount * $rowH) + 20   # 540
+[int]$formHeight = 36 + 130 + 28 + $listHeight + 52 + 14  # ~810
+
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS v3.0"
-$form.Size            = New-Object System.Drawing.Size(820, 720)
-$form.MinimumSize     = New-Object System.Drawing.Size(820, 720)
+$form.Size            = New-Object System.Drawing.Size(820, $formHeight)
+$form.MinimumSize     = New-Object System.Drawing.Size(820, $formHeight)
 $form.StartPosition   = "CenterScreen"
 $form.BackColor       = $cBg
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -278,9 +289,10 @@ $topBar.Add_Paint({
 })
 
 # ── HERO PANEL ─────────────────────────────────────────────────────────────
+# Taller hero to fit 4 info lines comfortably
 $heroPanel = New-Object System.Windows.Forms.Panel
 $heroPanel.Dock      = [System.Windows.Forms.DockStyle]::Top
-$heroPanel.Height    = 110
+$heroPanel.Height    = 130
 $heroPanel.BackColor = $cSurface
 $form.Controls.Add($heroPanel)
 
@@ -298,7 +310,7 @@ $heroPanel.Add_Paint({
     # logo outline
     $gp   = New-Object System.Drawing.Drawing2D.GraphicsPath
     $sf   = [System.Drawing.StringFormat]::GenericDefault
-    $gp.AddString("GOAT", $fLogo.FontFamily, [int][System.Drawing.FontStyle]::Bold, $g.DpiY * 42 / 72, [System.Drawing.PointF]::new(20, 22), $sf)
+    $gp.AddString("GOAT", $fLogo.FontFamily, [int][System.Drawing.FontStyle]::Bold, $g.DpiY * 42 / 72, [System.Drawing.PointF]::new(20, 18), $sf)
     $outPen = New-Object System.Drawing.Pen($cWhite, 1.2)
     $g.DrawPath($outPen, $gp)
     $outPen.Dispose(); $gp.Dispose()
@@ -306,25 +318,45 @@ $heroPanel.Add_Paint({
     # subtitle
     $subBr = New-Object System.Drawing.SolidBrush($cGray)
     $subFont = New-Object System.Drawing.Font("Consolas", 8)
-    $g.DrawString("GREATEST OF ALL TWEAKS  ·  v3.0", $subFont, $subBr, 24, 82)
+    $g.DrawString("GREATEST OF ALL TWEAKS  ·  v3.0", $subFont, $subBr, 24, 98)
     $subBr.Dispose(); $subFont.Dispose()
 
-    # sys info right
-    $sysBr  = New-Object System.Drawing.SolidBrush($cGrayDim)
-    $sysVal = New-Object System.Drawing.SolidBrush($cGray)
+    # ── sys info right — evenly spaced 4 rows ──────────────────────────────
+    # Label column anchored at rightX-152, value column right-aligned at rightX
+    $sysBr  = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(55,55,55))
+    $sysVal = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(110,110,110))
     $sf2    = New-Object System.Drawing.StringFormat
     $sf2.Alignment = [System.Drawing.StringAlignment]::Far
+    $sf3    = New-Object System.Drawing.StringFormat
+    $sf3.Alignment = [System.Drawing.StringAlignment]::Near
     $sysF   = New-Object System.Drawing.Font("Consolas", 8)
     $rightX = $s.Width - 24
 
-    $g.DrawString("CPU", $sysF, $sysBr, $rightX - 140, 30, $sf2)
-    $g.DrawString($CPUShort, $sysF, $sysVal, $rightX, 30, $sf2)
-    $g.DrawString("RAM", $sysF, $sysBr, $rightX - 140, 46, $sf2)
-    $g.DrawString("$RAMUsed / $RAMTotal GB  ($RAMPct%)", $sysF, $sysVal, $rightX, 46, $sf2)
-    $g.DrawString("OS", $sysF, $sysBr, $rightX - 140, 62, $sf2)
-    $g.DrawString($OSShort, $sysF, $sysVal, $rightX, 62, $sf2)
+    # row positions — 4 rows spaced evenly starting at y=22
+    $rows = @(22, 40, 58, 76)
+    $lblX = $rightX - 200   # label right edge
+    $valX = $rightX         # value right edge (far-aligned)
 
-    $sysBr.Dispose(); $sysVal.Dispose(); $sysF.Dispose(); $sf2.Dispose()
+    # user
+    $g.DrawString("USER", $sysF, $sysBr, $lblX, $rows[0], $sf2)
+    $g.DrawString($UserShort, $sysF, $sysVal, $rightX, $rows[0], $sf2)
+    # cpu
+    $g.DrawString("CPU", $sysF, $sysBr, $lblX, $rows[1], $sf2)
+    $g.DrawString($CPUShort, $sysF, $sysVal, $rightX, $rows[1], $sf2)
+    # ram  — show used/total and % inline, consistent width
+    $g.DrawString("RAM", $sysF, $sysBr, $lblX, $rows[2], $sf2)
+    $ramStr = "$RAMUsed / $($RAMTotal) GB  ($RAMPct%)"
+    $g.DrawString($ramStr, $sysF, $sysVal, $rightX, $rows[2], $sf2)
+    # os
+    $g.DrawString("OS", $sysF, $sysBr, $lblX, $rows[3], $sf2)
+    $g.DrawString($OSShort, $sysF, $sysVal, $rightX, $rows[3], $sf2)
+
+    # vertical divider between logo area and info area
+    $divPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(30,30,30), 1)
+    $g.DrawLine($divPen, $s.Width - 300, 14, $s.Width - 300, $s.Height - 18)
+    $divPen.Dispose()
+
+    $sysBr.Dispose(); $sysVal.Dispose(); $sysF.Dispose(); $sf2.Dispose(); $sf3.Dispose()
 
     # bottom border
     $pen = New-Object System.Drawing.Pen($cBorder, 1)
@@ -376,6 +408,7 @@ $sectionBar.Add_Paint({
 })
 
 # ── TASK SCROLL PANEL ──────────────────────────────────────────────────────
+# AutoScroll stays enabled as fallback but form is tall enough to show all 13
 $scrollPanel = New-Object System.Windows.Forms.Panel
 $scrollPanel.Dock        = [System.Windows.Forms.DockStyle]::Fill
 $scrollPanel.BackColor   = $cBg
@@ -444,7 +477,6 @@ $footer.Controls.Add($btnRun)
 # ── BUILD TASK ROWS ────────────────────────────────────────────────────────
 $script:TaskRows = @{}
 $taskKeys        = @($script:Tasks.Keys)
-[int]$rowH       = 40
 [int]$yPos       = 6
 [int]$totalH     = $taskKeys.Count * $rowH + 20
 
@@ -466,13 +498,11 @@ foreach ($key in $taskKeys) {
     $row.Tag       = "pending"
     $innerPanel.Controls.Add($row)
 
-    # Paint handler captures $idxLabel, $label, $key by ref via closure tag
     $row.Add_Paint({
         param($s,$e)
         $g    = $e.Graphics
         $state = $s.Tag
 
-        # row highlight
         if ($state -eq "running") {
             $hBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(22,22,22))
             $g.FillRectangle($hBr, 0, 0, $s.Width, $s.Height)
@@ -483,7 +513,6 @@ foreach ($key in $taskKeys) {
             $hPen.Dispose()
         }
 
-        # separator
         $sepPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(20,20,20), 1)
         $g.DrawLine($sepPen, 24, $s.Height-1, $s.Width-24, $s.Height-1)
         $sepPen.Dispose()
@@ -501,7 +530,7 @@ foreach ($key in $taskKeys) {
     $lblIdx.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($lblIdx)
 
-    # dot indicator (owner-draw via panel)
+    # dot indicator
     $dot = New-Object System.Windows.Forms.Panel
     $dot.Size      = New-Object System.Drawing.Size(10, 10)
     $dot.Location  = New-Object System.Drawing.Point(62, 14)
@@ -594,7 +623,6 @@ $blinkTimer.Interval = 520
 $blinkTimer.Add_Tick({
     if ($script:BlinkKey -and $script:TaskRows.ContainsKey($script:BlinkKey)) {
         $r = $script:TaskRows[$script:BlinkKey]
-        $r.Dot.BackColor = if ($script:BlinkOn) { [System.Drawing.Color]::Transparent } else { [System.Drawing.Color]::Transparent }
         $r.Dot.Tag = "running"
         $r.Dot.Invalidate()
         $script:BlinkOn = -not $script:BlinkOn
@@ -702,6 +730,7 @@ $runTimer.Add_Tick({
     $script:TaskRows[$key].Bar.Width = 0
     $animTimer.Start()
 
+    # Auto-scroll to keep the active row visible
     $r = $script:TaskRows[$key].Row
     $scrollPanel.AutoScrollPosition = New-Object System.Drawing.Point(0, [Math]::Max(0, $r.Top - 60))
     $form.Refresh()
