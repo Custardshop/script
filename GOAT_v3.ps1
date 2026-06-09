@@ -222,13 +222,13 @@ function Invoke-Cleanup {
 [int]$rowH       = 40
 [int]$taskCount  = 13
 [int]$listHeight = ($taskCount * $rowH) + 20   # 540
-[int]$changelogHeight = 150 # Height of the changelog panel
-$formHeight = 36 + 155 + 28 + $listHeight + 86 + 14 + $changelogHeight + 20 # Adjusted for changelog
+[int]$formWidth = 1240 # New width for horizontal layout
+[int]$formHeight = 36 + 155 + 28 + ($listHeight + 28) + 86 + 14 # Adjusted height for horizontal layout (sum of topBar, heroPanel, sectionBar, main content area, footer, and padding)
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS v3.0"
-$form.Size            = New-Object System.Drawing.Size(820, $formHeight)
-$form.MinimumSize     = New-Object System.Drawing.Size(820, $formHeight)
+$form.Size            = New-Object System.Drawing.Size($formWidth, $formHeight)
+$form.MinimumSize     = New-Object System.Drawing.Size($formWidth, $formHeight)
 $form.StartPosition   = "CenterScreen"
 $form.BackColor       = $cBg
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -271,7 +271,7 @@ $lblAdminBadge.Font      = $fMono8
 $lblAdminBadge.ForeColor = $cGray
 $lblAdminBadge.AutoSize  = $false
 $lblAdminBadge.Size      = New-Object System.Drawing.Size(60, 18)
-$lblAdminBadge.Location  = New-Object System.Drawing.Point(740, 9)
+$lblAdminBadge.Location  = New-Object System.Drawing.Point($formWidth - 80, 9)
 $lblAdminBadge.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 $lblAdminBadge.BackColor = $cSurface2
 $topBar.Controls.Add($lblAdminBadge)
@@ -280,7 +280,7 @@ $topBar.Add_Paint({
     param($s,$e)
     $g = $e.Graphics
     $pen = New-Object System.Drawing.Pen($cBorder, 1)
-    $g.DrawRectangle($pen, 740, 9, 59, 17)
+    $g.DrawRectangle($pen, $formWidth - 80, 9, 59, 17)
     $pen.Dispose()
     foreach ($pos in @(12, 22, 32)) {
         $br = New-Object System.Drawing.SolidBrush($cGrayDim)
@@ -386,7 +386,7 @@ $lblDoneCount.Font      = $fMono8
 $lblDoneCount.ForeColor = $cGrayDim
 $lblDoneCount.AutoSize  = $false
 $lblDoneCount.Size      = New-Object System.Drawing.Size(50, 18)
-$lblDoneCount.Location  = New-Object System.Drawing.Point(740, 5)
+$lblDoneCount.Location  = New-Object System.Drawing.Point($formWidth - 80, 5)
 $lblDoneCount.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 $lblDoneCount.BackColor = $cSurface2
 $sectionBar.Controls.Add($lblDoneCount)
@@ -394,7 +394,7 @@ $sectionBar.Controls.Add($lblDoneCount)
 $sectionBar.Add_Paint({
     param($s,$e)
     $pen = New-Object System.Drawing.Pen($cBorder, 1)
-    $e.Graphics.DrawRectangle($pen, 740, 5, 49, 17)
+    $e.Graphics.DrawRectangle($pen, $formWidth - 80, 5, 49, 17)
     $pen.Dispose()
 })
 
@@ -414,7 +414,7 @@ $footer.Add_Paint({
 # Progress Area (Left)
 $overallTrack = New-Object System.Windows.Forms.Panel
 $overallTrack.Location  = New-Object System.Drawing.Point(24, 18)
-$overallTrack.Size      = New-Object System.Drawing.Size(500, 8)
+$overallTrack.Size      = New-Object System.Drawing.Size($formWidth - 500, 8)
 $overallTrack.BackColor = $cBorderDim
 $footer.Controls.Add($overallTrack)
 
@@ -429,7 +429,7 @@ $lblPct.Text      = "PROGRESS  0%  ·  READY"
 $lblPct.Font      = $fMono8
 $lblPct.ForeColor = $cWhiteDim
 $lblPct.AutoSize  = $false
-$lblPct.Size      = New-Object System.Drawing.Size(500, 18)
+$lblPct.Size      = New-Object System.Drawing.Size($formWidth - 500, 18)
 $lblPct.Location  = New-Object System.Drawing.Point(24, 36)
 $lblPct.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 $lblPct.BackColor = [System.Drawing.Color]::Transparent
@@ -440,7 +440,7 @@ $lblFooterHint.Text      = "Run GOAT to apply performance tweaks. Restart is rec
 $lblFooterHint.Font      = $fMono8
 $lblFooterHint.ForeColor = $cGrayDim
 $lblFooterHint.AutoSize  = $false
-$lblFooterHint.Size      = New-Object System.Drawing.Size(500, 18)
+$lblFooterHint.Size      = New-Object System.Drawing.Size($formWidth - 500, 18)
 $lblFooterHint.Location  = New-Object System.Drawing.Point(24, 56)
 $lblFooterHint.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 $lblFooterHint.BackColor = [System.Drawing.Color]::Transparent
@@ -456,7 +456,7 @@ $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cBorder
 $btnRestart.FlatAppearance.BorderSize  = 1
 $btnRestart.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRestart.Location  = New-Object System.Drawing.Point(548, 26)
+$btnRestart.Location  = New-Object System.Drawing.Point($formWidth - 250, 26)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({
     $answer = [System.Windows.Forms.MessageBox]::Show("Restart this PC now?", "GOAT Complete", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
@@ -472,12 +472,14 @@ $btnRun.BackColor = $cWhite
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize  = 0
 $btnRun.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRun.Location      = New-Object System.Drawing.Point(670, 26)
+$btnRun.Location      = New-Object System.Drawing.Point($formWidth - 128, 26)
 $footer.Controls.Add($btnRun)
 
 # ── TASK SCROLL PANEL ──────────────────────────────────────────────────────
 $scrollPanel = New-Object System.Windows.Forms.Panel
-$scrollPanel.Dock        = [System.Windows.Forms.DockStyle]::Fill
+$scrollPanel.Dock        = [System.Windows.Forms.DockStyle]::None
+$scrollPanel.Size         = New-Object System.Drawing.Size(760, $listHeight + 28) # Explicit size for scroll panel
+$scrollPanel.Location     = New-Object System.Drawing.Point(24, 220) # Explicit location for scroll panel
 $scrollPanel.BackColor   = $cBg
 $scrollPanel.AutoScroll  = $true
 
@@ -485,7 +487,54 @@ $scrollPanel.AutoScroll  = $true
 # Bottom and Fill must be added before Top panels.
 # Top panels stack in reverse add order (last added = topmost).
 $form.Controls.Add($footer)      # Bottom  — add first
-$form.Controls.Add($scrollPanel) # Fill    — add second
+$form.Controls.Add($scrollPanel) # Task list panel
+
+# ── CHANGELOG ──────────────────────────────────────────────────────────────
+[int]$changelogPanelWidth = 400
+[int]$changelogPanelHeight = $listHeight + 28 # Match the height of the scrollable task list
+
+$changelogContent = @"
+v3.1 (2026-06-09)
+- Added Changelog feature.
+- Minor UI adjustments.
+
+v3.0 (2026-05-20)
+- Initial release of Monochrome Dark Theme.
+- Redesigned task list and progress indicators.
+"@
+
+$changelogPanel = New-Object System.Windows.Forms.Panel
+$changelogPanel.Size      = New-Object System.Drawing.Size($changelogPanelWidth, $changelogPanelHeight)
+$changelogPanel.Location  = New-Object System.Drawing.Point(24 + 760 + 20, 220) # To the right of scrollPanel
+$changelogPanel.BackColor = $cSurface2
+$changelogPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$changelogPanel.Tag       = "changelog"
+$form.Controls.Add($changelogPanel)
+
+$changelogTitle = New-Object System.Windows.Forms.Label
+$changelogTitle.Text      = "CHANGELOG"
+$changelogTitle.Font      = $fMonoBold
+$changelogTitle.ForeColor = $cWhite
+$changelogTitle.AutoSize  = $false
+$changelogTitle.Size      = New-Object System.Drawing.Size($changelogPanelWidth - 20, 20)
+$changelogTitle.Location  = New-Object System.Drawing.Point(10, 10)
+$changelogTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
+$changelogPanel.Controls.Add($changelogTitle)
+
+$changelogTextBox = New-Object System.Windows.Forms.TextBox
+$changelogTextBox.Text            = $changelogContent
+$changelogTextBox.Font            = $fMono9
+$changelogTextBox.ForeColor       = $cWhiteDim
+$changelogTextBox.BackColor       = $cSurface2
+$changelogTextBox.BorderStyle     = [System.Windows.Forms.BorderStyle]::None
+$changelogTextBox.Multiline       = $true
+$changelogTextBox.ReadOnly        = $true
+$changelogTextBox.ScrollBars      = [System.Windows.Forms.ScrollBars]::Vertical
+$changelogTextBox.Size            = New-Object System.Drawing.Size($changelogPanelWidth - 20, $changelogPanelHeight - 45)
+$changelogTextBox.Location        = New-Object System.Drawing.Point(10, 35)
+$changelogPanel.Controls.Add($changelogTextBox)
+
+
 $form.Controls.Add($sectionBar)  # Top     — appears below heroPanel
 $form.Controls.Add($heroPanel)   # Top     — appears below topBar
 $form.Controls.Add($topBar)      # Top     — add last = sits at very top
@@ -497,7 +546,7 @@ $taskKeys        = @($script:Tasks.Keys)
 [int]$totalH     = $taskKeys.Count * $rowH + 20
 
 $innerPanel = New-Object System.Windows.Forms.Panel
-$innerPanel.Size      = New-Object System.Drawing.Size(800, $totalH)
+$innerPanel.Size      = New-Object System.Drawing.Size(760, $totalH)
 $innerPanel.Location  = New-Object System.Drawing.Point(0, 0)
 $innerPanel.BackColor = [System.Drawing.Color]::Transparent
 $scrollPanel.Controls.Add($innerPanel)
@@ -508,7 +557,7 @@ foreach ($key in $taskKeys) {
     $idxLabel = ($taskIndex + 1).ToString("00")
 
     $row = New-Object System.Windows.Forms.Panel
-    $row.Size      = New-Object System.Drawing.Size(800, $rowH)
+    $row.Size      = New-Object System.Drawing.Size(760, $rowH)
     $row.Location  = New-Object System.Drawing.Point(0, $yPos)
     $row.BackColor = [System.Drawing.Color]::Transparent
     $row.Tag       = "pending"
@@ -594,7 +643,7 @@ foreach ($key in $taskKeys) {
 
     # bar track
     $barTrack = New-Object System.Windows.Forms.Panel
-    $barTrack.Location  = New-Object System.Drawing.Point(316, 18)
+    $barTrack.Location  = New-Object System.Drawing.Point(316 - 40, 18)
     $barTrack.Size      = New-Object System.Drawing.Size(360, 4)
     $barTrack.BackColor = $cBorderDim
     $row.Controls.Add($barTrack)
@@ -612,7 +661,7 @@ foreach ($key in $taskKeys) {
     $lblStatus.ForeColor = $cGrayDim
     $lblStatus.AutoSize  = $false
     $lblStatus.Size      = New-Object System.Drawing.Size(72, $rowH)
-    $lblStatus.Location  = New-Object System.Drawing.Point(708, 0)
+    $lblStatus.Location  = New-Object System.Drawing.Point(708 - 40, 0)
     $lblStatus.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
     $lblStatus.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($lblStatus)
@@ -765,6 +814,9 @@ $runTimer.Add_Tick({
         Set-OverallProgress $script:TotalTasks $script:TotalTasks "COMPLETE"
         $lblPct.ForeColor    = $cWhite
         $lblFooterHint.Text  = "Optimization complete. Restart your PC to apply all system-level changes."
+$lblFooterHint.Location = New-Object System.Drawing.Point(24, 56) # Ensure footer hint is correctly positioned
+$btnRestart.Location = New-Object System.Drawing.Point($formWidth - 250, 26) # Ensure restart button is correctly positioned
+$btnRun.Location = New-Object System.Drawing.Point($formWidth - 128, 26) # Ensure run button is correctly positioned
         $btnRestart.Visible  = $true
         Set-RunButtonStyle "complete"
         return
@@ -811,55 +863,6 @@ $btnRun.Add_Click({
     $script:TaskKeyList = @($script:Tasks.Keys)
     $script:TotalTasks  = $script:TaskKeyList.Count
     $btnRestart.Visible  = $false
-
-# ── CHANGELOG ──────────────────────────────────────────────────────────────
-$changelogContent = @"
-v3.1 (2026-06-09)
-- Added Changelog feature.
-- Minor UI adjustments.
-
-v3.0 (2026-05-20)
-- Initial release of Monochrome Dark Theme.
-- Redesigned task list and progress indicators.
-"@
-
-$changelogPanel = New-Object System.Windows.Forms.Panel
-$changelogPanel.Size      = New-Object System.Drawing.Size(760, $changelogHeight)
-$changelogPanel.Location  = New-Object System.Drawing.Point(24, $form.Height - $changelogHeight - 50) # Position above footer, adjust as needed
-$changelogPanel.BackColor = $cSurface2
-$changelogPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
-$changelogPanel.Tag       = "changelog"
-$form.Controls.Add($changelogPanel)
-
-$changelogTitle = New-Object System.Windows.Forms.Label
-$changelogTitle.Text      = "CHANGELOG"
-$changelogTitle.Font      = $fMonoBold
-$changelogTitle.ForeColor = $cWhite
-$changelogTitle.AutoSize  = $false
-$changelogTitle.Size      = New-Object System.Drawing.Size(740, 20)
-$changelogTitle.Location  = New-Object System.Drawing.Point(10, 10)
-$changelogTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
-$changelogPanel.Controls.Add($changelogTitle)
-
-$changelogTextBox = New-Object System.Windows.Forms.TextBox
-$changelogTextBox.Text            = $changelogContent
-$changelogTextBox.Font            = $fMono9
-$changelogTextBox.ForeColor       = $cWhiteDim
-$changelogTextBox.BackColor       = $cSurface2
-$changelogTextBox.BorderStyle     = [System.Windows.Forms.BorderStyle]::None
-$changelogTextBox.Multiline       = $true
-$changelogTextBox.ReadOnly        = $true
-$changelogTextBox.ScrollBars      = [System.Windows.Forms.ScrollBars]::Vertical
-$changelogTextBox.Size            = New-Object System.Drawing.Size(740, $changelogHeight - 45)
-$changelogTextBox.Location        = New-Object System.Drawing.Point(10, 35)
-$changelogPanel.Controls.Add($changelogTextBox)
-
-$form.Controls.Add($changelogPanel)
-
-$form.Add_Shown({
-    # Ensure the changelog panel is positioned correctly after form is shown
-    $changelogPanel.Location = New-Object System.Drawing.Point(24, $form.Height - $changelogHeight - 50)
-})
     $lblFooterHint.Text  = "GOAT is running. Please wait until every module is complete."
     Set-OverallProgress 0 $script:TotalTasks "RUNNING"
     Set-RunButtonStyle "running"
