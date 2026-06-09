@@ -3,7 +3,7 @@
 <#
   GOAT — GREATEST OF ALL TWEAKS
   Premium Edition v4.0 · Horizontal Landscape
-  Theme: Onyx Crimson · Soft Luxury
+  Theme: Onyx Crimson · Soft Luxury (FIXED)
 #>
 
 # ── ADMIN AUTO-ELEVATE ────────────────────────────────────────────────────
@@ -206,8 +206,10 @@ $sidebar.Add_Paint({
     $g.DrawString("GREATEST OF ALL TWEAKS", $fCap, $subBr, 26, 74)
     $subBr.Dispose()
 
-    # System Info Header
-    $g.DrawString("SPECIFICATIONS", $fCap, New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(80,30,45)), 26, 140)
+    # System Info Header (FIXED BRUSH ANCHOR)
+    $hdrBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(120,30,50))
+    $g.DrawString("SPECIFICATIONS", $fCap, $hdrBr, 26, 140)
+    $hdrBr.Dispose()
 
     # Box container for specs
     $boxPath = Get-RoundedRect 24 160 292 250 8
@@ -217,7 +219,7 @@ $sidebar.Add_Paint({
     $g.DrawPath($boxPen, $boxPath); $boxPen.Dispose(); $boxPath.Dispose()
 
     # Layout values
-    $lblBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(120,30,50))
+    $lblBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(100,24,40))
     $valBr = New-Object System.Drawing.SolidBrush($cWhiteDim)
     $rows  = @(180, 222, 264, 306, 348)
     $names = @("IDENTITY", "PROCESSOR", "GRAPHICS", "MEMORY", "PLATFORM")
