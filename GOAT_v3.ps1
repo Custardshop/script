@@ -12,6 +12,22 @@ Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
 Add-Type -AssemblyName System.Windows.Forms
 
+# ── STA THREAD ENFORCEMENT (required for WPF) ────────────────────────────────
+if ([System.Threading.Thread]::CurrentThread.ApartmentState -ne 'STA') {
+    $script = $MyInvocation.MyCommand.Definition
+    if ($script -and (Test-Path $script)) {
+        # Re-launch as STA from file
+        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -STA -File `"$script`"" -Verb RunAs
+    } else {
+        # Re-launch as STA from web (irm|iex scenario)
+        $tmpFile = [System.IO.Path]::GetTempFileName() + ".ps1"
+        $MyInvocation.MyCommand.ScriptBlock | Out-File $tmpFile -Encoding UTF8
+        Start-Process powershell.exe -ArgumentList "-ExecutionPolicy Bypass -STA -File `"$tmpFile`"" -Verb RunAs
+    }
+    exit
+}
+
+
 # ── XAML UI ──────────────────────────────────────────────────────────────────
 [xml]$xaml = @'
 <Window
@@ -83,11 +99,11 @@ Add-Type -AssemblyName System.Windows.Forms
               </EventTrigger>
             </Ellipse.Triggers>
           </Ellipse>
-          <TextBlock Text="GOAT TWEAK" Foreground="#E53E3E" FontSize="13" FontWeight="Bold" LetterSpacing="3" VerticalAlignment="Center"/>
+          <TextBlock Text="GOAT TWEAK" Foreground="#E53E3E" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
           <TextBlock Text="  v3.0" Foreground="#555555" FontSize="11" VerticalAlignment="Center"/>
         </StackPanel>
         <Border Grid.Column="1" BorderBrush="#333333" BorderThickness="1" CornerRadius="3" Padding="10,3" VerticalAlignment="Center">
-          <TextBlock x:Name="StatusBadge" Text="IDLE" Foreground="#888888" FontSize="10" LetterSpacing="2"/>
+          <TextBlock x:Name="StatusBadge" Text="IDLE" Foreground="#888888" FontSize="10"/>
         </Border>
       </Grid>
     </Border>
@@ -97,35 +113,35 @@ Add-Type -AssemblyName System.Windows.Forms
       <UniformGrid Columns="5" Margin="0">
         <Border BorderBrush="#1E1E1E" BorderThickness="0,0,1,0" Padding="14,8">
           <StackPanel>
-            <TextBlock Text="□ CPU" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
+            <TextBlock Text="CPU" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
             <TextBlock x:Name="SysCpu" Text="..." Foreground="#CCCCCC" FontSize="11" FontWeight="Bold"/>
             <TextBlock x:Name="SysCpuSub" Text="Active" Foreground="#22C55E" FontSize="10"/>
           </StackPanel>
         </Border>
         <Border BorderBrush="#1E1E1E" BorderThickness="0,0,1,0" Padding="14,8">
           <StackPanel>
-            <TextBlock Text="□ RAM" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
+            <TextBlock Text="RAM" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
             <TextBlock x:Name="SysRam" Text="..." Foreground="#CCCCCC" FontSize="11" FontWeight="Bold"/>
             <TextBlock x:Name="SysRamSub" Text="Physical" Foreground="#FACC15" FontSize="10"/>
           </StackPanel>
         </Border>
         <Border BorderBrush="#1E1E1E" BorderThickness="0,0,1,0" Padding="14,8">
           <StackPanel>
-            <TextBlock Text="□ OS" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
+            <TextBlock Text="OS" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
             <TextBlock x:Name="SysOs" Text="..." Foreground="#CCCCCC" FontSize="11" FontWeight="Bold"/>
             <TextBlock x:Name="SysOsBuild" Text="..." Foreground="#555555" FontSize="10"/>
           </StackPanel>
         </Border>
         <Border BorderBrush="#1E1E1E" BorderThickness="0,0,1,0" Padding="14,8">
           <StackPanel>
-            <TextBlock Text="□ USER" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
+            <TextBlock Text="USER" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
             <TextBlock x:Name="SysUser" Text="..." Foreground="#CCCCCC" FontSize="11" FontWeight="Bold"/>
             <TextBlock x:Name="SysHost" Text="..." Foreground="#555555" FontSize="10"/>
           </StackPanel>
         </Border>
         <Border Padding="14,8">
           <StackPanel>
-            <TextBlock Text="□ ADMIN" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
+            <TextBlock Text="ADMIN" Foreground="#444444" FontSize="9" Margin="0,0,0,3"/>
             <TextBlock x:Name="SysAdmin" Text="Elevated" Foreground="#22C55E" FontSize="11" FontWeight="Bold"/>
             <TextBlock x:Name="SysAdminSub" Text="Admin OK" Foreground="#22C55E" FontSize="10"/>
           </StackPanel>
@@ -144,7 +160,7 @@ Add-Type -AssemblyName System.Windows.Forms
       <Border Grid.Column="0" BorderBrush="#1E1E1E" BorderThickness="0,0,1,0" Background="#0D0D0D">
         <ScrollViewer Style="{StaticResource ThinScrollViewer}">
           <StackPanel x:Name="ModuleList" Margin="0,12,0,12">
-            <TextBlock Text="MODULES" Foreground="#333333" FontSize="9" Margin="16,0,16,10" LetterSpacing="3"/>
+            <TextBlock Text="MODULES" Foreground="#333333" FontSize="9" Margin="16,0,16,10"/>
           </StackPanel>
         </ScrollViewer>
       </Border>
@@ -160,7 +176,7 @@ Add-Type -AssemblyName System.Windows.Forms
         <Border Grid.Row="0" BorderBrush="#1E1E1E" BorderThickness="0,0,0,1" Padding="18,14">
           <StackPanel>
             <Grid Margin="0,0,0,10">
-              <TextBlock Text="PROGRESS" Foreground="#444444" FontSize="10" LetterSpacing="3" VerticalAlignment="Center"/>
+              <TextBlock Text="PROGRESS" Foreground="#444444" FontSize="10" VerticalAlignment="Center"/>
               <TextBlock x:Name="ProgPct" Text="0%" Foreground="#E53E3E" FontSize="22" FontWeight="Bold" HorizontalAlignment="Right"/>
             </Grid>
             <Border Background="#1E1E1E" Height="3" CornerRadius="2">
@@ -175,7 +191,7 @@ Add-Type -AssemblyName System.Windows.Forms
             <StackPanel>
               <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                 <Ellipse x:Name="OutDot" Width="7" Height="7" Fill="#E53E3E" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                <TextBlock Text="LIVE OUTPUT" Foreground="#444444" FontSize="9" LetterSpacing="3" VerticalAlignment="Center"/>
+                <TextBlock Text="LIVE OUTPUT" Foreground="#444444" FontSize="9" VerticalAlignment="Center"/>
               </StackPanel>
               <ScrollViewer x:Name="LogScroll" Style="{StaticResource ThinScrollViewer}" MaxHeight="310">
                 <StackPanel x:Name="LogLines"/>
@@ -193,7 +209,7 @@ Add-Type -AssemblyName System.Windows.Forms
         <ColumnDefinition Width="*"/>
       </Grid.ColumnDefinitions>
       <Border Grid.Column="0" BorderBrush="#1E1E1E" BorderThickness="0,1,1,0">
-        <Button x:Name="BtnRun" Content="▶  RUN ALL" Background="#E53E3E" Foreground="White"
+        <Button x:Name="BtnRun" Content="RUN ALL" Background="#E53E3E" Foreground="White"
                 FontFamily="Courier New" FontSize="13" FontWeight="Bold"
                 BorderThickness="0" Cursor="Hand">
           <Button.Template>
@@ -215,7 +231,7 @@ Add-Type -AssemblyName System.Windows.Forms
         </Button>
       </Border>
       <Border Grid.Column="1" BorderBrush="#1E1E1E" BorderThickness="0,1,0,0">
-        <Button x:Name="BtnReset" Content="⟳  RESET" Background="#111111" Foreground="#777777"
+        <Button x:Name="BtnReset" Content="RESET" Background="#111111" Foreground="#777777"
                 FontFamily="Courier New" FontSize="13" FontWeight="Bold"
                 BorderThickness="0" Cursor="Hand">
           <Button.Template>
@@ -242,8 +258,19 @@ Add-Type -AssemblyName System.Windows.Forms
 '@
 
 # ── Build Window ─────────────────────────────────────────────────────────────
-$reader = [System.Xml.XmlNodeReader]::new($xaml)
-$window = [Windows.Markup.XamlReader]::Load($reader)
+try {
+    $reader = [System.Xml.XmlNodeReader]::new($xaml)
+    $window = [Windows.Markup.XamlReader]::Load($reader)
+    if (-not $window) { throw "XamlReader returned null" }
+} catch {
+    [System.Windows.MessageBox]::Show(
+        "XAML Load Error:`n`n$($_.Exception.Message)`n`nInner: $($_.Exception.InnerException.Message)",
+        "GOAT - Fatal Error",
+        [System.Windows.MessageBoxButton]::OK,
+        [System.Windows.MessageBoxImage]::Error
+    )
+    exit 1
+}
 
 # Grab controls
 $statusBadge = $window.FindName('StatusBadge')
