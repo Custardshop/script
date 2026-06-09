@@ -386,7 +386,7 @@ $modules = @(
     @{ Msg="VisualFXSetting = 2 (custom performance)";
        Cmd={ reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" /v "VisualFXSetting" /t REG_DWORD /d 2 /f 2>$null } },
     @{ Msg="UserPreferencesMask applied";
-       Cmd={ reg add "HKCU\Control Panel\Desktop" /v "UserPreferencesMask" /t REG_BINARY /d 9012038010000000 /f 2>$null } },
+       Cmd={ reg add "HKCU\Control Panel\Desktop" /v "UserPreferencesMask" /t REG_BINARY /d 9012078010000000 /f 2>$null } },
     @{ Msg="Window + taskbar animations disabled";
        Cmd={ reg add "HKCU\Control Panel\Desktop\WindowMetrics" /v "MinAnimate" /t REG_SZ /d "0" /f 2>$null
              reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAnimations" /t REG_DWORD /d 0 /f 2>$null } },
@@ -460,7 +460,9 @@ $modules = @(
     @{ Msg="Restarting Windows Update service";
        Cmd={ Start-Service wuauserv -EA SilentlyContinue } },
     @{ Msg="Clearing all Windows Event Logs...";
-       Cmd={ Get-EventLog -List -EA SilentlyContinue | ForEach-Object { Clear-EventLog -LogName $_.Log -EA SilentlyContinue } } },
+       Cmd={ Get-WinEvent -ListLog * -EA SilentlyContinue | ForEach-Object {
+               [System.Diagnostics.Eventing.Reader.EventLogSession]::GlobalSession.ClearLog($_.LogName)
+             } } },
     @{ Msg="Cleanup complete ✓"; Cmd=$null }
   )}
 )
@@ -679,6 +681,13 @@ function Start-RunAll {
   $ps.Runspace = $rs
   [void]$ps.AddScript({
     param($addLog, $mods, $win, $pPct, $pFill, $badge, $bRun, $bReset, $logLinesCtrl, $startT)
+
+    # ── Import required modules into this runspace ──────────────────────────────
+    Import-Module Microsoft.PowerShell.Management -ErrorAction SilentlyContinue
+    Import-Module Microsoft.PowerShell.Utility    -ErrorAction SilentlyContinue
+    try { Import-Module PnpDevice    -ErrorAction SilentlyContinue } catch {}
+    try { Import-Module NetAdapter   -ErrorAction SilentlyContinue } catch {}
+    try { Import-Module NetTCPIP     -ErrorAction SilentlyContinue } catch {}
 
     for ($i = 0; $i -lt $mods.Count; $i++) {
       $m = $mods[$i]
