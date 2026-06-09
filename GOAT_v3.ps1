@@ -222,13 +222,12 @@ function Invoke-Cleanup {
 [int]$rowH       = 40
 [int]$taskCount  = 13
 [int]$listHeight = ($taskCount * $rowH) + 20   # 540
-[int]$formWidth = 1240 # New width for horizontal layout
-[int]$formHeight = 36 + 155 + 28 + ($listHeight + 20) + 86 + 10 # Adjusted height for horizontal layout
+[int]$formHeight = 36 + 155 + 28 + $listHeight + 86 + 14  # ~861
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS v3.0"
-$form.Size            = New-Object System.Drawing.Size($formWidth, $formHeight)
-$form.MinimumSize     = New-Object System.Drawing.Size($formWidth, $formHeight)
+$form.Size            = New-Object System.Drawing.Size(820, $formHeight)
+$form.MinimumSize     = New-Object System.Drawing.Size(820, $formHeight)
 $form.StartPosition   = "CenterScreen"
 $form.BackColor       = $cBg
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
@@ -271,7 +270,7 @@ $lblAdminBadge.Font      = $fMono8
 $lblAdminBadge.ForeColor = $cGray
 $lblAdminBadge.AutoSize  = $false
 $lblAdminBadge.Size      = New-Object System.Drawing.Size(60, 18)
-$lblAdminBadge.Location  = New-Object System.Drawing.Point($formWidth - 80, 9)
+$lblAdminBadge.Location  = New-Object System.Drawing.Point(740, 9)
 $lblAdminBadge.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 $lblAdminBadge.BackColor = $cSurface2
 $topBar.Controls.Add($lblAdminBadge)
@@ -280,7 +279,7 @@ $topBar.Add_Paint({
     param($s,$e)
     $g = $e.Graphics
     $pen = New-Object System.Drawing.Pen($cBorder, 1)
-    $g.DrawRectangle($pen, $formWidth - 80, 9, 60, 18)
+    $g.DrawRectangle($pen, 740, 9, 59, 17)
     $pen.Dispose()
     foreach ($pos in @(12, 22, 32)) {
         $br = New-Object System.Drawing.SolidBrush($cGrayDim)
@@ -386,7 +385,7 @@ $lblDoneCount.Font      = $fMono8
 $lblDoneCount.ForeColor = $cGrayDim
 $lblDoneCount.AutoSize  = $false
 $lblDoneCount.Size      = New-Object System.Drawing.Size(50, 18)
-$lblDoneCount.Location  = New-Object System.Drawing.Point($formWidth - 80, 5)
+$lblDoneCount.Location  = New-Object System.Drawing.Point(740, 5)
 $lblDoneCount.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
 $lblDoneCount.BackColor = $cSurface2
 $sectionBar.Controls.Add($lblDoneCount)
@@ -394,7 +393,7 @@ $sectionBar.Controls.Add($lblDoneCount)
 $sectionBar.Add_Paint({
     param($s,$e)
     $pen = New-Object System.Drawing.Pen($cBorder, 1)
-    $e.Graphics.DrawRectangle($pen, $formWidth - 80, 5, 50, 18)
+    $e.Graphics.DrawRectangle($pen, 740, 5, 49, 17)
     $pen.Dispose()
 })
 
@@ -414,7 +413,7 @@ $footer.Add_Paint({
 # Progress Area (Left)
 $overallTrack = New-Object System.Windows.Forms.Panel
 $overallTrack.Location  = New-Object System.Drawing.Point(24, 18)
-$overallTrack.Size      = New-Object System.Drawing.Size($formWidth - 300, 8)
+$overallTrack.Size      = New-Object System.Drawing.Size(500, 8)
 $overallTrack.BackColor = $cBorderDim
 $footer.Controls.Add($overallTrack)
 
@@ -429,7 +428,7 @@ $lblPct.Text      = "PROGRESS  0%  ·  READY"
 $lblPct.Font      = $fMono8
 $lblPct.ForeColor = $cWhiteDim
 $lblPct.AutoSize  = $false
-$lblPct.Size      = New-Object System.Drawing.Size($formWidth - 300, 18)
+$lblPct.Size      = New-Object System.Drawing.Size(500, 18)
 $lblPct.Location  = New-Object System.Drawing.Point(24, 36)
 $lblPct.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 $lblPct.BackColor = [System.Drawing.Color]::Transparent
@@ -440,7 +439,7 @@ $lblFooterHint.Text      = "Run GOAT to apply performance tweaks. Restart is rec
 $lblFooterHint.Font      = $fMono8
 $lblFooterHint.ForeColor = $cGrayDim
 $lblFooterHint.AutoSize  = $false
-$lblFooterHint.Size      = New-Object System.Drawing.Size($formWidth - 300, 18)
+$lblFooterHint.Size      = New-Object System.Drawing.Size(500, 18)
 $lblFooterHint.Location  = New-Object System.Drawing.Point(24, 56)
 $lblFooterHint.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
 $lblFooterHint.BackColor = [System.Drawing.Color]::Transparent
@@ -456,7 +455,7 @@ $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cBorder
 $btnRestart.FlatAppearance.BorderSize  = 1
 $btnRestart.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRestart.Location  = New-Object System.Drawing.Point($formWidth - 250, 26)
+$btnRestart.Location  = New-Object System.Drawing.Point(548, 26)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({
     $answer = [System.Windows.Forms.MessageBox]::Show("Restart this PC now?", "GOAT Complete", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
@@ -472,64 +471,23 @@ $btnRun.BackColor = $cWhite
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize  = 0
 $btnRun.Size      = New-Object System.Drawing.Size(110, 34)
-$btnRun.Location      = New-Object System.Drawing.Point($formWidth - 128, 26)
+$btnRun.Location      = New-Object System.Drawing.Point(670, 26)
 $footer.Controls.Add($btnRun)
-
-# ── MAIN CONTENT CONTAINER ──────────────────────────────────────────────────
-$mainContent = New-Object System.Windows.Forms.Panel
-$mainContent.Dock      = [System.Windows.Forms.DockStyle]::Fill
-$mainContent.BackColor = $cBg
-$mainContent.Padding   = New-Object System.Windows.Forms.Padding(24, 10, 24, 10)
 
 # ── TASK SCROLL PANEL ──────────────────────────────────────────────────────
 $scrollPanel = New-Object System.Windows.Forms.Panel
-$scrollPanel.Size         = New-Object System.Drawing.Size(760, $listHeight + 20)
-$scrollPanel.Location     = New-Object System.Drawing.Point(24, 10)
+$scrollPanel.Dock        = [System.Windows.Forms.DockStyle]::Fill
 $scrollPanel.BackColor   = $cBg
 $scrollPanel.AutoScroll  = $true
-$mainContent.Controls.Add($scrollPanel)
 
-# ── LIVE LOG PANEL ──────────────────────────────────────────────────────────
-[int]$logPanelWidth = 400
-[int]$logPanelHeight = $listHeight + 20
-
-$logPanel = New-Object System.Windows.Forms.Panel
-$logPanel.Size      = New-Object System.Drawing.Size($logPanelWidth, $logPanelHeight)
-$logPanel.Location  = New-Object System.Drawing.Point(24 + 760 + 20, 10)
-$logPanel.BackColor = $cSurface2
-$logPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
-$mainContent.Controls.Add($logPanel)
-
-$logTitle = New-Object System.Windows.Forms.Label
-$logTitle.Text      = "OPTIMIZATION LOG"
-$logTitle.Font      = $fMonoBold
-$logTitle.ForeColor = $cWhite
-$logTitle.AutoSize  = $false
-$logTitle.Size      = New-Object System.Drawing.Size($logPanelWidth - 20, 20)
-$logTitle.Location  = New-Object System.Drawing.Point(10, 10)
-$logTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
-$logPanel.Controls.Add($logTitle)
-
-$logTextBox = New-Object System.Windows.Forms.TextBox
-$logTextBox.Text            = "Ready to optimize system..."
-$logTextBox.Font            = $fMono9
-$logTextBox.ForeColor       = $cWhiteDim
-$logTextBox.BackColor       = $cSurface2
-$logTextBox.BorderStyle     = [System.Windows.Forms.BorderStyle]::None
-$logTextBox.Multiline       = $true
-$logTextBox.ReadOnly        = $true
-$logTextBox.ScrollBars      = [System.Windows.Forms.ScrollBars]::Vertical
-$logTextBox.Size            = New-Object System.Drawing.Size($logPanelWidth - 20, $logPanelHeight - 45)
-$logTextBox.Location        = New-Object System.Drawing.Point(10, 35)
-$logPanel.Controls.Add($logTextBox)
-
-# ── ADD CONTROLS TO FORM ──────────────────────────────────────────────────
-# Order: Bottom, Fill, then Top panels (last added is topmost)
-$form.Controls.Add($footer)      # Bottom
-$form.Controls.Add($mainContent) # Fill middle
-$form.Controls.Add($sectionBar)  # Top
-$form.Controls.Add($heroPanel)   # Top
-$form.Controls.Add($topBar)      # Top
+# ── ADD CONTROLS TO FORM — ORDER MATTERS FOR DOCKING ──────────────────────
+# Bottom and Fill must be added before Top panels.
+# Top panels stack in reverse add order (last added = topmost).
+$form.Controls.Add($footer)      # Bottom  — add first
+$form.Controls.Add($scrollPanel) # Fill    — add second
+$form.Controls.Add($sectionBar)  # Top     — appears below heroPanel
+$form.Controls.Add($heroPanel)   # Top     — appears below topBar
+$form.Controls.Add($topBar)      # Top     — add last = sits at very top
 
 # ── BUILD TASK ROWS ────────────────────────────────────────────────────────
 $script:TaskRows = @{}
@@ -538,7 +496,7 @@ $taskKeys        = @($script:Tasks.Keys)
 [int]$totalH     = $taskKeys.Count * $rowH + 20
 
 $innerPanel = New-Object System.Windows.Forms.Panel
-$innerPanel.Size      = New-Object System.Drawing.Size(740, $totalH)
+$innerPanel.Size      = New-Object System.Drawing.Size(800, $totalH)
 $innerPanel.Location  = New-Object System.Drawing.Point(0, 0)
 $innerPanel.BackColor = [System.Drawing.Color]::Transparent
 $scrollPanel.Controls.Add($innerPanel)
@@ -549,7 +507,7 @@ foreach ($key in $taskKeys) {
     $idxLabel = ($taskIndex + 1).ToString("00")
 
     $row = New-Object System.Windows.Forms.Panel
-    $row.Size      = New-Object System.Drawing.Size(740, $rowH)
+    $row.Size      = New-Object System.Drawing.Size(800, $rowH)
     $row.Location  = New-Object System.Drawing.Point(0, $yPos)
     $row.BackColor = [System.Drawing.Color]::Transparent
     $row.Tag       = "pending"
@@ -635,7 +593,7 @@ foreach ($key in $taskKeys) {
 
     # bar track
     $barTrack = New-Object System.Windows.Forms.Panel
-    $barTrack.Location  = New-Object System.Drawing.Point(316 - 40, 18)
+    $barTrack.Location  = New-Object System.Drawing.Point(316, 18)
     $barTrack.Size      = New-Object System.Drawing.Size(360, 4)
     $barTrack.BackColor = $cBorderDim
     $row.Controls.Add($barTrack)
@@ -653,7 +611,7 @@ foreach ($key in $taskKeys) {
     $lblStatus.ForeColor = $cGrayDim
     $lblStatus.AutoSize  = $false
     $lblStatus.Size      = New-Object System.Drawing.Size(72, $rowH)
-    $lblStatus.Location  = New-Object System.Drawing.Point(708 - 40, 0)
+    $lblStatus.Location  = New-Object System.Drawing.Point(708, 0)
     $lblStatus.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
     $lblStatus.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($lblStatus)
@@ -777,14 +735,6 @@ function Set-RunButtonStyle ([string]$mode) {
     }
 }
 
-# ── LOGGING ────────────────────────────────────────────────────────────────
-function Write-Log ([string]$msg) {
-    $timestamp = Get-Date -Format "HH:mm:ss"
-    $logTextBox.AppendText("[$timestamp] $msg`r`n")
-    $logTextBox.SelectionStart = $logTextBox.Text.Length
-    $logTextBox.ScrollToCaret()
-}
-
 # ── RUN LOGIC ──────────────────────────────────────────────────────────────
 $script:RunIndex    = 0
 $script:TaskKeyList = @()
@@ -802,7 +752,6 @@ $runTimer.Add_Tick({
         $prevKey = $script:TaskKeyList[$script:RunIndex - 1]
         Set-TaskState $prevKey "done"
         $script:DoneCount++
-        Write-Log "Success: $($script:Tasks[$prevKey]) complete."
         Set-OverallProgress $script:DoneCount $script:TotalTasks "RUNNING"
         $form.Refresh()
     }
@@ -812,20 +761,15 @@ $runTimer.Add_Tick({
         $animTimer.Stop()
         if ($script:JobWorker) { $script:JobWorker | Remove-Job -Force -ErrorAction SilentlyContinue }
         $script:IsRunning    = $false
-        Write-Log "All tasks completed successfully."
         Set-OverallProgress $script:TotalTasks $script:TotalTasks "COMPLETE"
         $lblPct.ForeColor    = $cWhite
         $lblFooterHint.Text  = "Optimization complete. Restart your PC to apply all system-level changes."
-$lblFooterHint.Location = New-Object System.Drawing.Point(24, 56) # Ensure footer hint is correctly positioned
-$btnRestart.Location = New-Object System.Drawing.Point($formWidth - 250, 26) # Ensure restart button is correctly positioned
-$btnRun.Location = New-Object System.Drawing.Point($formWidth - 128, 26) # Ensure run button is correctly positioned
         $btnRestart.Visible  = $true
         Set-RunButtonStyle "complete"
         return
     }
 
     $key    = $script:TaskKeyList[$script:RunIndex]
-    Write-Log "Action: Optimizing $($script:Tasks[$key])..."
     Set-TaskState $key "running"
 
     $script:AnimKey    = $key
@@ -860,8 +804,6 @@ $btnRun.Location = New-Object System.Drawing.Point($formWidth - 128, 26) # Ensur
 
 $btnRun.Add_Click({
     if ($script:IsRunning) { return }
-    $logTextBox.Text = ""
-    Write-Log "Initializing GOAT v3.0..."
     $script:IsRunning   = $true
     $script:RunIndex    = 0
     $script:DoneCount   = 0
