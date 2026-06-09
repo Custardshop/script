@@ -222,7 +222,8 @@ function Invoke-Cleanup {
 [int]$rowH       = 40
 [int]$taskCount  = 13
 [int]$listHeight = ($taskCount * $rowH) + 20   # 540
-[int]$formHeight = 36 + 155 + 28 + $listHeight + 86 + 14  # ~861
+[int]$changelogHeight = 150 # Height of the changelog panel
+$formHeight = 36 + 155 + 28 + $listHeight + 86 + 14 + $changelogHeight + 20 # Adjusted for changelog
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS v3.0"
@@ -810,6 +811,55 @@ $btnRun.Add_Click({
     $script:TaskKeyList = @($script:Tasks.Keys)
     $script:TotalTasks  = $script:TaskKeyList.Count
     $btnRestart.Visible  = $false
+
+# ── CHANGELOG ──────────────────────────────────────────────────────────────
+$changelogContent = @"
+v3.1 (2026-06-09)
+- Added Changelog feature.
+- Minor UI adjustments.
+
+v3.0 (2026-05-20)
+- Initial release of Monochrome Dark Theme.
+- Redesigned task list and progress indicators.
+"@
+
+$changelogPanel = New-Object System.Windows.Forms.Panel
+$changelogPanel.Size      = New-Object System.Drawing.Size(760, $changelogHeight)
+$changelogPanel.Location  = New-Object System.Drawing.Point(24, $form.Height - $changelogHeight - 50) # Position above footer, adjust as needed
+$changelogPanel.BackColor = $cSurface2
+$changelogPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$changelogPanel.Tag       = "changelog"
+$form.Controls.Add($changelogPanel)
+
+$changelogTitle = New-Object System.Windows.Forms.Label
+$changelogTitle.Text      = "CHANGELOG"
+$changelogTitle.Font      = $fMonoBold
+$changelogTitle.ForeColor = $cWhite
+$changelogTitle.AutoSize  = $false
+$changelogTitle.Size      = New-Object System.Drawing.Size(740, 20)
+$changelogTitle.Location  = New-Object System.Drawing.Point(10, 10)
+$changelogTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
+$changelogPanel.Controls.Add($changelogTitle)
+
+$changelogTextBox = New-Object System.Windows.Forms.TextBox
+$changelogTextBox.Text            = $changelogContent
+$changelogTextBox.Font            = $fMono9
+$changelogTextBox.ForeColor       = $cWhiteDim
+$changelogTextBox.BackColor       = $cSurface2
+$changelogTextBox.BorderStyle     = [System.Windows.Forms.BorderStyle]::None
+$changelogTextBox.Multiline       = $true
+$changelogTextBox.ReadOnly        = $true
+$changelogTextBox.ScrollBars      = [System.Windows.Forms.ScrollBars]::Vertical
+$changelogTextBox.Size            = New-Object System.Drawing.Size(740, $changelogHeight - 45)
+$changelogTextBox.Location        = New-Object System.Drawing.Point(10, 35)
+$changelogPanel.Controls.Add($changelogTextBox)
+
+$form.Controls.Add($changelogPanel)
+
+$form.Add_Shown({
+    # Ensure the changelog panel is positioned correctly after form is shown
+    $changelogPanel.Location = New-Object System.Drawing.Point(24, $form.Height - $changelogHeight - 50)
+})
     $lblFooterHint.Text  = "GOAT is running. Please wait until every module is complete."
     Set-OverallProgress 0 $script:TotalTasks "RUNNING"
     Set-RunButtonStyle "running"
