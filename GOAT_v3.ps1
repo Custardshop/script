@@ -2,7 +2,8 @@
 
 <#
   GOAT — GREATEST OF ALL TWEAKS
-  Premium Edition v4.0 · Onyx Crimson · Soft Luxury
+  Premium Edition v4.0 · Horizontal Landscape
+  Theme: Onyx Crimson · Soft Luxury
 #>
 
 # ── ADMIN AUTO-ELEVATE ────────────────────────────────────────────────────
@@ -32,10 +33,10 @@ $GPU      = (Get-CimInstance Win32_VideoController | Where-Object { $_.Name -not
 if (-not $GPU) { $GPU = (Get-CimInstance Win32_VideoController | Select-Object -First 1).Name }
 
 function Trim-String($s, $len) { if ($s.Length -gt $len) { $s.Substring(0,$len)+"…" } else { $s } }
-$CPUShort  = Trim-String $CPU 34
-$GPUShort  = Trim-String $GPU 34
-$OSShort   = Trim-String $OSName 34
-$UserShort = Trim-String "$UserName @ $PCName" 34
+$CPUShort  = Trim-String $CPU 38
+$GPUShort  = Trim-String $GPU 38
+$OSShort   = Trim-String $OSName 38
+$UserShort = Trim-String "$UserName @ $PCName" 38
 
 # ── DOUBLE BUFFER HELPER ───────────────────────────────────────────────────
 $doubleBufferCode = @"
@@ -53,34 +54,29 @@ Add-Type -TypeDefinition $doubleBufferCode -ReferencedAssemblies System.Windows.
 # ── PALETTE — ONYX CRIMSON ─────────────────────────────────────────────────
 $cBg         = [System.Drawing.Color]::FromArgb(8,   8,   10)
 $cSurface    = [System.Drawing.Color]::FromArgb(14,  14,  18)
-$cCard       = [System.Drawing.Color]::FromArgb(20,  20,  26)
-$cCardHover  = [System.Drawing.Color]::FromArgb(26,  26,  34)
-$cBorder     = [System.Drawing.Color]::FromArgb(44,  44,  56)
+$cCard       = [System.Drawing.Color]::FromArgb(18,  18,  24)
+$cCardHover  = [System.Drawing.Color]::FromArgb(24,  24,  32)
 $cBorderFine = [System.Drawing.Color]::FromArgb(30,  30,  40)
 
 # Crimson accent palette
 $cAccent     = [System.Drawing.Color]::FromArgb(180, 30,  50)    # deep crimson
 $cAccentGlow = [System.Drawing.Color]::FromArgb(220, 50,  70)    # bright crimson
 $cAccentDim  = [System.Drawing.Color]::FromArgb(100, 20,  30)    # muted crimson
-$cAccentFill = [System.Drawing.Color]::FromArgb(40,  180, 30, 50) # translucent
 
 $cWhite      = [System.Drawing.Color]::FromArgb(245, 240, 238)
 $cWhiteDim   = [System.Drawing.Color]::FromArgb(170, 165, 162)
 $cMuted      = [System.Drawing.Color]::FromArgb(90,  86,  90)
 $cDimText    = [System.Drawing.Color]::FromArgb(52,  50,  55)
 $cDone       = [System.Drawing.Color]::FromArgb(70,  68,  72)
-$cDoneFill   = [System.Drawing.Color]::FromArgb(35,  34,  38)
 
 # ── FONTS ──────────────────────────────────────────────────────────────────
 $fUI8      = New-Object System.Drawing.Font("Segoe UI", 8)
 $fUI9      = New-Object System.Drawing.Font("Segoe UI", 9)
-$fUI10     = New-Object System.Drawing.Font("Segoe UI", 10)
-$fUISemi   = New-Object System.Drawing.Font("Segoe UI Semibold", 10)
-$fUIBold11 = New-Object System.Drawing.Font("Segoe UI Bold", 11)
+$fUISemi   = New-Object System.Drawing.Font("Segoe UI Semibold", 9.5)
 $fUIBold9  = New-Object System.Drawing.Font("Segoe UI Bold", 9)
 $fMono8    = New-Object System.Drawing.Font("Consolas", 8)
 $fMono9    = New-Object System.Drawing.Font("Consolas", 9)
-$fTitle    = New-Object System.Drawing.Font("Segoe UI Black", 28, [System.Drawing.FontStyle]::Bold)
+$fTitle    = New-Object System.Drawing.Font("Segoe UI Black", 24, [System.Drawing.FontStyle]::Bold)
 $fCap      = New-Object System.Drawing.Font("Segoe UI", 7)
 
 # ── TASK DEFINITIONS ───────────────────────────────────────────────────────
@@ -101,19 +97,19 @@ $script:Tasks = [ordered]@{
 }
 
 $script:TaskDesc = [ordered]@{
-    "kernel"   = "BCD boot flags, platform clock, TSC sync"
-    "timer"    = "GlobalTimerResolutionRequests registry"
-    "priority" = "Win32 priority separation, MMCSS"
-    "irq"      = "PCI MSI interrupt mode enforcement"
-    "memory"   = "Prefetch, pagefile, Superfetch, OneDrive"
-    "input"    = "Mouse accel, USB suspend, queue size"
-    "nagle"    = "TCP ACK frequency, delayed ACK disable"
-    "visual"   = "Animation, transparency, DWM effects"
-    "gamebar"  = "GameDVR, FSE, Xbox overlay disable"
-    "power"    = "CPU min/max P-state 100% lock"
-    "network"  = "RSS, autotuning, Winsock reset, DNS"
-    "services" = "Telemetry, Xbox, Fax, Search disable"
-    "cleanup"  = "Temp files, SoftwareDistribution, logs"
+    "kernel"   = "Disable platform clock, optimize TSC synchronization."
+    "timer"    = "Force global kernel timer resolution requests."
+    "priority" = "Adjust Win32 separation and multimedia scheduling."
+    "irq"      = "Enforce Message Signaled Interrupts on PCI devices."
+    "memory"   = "Disable Superfetch, optimize dirty page thresholds."
+    "input"    = "Remove mouse acceleration, disable USB power savings."
+    "nagle"    = "Disable Nagle's algorithm for low-latency network packet transmission."
+    "visual"   = "Optimize system responsiveness by disabling window animations."
+    "gamebar"  = "Turn off Xbox Game DVR background capture and overlay."
+    "power"    = "Lock CPU minimum and maximum P-states to full capacity."
+    "network"  = "Enable RSS, configure TCP autotuning, flush DNS cache."
+    "services" = "Disable background tracking, telemetry, and unnecessary services."
+    "cleanup"  = "Clear software distribution caches, user temp folders, and logs."
 }
 
 $script:FnMap = [ordered]@{
@@ -132,133 +128,6 @@ $script:FnMap = [ordered]@{
     "cleanup"  = "Invoke-Cleanup"
 }
 
-# ── OPTIMIZATION FUNCTIONS ─────────────────────────────────────────────────
-function Invoke-Kernel {
-    bcdedit /set useplatformclock no 2>$null | Out-Null
-    bcdedit /set useplatformtick yes 2>$null | Out-Null
-    bcdedit /set disabledynamictick yes 2>$null | Out-Null
-    bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
-    bcdedit /set nx OptOut 2>$null | Out-Null
-    bcdedit /set synthetictimers yes 2>$null | Out-Null
-    $h = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*High Precision*" }
-    if ($h) { Disable-PnpDevice -InstanceId $h.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }
-}
-function Invoke-TimerResolution {
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null
-}
-function Invoke-IRQ {
-    Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI" -ErrorAction SilentlyContinue | ForEach-Object {
-        $p = "$($_.PSPath)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"
-        if (Test-Path $p) { Set-ItemProperty -Path $p -Name "MSISupported" -Value 1 -Type DWord -Force 2>$null }
-    }
-}
-function Invoke-Nagle {
-    $iP = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces"
-    Get-ChildItem $iP -ErrorAction SilentlyContinue | ForEach-Object {
-        Set-ItemProperty -Path $_.PSPath -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null
-        Set-ItemProperty -Path $_.PSPath -Name "TCPNoDelay"      -Value 1 -Type DWord -Force 2>$null
-        Set-ItemProperty -Path $_.PSPath -Name "TcpDelAckTicks"  -Value 0 -Type DWord -Force 2>$null
-    }
-}
-function Invoke-VisualEffects {
-    $vp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"
-    if (-not (Test-Path $vp)) { New-Item -Path $vp -Force | Out-Null }
-    Set-ItemProperty -Path $vp -Name "VisualFXSetting" -Value 2 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null
-}
-function Invoke-GameBar {
-    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode" -Value 1 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord -Force 2>$null
-    $gp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
-    if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
-    Set-ItemProperty -Path $gp -Name "AllowGameDVR" -Value 0 -Type DWord -Force 2>$null
-}
-function Invoke-ProcessorPower {
-    powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100 2>$null | Out-Null
-    powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 2>$null | Out-Null
-    powercfg /setactive SCHEME_CURRENT 2>$null | Out-Null
-}
-function Invoke-Priority {
-    $pp = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
-    $sp = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
-    $gp = "$sp\Tasks\Games"
-    $ep = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Executive"
-    Set-ItemProperty -Path $pp -Name "Win32PrioritySeparation" -Value 0x2a -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $sp -Name "SystemResponsiveness" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $sp -Name "NetworkThrottlingIndex" -Value 0xFFFFFFFF -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $ep -Name "AdditionalCriticalWorkerThreads" -Value 2 -Type DWord -Force 2>$null
-    if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
-    Set-ItemProperty -Path $gp -Name "GPU Priority"        -Value 8      -Type DWord  -Force 2>$null
-    Set-ItemProperty -Path $gp -Name "Priority"            -Value 6      -Type DWord  -Force 2>$null
-    Set-ItemProperty -Path $gp -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null
-    Set-ItemProperty -Path $gp -Name "SFIO Priority"       -Value "High" -Type String -Force 2>$null
-}
-function Invoke-Memory {
-    $mp = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
-    Set-ItemProperty -Path $mp -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $mp -Name "ClearPageFileAtShutdown"       -Value 0 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null
-    powercfg -h off 2>$null | Out-Null
-    taskkill /f /im OneDrive.exe 2>$null | Out-Null
-    Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue
-}
-function Invoke-Input {
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize"    -Value 16 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
-    $pt = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"
-    if (-not (Test-Path $pt)) { New-Item -Path $pt -Force | Out-Null }
-    Set-ItemProperty -Path $pt -Name "PowerThrottlingOff" -Value 1 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseSpeed"      -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseThreshold1" -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Mouse"    -Name "MouseThreshold2" -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay"   -Value "0"  -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed"   -Value "31" -Type String -Force 2>$null
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB"    -Name "DisableSelectiveSuspend" -Value 1 -Type DWord -Force 2>$null
-    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HidUsb" -Name "IdleEnable"              -Value 0 -Type DWord -Force 2>$null
-}
-function Invoke-Network {
-    netsh int tcp set global rss=enabled 2>$null | Out-Null
-    netsh int tcp set global autotuninglevel=disabled 2>$null | Out-Null
-    netsh int tcp set global timestamps=disabled 2>$null | Out-Null
-    netsh int tcp set global chimney=disabled 2>$null | Out-Null
-    $tp = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"
-    Set-ItemProperty -Path $tp -Name "TCPNoDelay"      -Value 1  -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $tp -Name "TcpAckFrequency" -Value 1  -Type DWord -Force 2>$null
-    Set-ItemProperty -Path $tp -Name "DefaultTTL"      -Value 64 -Type DWord -Force 2>$null
-    Clear-DnsClientCache -ErrorAction SilentlyContinue | Out-Null
-    netsh winsock reset 2>$null | Out-Null
-    netsh int ip reset  2>$null | Out-Null
-    ipconfig /release   2>$null | Out-Null
-    ipconfig /renew     2>$null | Out-Null
-    Get-NetAdapter | Where-Object { $_.Physical } | Restart-NetAdapter -ErrorAction SilentlyContinue
-}
-function Invoke-Services {
-    @('DiagTrack','WSearch','MapsBroker','XblAuthManager','XblGameSave','XboxNetApiSvc','Fax','RetailDemo','RemoteRegistry','WerSvc') | ForEach-Object {
-        Stop-Service -Name $_ -Force -ErrorAction SilentlyContinue
-        Set-Service  -Name $_ -StartupType Disabled -ErrorAction SilentlyContinue
-    }
-    @('Audiosrv','AudioEndpointBuilder','Dhcp','NlaSvc','Netman','WlanSvc','RpcSs','EventLog','PlugPlay','LanmanWorkstation','LanmanServer') | ForEach-Object {
-        Set-Service   -Name $_ -StartupType Automatic -ErrorAction SilentlyContinue
-        Start-Service -Name $_ -ErrorAction SilentlyContinue
-    }
-}
-function Invoke-Cleanup {
-    @("$env:USERPROFILE\AppData\Local\Temp\*","C:\Windows\Temp\*","C:\Windows\Prefetch\*") | ForEach-Object {
-        Get-ChildItem -Path $_ -Recurse -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    Stop-Service -Name wuauserv,UsoSvc -Force -ErrorAction SilentlyContinue
-    Remove-Item -Path "C:\Windows\SoftwareDistribution\*" -Recurse -Force -ErrorAction SilentlyContinue
-    Start-Service -Name wuauserv -ErrorAction SilentlyContinue
-    wevtutil.exe el | ForEach-Object { wevtutil.exe cl "$_" 2>$null }
-}
-
 # ── ROUNDED RECT HELPER ────────────────────────────────────────────────────
 function Get-RoundedRect([int]$x,[int]$y,[int]$w,[int]$h,[int]$r) {
     $path = New-Object System.Drawing.Drawing2D.GraphicsPath
@@ -270,28 +139,17 @@ function Get-RoundedRect([int]$x,[int]$y,[int]$w,[int]$h,[int]$r) {
     return $path
 }
 
-# ── LAYOUT CONSTANTS ───────────────────────────────────────────────────────
-[int]$formW      = 860
-[int]$headerH    = 180
-[int]$subbarH    = 44
-[int]$rowH       = 52
-[int]$taskCount  = 13
-[int]$listH      = ($taskCount * $rowH) + 16
-[int]$footerH    = 96
-[int]$formH      = 36 + $headerH + $subbarH + $listH + $footerH + 8
-
-# ── MAIN FORM ──────────────────────────────────────────────────────────────
+# ── FORM SETUP (HORIZONTAL LANDSCAPE) ──────────────────────────────────────
 $form = New-Object DBForm
-$form.Text            = "GOAT — Greatest Of All Tweaks v4.0"
-$form.Size            = New-Object System.Drawing.Size($formW, $formH)
-$form.MinimumSize     = New-Object System.Drawing.Size($formW, $formH)
+$form.Text            = "GOAT — Premium Edition v4.0"
+$form.Size            = New-Object System.Drawing.Size(1160, 680)
+$form.MinimumSize     = New-Object System.Drawing.Size(1160, 680)
 $form.StartPosition   = "CenterScreen"
 $form.BackColor       = $cBg
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 $form.MaximizeBox     = $false
-$form.Icon            = [System.Drawing.SystemIcons]::Shield
 
-# ── TITLE BAR STRIP ────────────────────────────────────────────────────────
+# ── TITLE BAR (TOP STRIP) ──────────────────────────────────────────────────
 $titleBar = New-Object DBPanel
 $titleBar.Dock      = [System.Windows.Forms.DockStyle]::Top
 $titleBar.Height    = 36
@@ -300,181 +158,235 @@ $titleBar.BackColor = $cSurface
 $titleBar.Add_Paint({
     param($s,$e)
     $g = $e.Graphics
-    $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(60,180,30,50), 1)
-    $g.DrawLine($pen, 0, $s.Height-1, $s.Width, $s.Height-1)
-    $pen.Dispose()
     $colors = @([System.Drawing.Color]::FromArgb(255,90,90), [System.Drawing.Color]::FromArgb(255,190,60), [System.Drawing.Color]::FromArgb(60,200,80))
     for ($i=0;$i -lt 3;$i++) {
         $br = New-Object System.Drawing.SolidBrush($colors[$i])
-        $g.FillEllipse($br, 14+($i*20), 13, 10, 10)
+        $g.FillEllipse($br, 16+($i*18), 13, 9, 9)
         $br.Dispose()
     }
-    $br2 = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(60,60,70))
-    $g.DrawString("GOAT.ps1  —  Administrator", $fMono8, $br2, 80, 12)
-    $br2.Dispose()
-    $badgePath = Get-RoundedRect 754 10 60 16 4
-    $pen2 = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(80,180,30,50), 1)
-    $g.DrawPath($pen2, $badgePath)
-    $pen2.Dispose()
-    $badgePath.Dispose()
-    $br3 = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(180,30,50))
-    $g.DrawString("v4.0", $fMono8, $br3, 768, 13)
-    $br3.Dispose()
+    $brText = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(70,70,80))
+    $g.DrawString("GOAT.dashboard.v4.0.landscape", $fMono8, $brText, 76, 12)
+    $brText.Dispose()
+    
+    $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(22,22,26), 1)
+    $g.DrawLine($pen, 0, $s.Height-1, $s.Width, $s.Height-1)
+    $pen.Dispose()
 })
 
-# ── HERO / HEADER ─────────────────────────────────────────────────────────
-$heroPanel = New-Object DBPanel
-$heroPanel.Dock      = [System.Windows.Forms.DockStyle]::Top
-$heroPanel.Height    = $headerH
-$heroPanel.BackColor = $cSurface
+# ── LEFT SIDEBAR (HERO & SYSINFO) ─────────────────────────────────────────
+$sidebar = New-Object DBPanel
+$sidebar.Dock      = [System.Windows.Forms.DockStyle]::Left
+$sidebar.Width     = 340
+$sidebar.BackColor = $cSurface
 
-$heroPanel.Add_Paint({
+$sidebar.Add_Paint({
     param($s,$e)
     $g = $e.Graphics
     $g.SmoothingMode     = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::ClearTypeGridFit
 
-    $gb = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-        [System.Drawing.Point]::new(0,0), [System.Drawing.Point]::new(0,$s.Height),
-        [System.Drawing.Color]::FromArgb(14,14,18), [System.Drawing.Color]::FromArgb(10,10,14)
-    )
-    $g.FillRectangle($gb, 0, 0, $s.Width, $s.Height)
-    $gb.Dispose()
-
+    # Accent Glow Left Edge
     $glowBr = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-        [System.Drawing.Point]::new(0,0), [System.Drawing.Point]::new(5,0),
-        [System.Drawing.Color]::FromArgb(200,180,30,50), [System.Drawing.Color]::FromArgb(0,180,30,50)
+        [System.Drawing.Point]::new(0,0), [System.Drawing.Point]::new(4,0),
+        [System.Drawing.Color]::FromArgb(180,180,30,50), [System.Drawing.Color]::FromArgb(0,180,30,50)
     )
-    $g.FillRectangle($glowBr, 0, 24, 4, $s.Height - 48)
+    $g.FillRectangle($glowBr, 0, 30, 4, 80)
     $glowBr.Dispose()
 
+    # Brand Title
     $titleBr = New-Object System.Drawing.SolidBrush($cWhite)
-    $g.DrawString("GOAT", $fTitle, $titleBr, 24, 22)
+    $g.DrawString("GOAT", $fTitle, $titleBr, 24, 26)
     $titleBr.Dispose()
 
     $dotBr = New-Object System.Drawing.SolidBrush($cAccent)
-    $g.FillEllipse($dotBr, 165, 28, 8, 8)
+    $g.FillEllipse($dotBr, 142, 32, 7, 7)
     $dotBr.Dispose()
 
     $subBr = New-Object System.Drawing.SolidBrush($cMuted)
-    $g.DrawString("GREATEST OF ALL TWEAKS", $fCap, $subBr, 26, 78)
+    $g.DrawString("GREATEST OF ALL TWEAKS", $fCap, $subBr, 26, 74)
     $subBr.Dispose()
 
-    $sepBr = New-Object System.Drawing.SolidBrush($cAccentDim)
-    $g.FillRectangle($sepBr, 24, 96, 160, 1)
-    $sepBr.Dispose()
+    # System Info Header
+    $g.DrawString("SPECIFICATIONS", $fCap, New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(80,30,45)), 26, 140)
 
-    $cardPath = Get-RoundedRect ($s.Width - 296) 16 270 ($s.Height - 32) 10
-    $cardBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(26,26,32))
-    $g.FillPath($cardBr, $cardPath)
-    $cardBr.Dispose()
-    $cardPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(44,44,56), 1)
-    $g.DrawPath($cardPen, $cardPath)
-    $cardPen.Dispose()
-    $cardPath.Dispose()
+    # Box container for specs
+    $boxPath = Get-RoundedRect 24 160 292 250 8
+    $boxBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(20,20,26))
+    $g.FillPath($boxBr, $boxPath); $boxBr.Dispose()
+    $boxPen = New-Object System.Drawing.Pen($cBorderFine, 1)
+    $g.DrawPath($boxPen, $boxPath); $boxPen.Dispose(); $boxPath.Dispose()
 
-    $labelBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(100,30,50))
-    $valBr   = New-Object System.Drawing.SolidBrush($cWhiteDim)
-    $sfR = New-Object System.Drawing.StringFormat
-    $sfR.Alignment = [System.Drawing.StringAlignment]::Far
-    $rx = $s.Width - 30
-    $rows = @(26, 52, 78, 104, 130)
-    $labels = @("USER","CPU","GPU","RAM","OS")
-    $vals   = @($UserShort, $CPUShort, $GPUShort, "$RAMUsed / $($RAMTotal) GB  ($RAMPct%)", $OSShort)
-    for ($i=0; $i -lt 5; $i++) {
-        $g.DrawString($labels[$i], $fCap, $labelBr, $rx-240, $rows[$i], $sfR)
-        $divPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(40,40,50), 1)
-        $g.DrawLine($divPen, $rx-236, $rows[$i]+4, $rx-230, $rows[$i]+4)
-        $divPen.Dispose()
-        $g.DrawString($vals[$i], $fCap, $valBr, $rx, $rows[$i], $sfR)
+    # Layout values
+    $lblBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(120,30,50))
+    $valBr = New-Object System.Drawing.SolidBrush($cWhiteDim)
+    $rows  = @(180, 222, 264, 306, 348)
+    $names = @("IDENTITY", "PROCESSOR", "GRAPHICS", "MEMORY", "PLATFORM")
+    $vals  = @($UserShort, $CPUShort, $GPUShort, "$RAMUsed / $($RAMTotal) GB  ($RAMPct%)", $OSShort)
+
+    for($i=0; $i -lt 5; $i++) {
+        $g.DrawString($names[$i], $fCap, $lblBr, 40, $rows[$i])
+        $g.DrawString($vals[$i], $fCap, $valBr, 40, $rows[$i]+14)
     }
-    $labelBr.Dispose(); $valBr.Dispose(); $sfR.Dispose()
+    $lblBr.Dispose(); $valBr.Dispose()
 
+    # Separator Line
+    $sepPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(24,24,30), 1)
+    $g.DrawLine($sepPen, 0, $s.Height-1, $s.Width, $s.Height-1)
+    $sepPen.Dispose()
+})
+
+# ── RIGHT CONTENT CONTROLLER (CONTAINER) ──────────────────────────────────
+$mainContent = New-Object DBPanel
+$mainContent.Dock      = [System.Windows.Forms.DockStyle]::Fill
+$mainContent.BackColor = $cBg
+
+# Sub Header inside Main Panel
+$subHeader = New-Object DBPanel
+$subHeader.Dock      = [System.Windows.Forms.DockStyle]::Top
+$subHeader.Height    = 50
+$subHeader.BackColor = $cBg
+
+$lblMod = New-Object System.Windows.Forms.Label
+$lblMod.Text      = "TUNING MODULES ARCHITECTURE"
+$lblMod.Font      = $fCap
+$lblMod.ForeColor = [System.Drawing.Color]::FromArgb(70,66,72)
+$lblMod.Location  = New-Object System.Drawing.Point(24, 20)
+$lblMod.AutoSize  = $true
+$subHeader.Controls.Add($lblMod)
+
+$lblCounter = New-Object System.Windows.Forms.Label
+$lblCounter.Text      = "0 / 13 CHANNELS READY"
+$lblCounter.Font      = $fMono8
+$lblCounter.ForeColor = $cAccentDim
+$lblCounter.Location  = New-Object System.Drawing.Point(620, 18)
+$lblCounter.Size      = New-Object System.Drawing.Size(150, 20)
+$lblCounter.TextAlign = [System.Drawing.ContentAlignment]::TopRight
+$subHeader.Controls.Add($lblCounter)
+
+# Scrollable Panel for grid rows
+$scrollPanel = New-Object System.Windows.Forms.Panel
+$scrollPanel.Dock        = [System.Windows.Forms.DockStyle]::Fill
+$scrollPanel.AutoScroll  = $true
+$scrollPanel.BackColor   = $cBg
+
+[int]$rowW = 764
+[int]$rowH = 46
+[int]$yPos = 4
+[int]$tidx = 0
+
+$script:TaskRows = @{}
+$taskKeys = @($script:Tasks.Keys)
+
+foreach ($key in $taskKeys) {
+    $label  = $script:Tasks[$key]
+    $desc   = $script:TaskDesc[$key]
+    $idxTxt = ($tidx + 1).ToString("00")
+
+    $row = New-Object DBPanel
+    $row.Size     = New-Object System.Drawing.Size($rowW, $rowH)
+    $row.Location = New-Object System.Drawing.Point(16, $yPos)
+    $row.BackColor = [System.Drawing.Color]::Transparent
+    $row.Tag      = "pending"
+    $scrollPanel.Controls.Add($row)
+
+    $row.Add_Paint({
+        param($s,$e)
+        $g = $e.Graphics
+        $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+        $st = $s.Tag
+        
+        # Draw background container base on real-time state
+        $path = Get-RoundedRect 0 1 ($s.Width-2) ($s.Height-3) 5
+        if ($st -eq "running") {
+            $br = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(24,16,18))
+            $g.FillPath($br, $path); $br.Dispose()
+            $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(120,180,30,50), 1)
+            $g.DrawPath($pen, $path); $pen.Dispose()
+        } elseif ($st -eq "done") {
+            $br = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(14,14,16))
+            $g.FillPath($br, $path); $br.Dispose()
+            $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(24,24,30), 1)
+            $g.DrawPath($pen, $path); $pen.Dispose()
+        } else {
+            $br = New-Object System.Drawing.SolidBrush($cCard)
+            $g.FillPath($br, $path); $br.Dispose()
+            $pen = New-Object System.Drawing.Pen($cBorderFine, 1)
+            $g.DrawPath($pen, $path); $pen.Dispose()
+        }
+        $path.Dispose()
+
+        # Channel Index
+        $numBr = New-Object System.Drawing.SolidBrush(if($st -eq "done"){$cDimText}else{$cAccentDim})
+        $g.DrawString($idxTxt, $fMono8, $numBr, 16, 16)
+        $numBr.Dispose()
+
+        # Task Heading
+        $lblBr = New-Object System.Drawing.SolidBrush(if($st -eq "done"){$cDone}else{$cWhite})
+        $g.DrawString($label, $fUISemi, $lblBr, 46, 13)
+        $lblBr.Dispose()
+
+        # Core Description string clipped neatly
+        $descBr = New-Object System.Drawing.SolidBrush(if($st -eq "done"){[System.Drawing.Color]::FromArgb(34,34,38)}else{$cMuted})
+        $g.DrawString($desc, $fUI8, $descBr, 190, 15)
+        $descBr.Dispose()
+
+        # Right status mapping
+        if ($st -eq "done") {
+            $statusStr = "PATCHED"
+            $statusBr  = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(50,50,55))
+        } elseif ($st -eq "running") {
+            $statusStr = "INJECTING"
+            $statusBr  = New-Object System.Drawing.SolidBrush($cAccentGlow)
+        } else {
+            $statusStr = "READY"
+            $statusBr  = New-Object System.Drawing.SolidBrush($cDimText)
+        }
+        $sf = New-Object System.Drawing.StringFormat
+        $sf.Alignment = [System.Drawing.StringAlignment]::Far
+        $g.DrawString($statusStr, $fMono8, $statusBr, ($s.Width - 24), 16, $sf)
+        $statusBr.Dispose(); $sf.Dispose()
+    })
+
+    $row.Add_MouseEnter({ param($s,$e) if ($s.Tag -eq "pending") { $s.Tag = "hover"; $s.Invalidate() } })
+    $row.Add_MouseLeave({ param($s,$e) if ($s.Tag -eq "hover")   { $s.Tag = "pending"; $s.Invalidate() } })
+
+    $script:TaskRows[$key] = $row
+    $yPos += $rowH + 4
+    $tidx++
+}
+
+# ── CONTROL PANEL / FOOTER STRIP ──────────────────────────────────────────
+$controlStrip = New-Object DBPanel
+$controlStrip.Dock      = [System.Windows.Forms.DockStyle]::Bottom
+$controlStrip.Height    = 76
+$controlStrip.BackColor = $cSurface
+
+$controlStrip.Add_Paint({
+    param($s,$e)
+    $g = $e.Graphics
     $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(30,30,40), 1)
-    $g.DrawLine($pen, 0, $s.Height-1, $s.Width, $s.Height-1)
-    $pen.Dispose()
-})
-
-# ── MODULE HEADER BAR ──────────────────────────────────────────────────────
-$subBar = New-Object DBPanel
-$subBar.Dock      = [System.Windows.Forms.DockStyle]::Top
-$subBar.Height    = $subbarH
-$subBar.BackColor = $cBg
-
-$lblModTitle = New-Object System.Windows.Forms.Label
-$lblModTitle.Text      = "OPTIMIZATION MODULES"
-$lblModTitle.Font      = $fCap
-$lblModTitle.ForeColor = [System.Drawing.Color]::FromArgb(80,76,82)
-$lblModTitle.AutoSize  = $false
-$lblModTitle.Size      = New-Object System.Drawing.Size(300, $subbarH)
-$lblModTitle.Location  = New-Object System.Drawing.Point(28, 0)
-$lblModTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
-$lblModTitle.BackColor = [System.Drawing.Color]::Transparent
-$subBar.Controls.Add($lblModTitle)
-
-$lblDoneCount = New-Object System.Windows.Forms.Label
-$lblDoneCount.Text      = "0 / 13"
-$lblDoneCount.Font      = $fMono8
-$lblDoneCount.ForeColor = $cAccentDim
-$lblDoneCount.AutoSize  = $false
-$lblDoneCount.Size      = New-Object System.Drawing.Size(56, 22)
-$lblDoneCount.Location  = New-Object System.Drawing.Point(770, 11)
-$lblDoneCount.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$lblDoneCount.BackColor = [System.Drawing.Color]::Transparent
-$subBar.Controls.Add($lblDoneCount)
-
-$subBar.Add_Paint({
-    param($s,$e)
-    $g = $e.Graphics
-    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $path = Get-RoundedRect 768 9 60 24 5
-    $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(80,180,30,50), 1)
-    $g.DrawPath($pen, $path)
-    $pen.Dispose(); $path.Dispose()
-    $pen2 = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(22,22,28), 1)
-    $g.DrawLine($pen2, 0, $s.Height-1, $s.Width, $s.Height-1)
-    $pen2.Dispose()
-})
-
-# ── FOOTER ─────────────────────────────────────────────────────────────────
-$footer = New-Object DBPanel
-$footer.Dock      = [System.Windows.Forms.DockStyle]::Bottom
-$footer.Height    = $footerH
-$footer.BackColor = $cSurface
-
-$footer.Add_Paint({
-    param($s,$e)
-    $g = $e.Graphics
-    $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(44,44,56), 1)
     $g.DrawLine($pen, 0, 0, $s.Width, 0)
     $pen.Dispose()
-    $gl = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
-        [System.Drawing.Point]::new(0,0), [System.Drawing.Point]::new($s.Width,0),
-        [System.Drawing.Color]::FromArgb(0,180,30,50), [System.Drawing.Color]::FromArgb(120,180,30,50)
-    )
-    $g.FillRectangle($gl, 0, 0, $s.Width/2, 1)
-    $gl.Dispose()
 })
 
-# progress track
+# Track Slider BG
 $trackBg = New-Object DBPanel
-$trackBg.Location  = New-Object System.Drawing.Point(28, 20)
-$trackBg.Size      = New-Object System.Drawing.Size(480, 6)
-$trackBg.BackColor = [System.Drawing.Color]::FromArgb(28,28,36)
-$footer.Controls.Add($trackBg)
+$trackBg.Location  = New-Object System.Drawing.Point(24, 24)
+$trackBg.Size      = New-Object System.Drawing.Size(440, 5)
+$trackBg.BackColor = [System.Drawing.Color]::FromArgb(24,24,30)
+$controlStrip.Controls.Add($trackBg)
 
 $trackBg.Add_Paint({
     param($s,$e)
     $g = $e.Graphics
-    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $path = Get-RoundedRect 0 0 $s.Width $s.Height 3
-    $br = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(28,28,36))
+    $path = Get-RoundedRect 0 0 $s.Width $s.Height 2
+    $br = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(24,24,30))
     $g.FillPath($br, $path); $br.Dispose(); $path.Dispose()
 })
 
 $overallFill = New-Object DBPanel
 $overallFill.Location  = New-Object System.Drawing.Point(0, 0)
-$overallFill.Size      = New-Object System.Drawing.Size(0, 6)
+$overallFill.Size      = New-Object System.Drawing.Size(0, 5)
 $overallFill.BackColor = $cAccent
 $trackBg.Controls.Add($overallFill)
 
@@ -485,75 +397,58 @@ $overallFill.Add_Paint({
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
     $gb = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
         [System.Drawing.Point]::new(0,0), [System.Drawing.Point]::new($s.Width,0),
-        [System.Drawing.Color]::FromArgb(140,20,36), $cAccentGlow
+        [System.Drawing.Color]::FromArgb(140,22,36), $cAccentGlow
     )
-    $path = Get-RoundedRect 0 0 $s.Width $s.Height 3
-    $g.FillPath($gb, $path)
-    $gb.Dispose(); $path.Dispose()
+    $path = Get-RoundedRect 0 0 $s.Width $s.Height 2
+    $g.FillPath($gb, $path); $gb.Dispose(); $path.Dispose()
 })
 
-$lblPct = New-Object System.Windows.Forms.Label
-$lblPct.Text      = "READY  ·  0%"
-$lblPct.Font      = $fUI8
-$lblPct.ForeColor = $cMuted
-$lblPct.AutoSize  = $false
-$lblPct.Size      = New-Object System.Drawing.Size(480, 20)
-$lblPct.Location  = New-Object System.Drawing.Point(28, 34)
-$lblPct.BackColor = [System.Drawing.Color]::Transparent
-$footer.Controls.Add($lblPct)
+$lblStatus = New-Object System.Windows.Forms.Label
+$lblStatus.Text      = "STANDBY PIPELINE READY"
+$lblStatus.Font      = $fCap
+$lblStatus.ForeColor = $cMuted
+$lblStatus.Location  = New-Object System.Drawing.Point(24, 38)
+$lblStatus.Size      = New-Object System.Drawing.Size(440, 20)
+$controlStrip.Controls.Add($lblStatus)
 
-$lblHint = New-Object System.Windows.Forms.Label
-$lblHint.Text      = "Run GOAT to apply all performance optimizations. A system restart is recommended after completion."
-$lblHint.Font      = $fCap
-$lblHint.ForeColor = [System.Drawing.Color]::FromArgb(52,50,55)
-$lblHint.AutoSize  = $false
-$lblHint.Size      = New-Object System.Drawing.Size(480, 18)
-$lblHint.Location  = New-Object System.Drawing.Point(28, 58)
-$lblHint.BackColor = [System.Drawing.Color]::Transparent
-$footer.Controls.Add($lblHint)
-
-# Restart button (hidden until done)
 $btnRestart = New-Object System.Windows.Forms.Button
-$btnRestart.Text      = "RESTART"
+$btnRestart.Text      = "RESTART SYSTEM"
 $btnRestart.Font      = $fUI9
 $btnRestart.ForeColor = $cAccentGlow
-$btnRestart.BackColor = [System.Drawing.Color]::FromArgb(30,14,18)
+$btnRestart.BackColor = [System.Drawing.Color]::FromArgb(28,14,18)
 $btnRestart.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRestart.FlatAppearance.BorderColor = $cAccentDim
-$btnRestart.FlatAppearance.BorderSize  = 1
-$btnRestart.Size      = New-Object System.Drawing.Size(100, 36)
-$btnRestart.Location  = New-Object System.Drawing.Point(530, 29)
+$btnRestart.Size      = New-Object System.Drawing.Size(130, 32)
+$btnRestart.Location  = New-Object System.Drawing.Point(500, 20)
 $btnRestart.Visible   = $false
 $btnRestart.Add_Click({
-    $ans = [System.Windows.Forms.MessageBox]::Show("Restart this PC now to apply all changes?", "GOAT Complete", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
+    $ans = [System.Windows.Forms.MessageBox]::Show("Restart the system now to enforce optimized states?", "Deployment Complete", [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question)
     if ($ans -eq [System.Windows.Forms.DialogResult]::Yes) { Restart-Computer -Force }
 })
-$footer.Controls.Add($btnRestart)
+$controlStrip.Controls.Add($btnRestart)
 
-# Run button
 $btnRun = New-Object System.Windows.Forms.Button
-$btnRun.Text      = "RUN GOAT"
+$btnRun.Text      = "INITIALIZE ENGINE"
 $btnRun.Font      = $fUIBold9
 $btnRun.ForeColor = $cWhite
 $btnRun.BackColor = $cAccent
 $btnRun.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnRun.FlatAppearance.BorderSize = 0
-$btnRun.Size      = New-Object System.Drawing.Size(120, 36)
-$btnRun.Location  = New-Object System.Drawing.Point(642, 29)
-$footer.Controls.Add($btnRun)
+$btnRun.Size      = New-Object System.Drawing.Size(140, 32)
+$btnRun.Location  = New-Object System.Drawing.Point(640, 20)
+$controlStrip.Controls.Add($btnRun)
 
 $btnRun.Add_Paint({
     param($s,$e)
     if (-not $s.Enabled) { return }
     $g = $e.Graphics
     $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-    $path = Get-RoundedRect 0 0 $s.Width $s.Height 6
+    $path = Get-RoundedRect 0 0 $s.Width $s.Height 5
     $gb = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
         [System.Drawing.Point]::new(0,0), [System.Drawing.Point]::new(0,$s.Height),
-        [System.Drawing.Color]::FromArgb(220,50,70), [System.Drawing.Color]::FromArgb(150,20,40)
+        [System.Drawing.Color]::FromArgb(210,40,60), [System.Drawing.Color]::FromArgb(140,20,36)
     )
-    $g.FillPath($gb, $path)
-    $gb.Dispose(); $path.Dispose()
+    $g.FillPath($gb, $path); $gb.Dispose(); $path.Dispose()
 
     $sf = New-Object System.Drawing.StringFormat
     $sf.Alignment = [System.Drawing.StringAlignment]::Center
@@ -563,126 +458,16 @@ $btnRun.Add_Paint({
     $br.Dispose(); $sf.Dispose()
 })
 
-# ── SCROLL + INNER PANEL ──────────────────────────────────────────────────
-$scrollPanel = New-Object System.Windows.Forms.Panel
-$scrollPanel.Dock      = [System.Windows.Forms.DockStyle]::Fill
-$scrollPanel.BackColor = $cBg
-$scrollPanel.AutoScroll = $true
+# Assemble Panels
+$mainContent.Controls.Add($scrollPanel)
+$mainContent.Controls.Add($controlStrip)
+$mainContent.Controls.Add($subHeader)
 
-[int]$innerH = ($taskCount * $rowH) + 24
-$innerPanel = New-Object DBPanel
-$innerPanel.Size     = New-Object System.Drawing.Size($formW - 4, $innerH)
-$innerPanel.Location = New-Object System.Drawing.Point(0, 0)
-$innerPanel.BackColor = [System.Drawing.Color]::Transparent
-$scrollPanel.Controls.Add($innerPanel)
-
-# ── FORM CONTROL ORDER ─────────────────────────────────────────────────────
-$form.Controls.Add($footer)
-$form.Controls.Add($scrollPanel)
-$form.Controls.Add($subBar)
-$form.Controls.Add($heroPanel)
+$form.Controls.Add($mainContent)
+$form.Controls.Add($sidebar)
 $form.Controls.Add($titleBar)
 
-# ── BUILD TASK ROWS ────────────────────────────────────────────────────────
-$script:TaskRows = @{}
-$taskKeys = @($script:Tasks.Keys)
-[int]$yPos = 8
-[int]$tidx = 0
-
-foreach ($key in $taskKeys) {
-    $label  = $script:Tasks[$key]
-    $desc   = $script:TaskDesc[$key]
-    $idxTxt = ($tidx + 1).ToString("00")
-
-    $row = New-Object DBPanel
-    $row.Size     = New-Object System.Drawing.Size($formW - 20, $rowH)
-    $row.Location = New-Object System.Drawing.Point(10, $yPos)
-    $row.BackColor = [System.Drawing.Color]::Transparent
-    $row.Tag      = "pending"
-    $innerPanel.Controls.Add($row)
-
-    $rowKey = $key
-    $row.Add_Paint({
-        param($s,$e)
-        $g = $e.Graphics
-        $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
-        $st = $s.Tag
-        $rc = 6
-
-        if ($st -eq "running") {
-            $path = Get-RoundedRect 0 2 ($s.Width-1) ($s.Height-4) $rc
-            $cardBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(26,20,24))
-            $g.FillPath($cardBr, $path); $cardBr.Dispose()
-            $cardPen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(80,180,30,50), 1)
-            $g.DrawPath($cardPen, $path); $cardPen.Dispose()
-            $path.Dispose()
-        } elseif ($st -eq "done") {
-            $path = Get-RoundedRect 0 2 ($s.Width-1) ($s.Height-4) $rc
-            $cardBr = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(18,18,22))
-            $g.FillPath($cardBr, $path); $cardBr.Dispose()
-            $cardPen = New-Object System.Drawing.Pen($cBorderFine, 1)
-            $g.DrawPath($cardPen, $path); $cardPen.Dispose()
-            $path.Dispose()
-        } else {
-            $path = Get-RoundedRect 0 2 ($s.Width-1) ($s.Height-4) $rc
-            $cardBr = New-Object System.Drawing.SolidBrush($cCard)
-            $g.FillPath($cardBr, $path); $cardBr.Dispose()
-            $cardPen = New-Object System.Drawing.Pen($cBorderFine, 1)
-            $g.DrawPath($cardPen, $path); $cardPen.Dispose()
-            $path.Dispose()
-        }
-
-        # Elements
-        $numBr = New-Object System.Drawing.SolidBrush(if($st -eq "done"){$cDimText}else{$cAccentDim})
-        $g.DrawString($idxTxt, $fMono9, $numBr, 20, 19)
-        $numBr.Dispose()
-
-        $lblBr = New-Object System.Drawing.SolidBrush(if($st -eq "done"){$cDone}else{$cWhite})
-        $g.DrawString($label, $fUISemi, $lblBr, 54, 16)
-        $lblBr.Dispose()
-
-        $descBr = New-Object System.Drawing.SolidBrush(if($st -eq "done"){$cDoneFill}else{$cMuted})
-        $g.DrawString($desc, $fUI8, $descBr, 240, 20)
-        $descBr.Dispose()
-
-        # Status badge right alignment
-        if ($st -eq "done") {
-            $statusStr = "OPTIMIZED"
-            $statusBr  = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(60,60,65))
-        } elseif ($st -eq "running") {
-            $statusStr = "TUNING..."
-            $statusBr  = New-Object System.Drawing.SolidBrush($cAccentGlow)
-        } else {
-            $statusStr = "READY"
-            $statusBr  = New-Object System.Drawing.SolidBrush($cDimText)
-        }
-        $sf = New-Object System.Drawing.StringFormat
-        $sf.Alignment = [System.Drawing.StringAlignment]::Far
-        $g.DrawString($statusStr, $fMono8, $statusBr, ($s.Width - 24), 20, $sf)
-        $statusBr.Dispose(); $sf.Dispose()
-    })
-
-    $row.Add_MouseEnter({
-        param($s,$e)
-        if ($s.Tag -eq "pending") {
-            $s.Tag = "hover"
-            $s.Invalidate()
-        }
-    })
-    $row.Add_MouseLeave({
-        param($s,$e)
-        if ($s.Tag -eq "hover") {
-            $s.Tag = "pending"
-            $s.Invalidate()
-        }
-    })
-
-    $script:TaskRows[$key] = $row
-    $yPos  += $rowH
-    $tidx++
-}
-
-# ── LOGIC CONTROLLER ───────────────────────────────────────────────────────
+# ── LOGIC AND ENGINE CONTROLLER ────────────────────────────────────────────
 $script:IsRunning   = $false
 $script:RunIndex    = 0
 $script:DoneCount   = 0
@@ -690,7 +475,7 @@ $script:TaskKeyList = @($script:Tasks.Keys)
 $script:TotalTasks  = $script:TaskKeyList.Count
 
 $timerWorker = New-Object System.Windows.Forms.Timer
-$timerWorker.Interval = 280
+$timerWorker.Interval = 300
 
 $timerWorker.Add_Tick({
     if ($script:RunIndex -lt $script:TotalTasks) {
@@ -701,23 +486,22 @@ $timerWorker.Add_Tick({
             $row.Tag = "running"
             $row.Invalidate()
             $fnName = $script:FnMap[$key]
-            $lblPct.Text = "EXECUTING: $( $script:Tasks[$key].ToUpper() )"
+            $lblStatus.Text = "DEPLOYING: $( $script:Tasks[$key].ToUpper() )"
             
-            # Run tweak block safely in background/arg list context
+            # Asynchronous script block delivery channel
             Start-Job -ScriptBlock {
                 param($fn)
-                # inline import the tweak functions into the thread container
-                function Invoke-Kernel { bcdedit /set useplatformclock no 2>$null | Out-Null; bcdedit /set useplatformtick yes 2>$null | Out-Null; bcdedit /set disabledynamictick yes 2>$null | Out-Null; bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null; bcdedit /set nx OptOut 2>$null | Out-Null; bcdedit /set synthetictimers yes 2>$null | Out-Null; $h = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*High Precision*" }; if ($h) { Disable-PnpDevice -InstanceId $h.InstanceId -Confirm:$false -ErrorAction SilentlyContinue } }
+                function Invoke-Kernel { bcdedit /set useplatformclock no 2>$null; bcdedit /set useplatformtick yes 2>$null; bcdedit /set disabledynamictick yes 2>$null; bcdedit /set tscsyncpolicy Enhanced 2>$null; bcdedit /set nx OptOut 2>$null; bcdedit /set synthetictimers yes 2>$null; $h = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*High Precision*" }; if ($h) { Disable-PnpDevice -InstanceId $h.InstanceId -Confirm:$false -ErrorAction SilentlyContinue } }
                 function Invoke-TimerResolution { Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null }
                 function Invoke-IRQ { Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI" -ErrorAction SilentlyContinue | ForEach-Object { $p = "$($_.PSPath)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"; if (Test-Path $p) { Set-ItemProperty -Path $p -Name "MSISupported" -Value 1 -Type DWord -Force 2>$null } } }
                 function Invoke-Nagle { $iP = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces"; Get-ChildItem $iP -ErrorAction SilentlyContinue | ForEach-Object { Set-ItemProperty -Path $_.PSPath -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $_.PSPath -Name "TCPNoDelay" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $_.PSPath -Name "TcpDelAckTicks" -Value 0 -Type DWord -Force 2>$null } }
                 function Invoke-VisualEffects { $vp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"; if (-not (Test-Path $vp)) { New-Item -Path $vp -Force | Out-Null }; Set-ItemProperty -Path $vp -Name "VisualFXSetting" -Value 2 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null }
                 function Invoke-GameBar { Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord -Force 2>$null; $gp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"; if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }; Set-ItemProperty -Path $gp -Name "AllowGameDVR" -Value 0 -Type DWord -Force 2>$null }
-                function Invoke-ProcessorPower { powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100 2>$null | Out-Null; powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 2>$null | Out-Null; powercfg /setactive SCHEME_CURRENT 2>$null | Out-Null }
+                function Invoke-ProcessorPower { powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100 2>$null; powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 2>$null; powercfg /setactive SCHEME_CURRENT 2>$null }
                 function Invoke-Priority { $pp = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"; $sp = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"; $gp = "$sp\Tasks\Games"; $ep = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Executive"; Set-ItemProperty -Path $pp -Name "Win32PrioritySeparation" -Value 0x2a -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null; Set-ItemProperty -Path $sp -Name "SystemResponsiveness" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path $sp -Name "NetworkThrottlingIndex" -Value 0xFFFFFFFF -Type DWord -Force 2>$null; Set-ItemProperty -Path $ep -Name "AdditionalCriticalWorkerThreads" -Value 2 -Type DWord -Force 2>$null; if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }; Set-ItemProperty -Path $gp -Name "GPU Priority" -Value 8 -Type DWord -Force 2>$null; Set-ItemProperty -Path $gp -Name "Priority" -Value 6 -Type DWord -Force 2>$null; Set-ItemProperty -Path $gp -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null; Set-ItemProperty -Path $gp -Name "SFIO Priority" -Value "High" -Type String -Force 2>$null }
-                function Invoke-Memory { $mp = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"; Set-ItemProperty -Path $mp -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path $mp -Name "ClearPageFileAtShutdown" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null; Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null; powercfg -h off 2>$null | Out-Null; taskkill /f /im OneDrive.exe 2>$null | Out-Null; Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue }
+                function Invoke-Memory { $mp = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"; Set-ItemProperty -Path $mp -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path $mp -Name "ClearPageFileAtShutdown" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null; Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null; powercfg -h off 2>$null; taskkill /f /im OneDrive.exe 2>$null; Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue }
                 function Invoke-Input { Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize" -Value 16 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null; $pt = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"; if (-not (Test-Path $pt)) { New-Item -Path $pt -Force | Out-Null }; Set-ItemProperty -Path $pt -Name "PowerThrottlingOff" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold1" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold2" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed" -Value "31" -Type String -Force 2>$null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB" -Name "DisableSelectiveSuspend" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HidUsb" -Name "IdleEnable" -Value 0 -Type DWord -Force 2>$null }
-                function Invoke-Network { netsh int tcp set global rss=enabled 2>$null | Out-Null; netsh int tcp set global autotuninglevel=disabled 2>$null | Out-Null; netsh int tcp set global timestamps=disabled 2>$null | Out-Null; netsh int tcp set global chimney=disabled 2>$null | Out-Null; $tp = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"; Set-ItemProperty -Path $tp -Name "TcpNoDelay" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $tp -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $tp -Name "DefaultTTL" -Value 64 -Type DWord -Force 2>$null; Clear-DnsClientCache -ErrorAction SilentlyContinue | Out-Null; netsh winsock reset 2>$null | Out-Null; netsh int ip reset 2>$null | Out-Null; ipconfig /release 2>$null | Out-Null; ipconfig /renew 2>$null | Out-Null; Get-NetAdapter | Where-Object { $_.Physical } | Restart-NetAdapter -ErrorAction SilentlyContinue }
+                function Invoke-Network { netsh int tcp set global rss=enabled 2>$null; netsh int tcp set global autotuninglevel=disabled 2>$null; netsh int tcp set global timestamps=disabled 2>$null; netsh int tcp set global chimney=disabled 2>$null; $tp = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"; Set-ItemProperty -Path $tp -Name "TcpNoDelay" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $tp -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $tp -Name "DefaultTTL" -Value 64 -Type DWord -Force 2>$null; Clear-DnsClientCache -ErrorAction SilentlyContinue; netsh winsock reset 2>$null; netsh int ip reset 2>$null; ipconfig /release 2>$null; ipconfig /renew 2>$null; Get-NetAdapter | Where-Object { $_.Physical } | Restart-NetAdapter -ErrorAction SilentlyContinue }
                 function Invoke-Services { @('DiagTrack','WSearch','MapsBroker','XblAuthManager','XblGameSave','XboxNetApiSvc','Fax','RetailDemo','RemoteRegistry','WerSvc')|ForEach-Object{ Stop-Service -Name $_ -Force -ErrorAction SilentlyContinue; Set-Service -Name $_ -StartupType Disabled -ErrorAction SilentlyContinue }; @('Audiosrv','AudioEndpointBuilder','Dhcp','NlaSvc','Netman','WlanSvc','RpcSs','EventLog','PlugPlay','LanmanWorkstation','LanmanServer')|ForEach-Object{ Set-Service -Name $_ -StartupType Automatic -ErrorAction SilentlyContinue; Start-Service -Name $_ -ErrorAction SilentlyContinue } }
                 function Invoke-Cleanup { @("$env:USERPROFILE\AppData\Local\Temp\*","C:\Windows\Temp\*","C:\Windows\Prefetch\*")|ForEach-Object{ Get-ChildItem -Path $_ -Recurse -ErrorAction SilentlyContinue|Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; Stop-Service -Name wuauserv,UsoSvc -Force -ErrorAction SilentlyContinue; Remove-Item -Path "C:\Windows\SoftwareDistribution\*" -Recurse -Force -ErrorAction SilentlyContinue; Start-Service -Name wuauserv -ErrorAction SilentlyContinue; wevtutil.exe el|ForEach-Object{ wevtutil.exe cl \"$_\" 2>$null } }
                 try { & $fn } catch {}
@@ -726,37 +510,32 @@ $timerWorker.Add_Tick({
             $row.Tag = "done"
             $row.Invalidate()
             $script:DoneCount++
-            $lblDoneCount.Text = "$($script:DoneCount) / 13"
             
+            $lblCounter.Text = "$($script:DoneCount) / 13 CHANNELS PATCHED"
             [int]$pct = [math]::Round(($script:DoneCount / $script:TotalTasks) * 100)
             $overallFill.Width = [int]($trackBg.Width * ($script:DoneCount / $script:TotalTasks))
-            $lblPct.Text = "RUNNING GOAT  ·  $($pct)%"
+            $lblStatus.Text = "TUNING PIPELINE ENGAGED  ·  $($pct)%"
             
             $script:RunIndex++
         }
     } else {
         $timerWorker.Stop()
-        $lblPct.Text         = "COMPLETED  ·  100%"
-        $lblPct.ForeColor    = $cAccentGlow
-        $lblHint.Text        = "All tasks applied successfully! Please restart to take effect."
-        $lblHint.ForeColor   = $cWhiteDim
-        $btnRun.Enabled      = $false
-        $btnRun.Visible      = $false
+        $lblStatus.Text     = "ENGINE OPTIMIZATION COMPLETED  ·  100%"
+        $lblStatus.ForeColor = $cAccentGlow
+        $btnRun.Enabled     = $false
+        $btnRun.Visible     = $false
         $btnRestart.Location = $btnRun.Location
-        $btnRestart.Visible  = $true
-        $script:IsRunning    = $false
+        $btnRestart.Visible = $true
+        $script:IsRunning   = $false
     }
 })
 
 $btnRun.Add_Click({
     if ($script:IsRunning) { return }
-    $script:IsRunning   = $true
-    $script:RunIndex    = 0
-    $script:DoneCount   = 0
-    $script:TaskKeyList = @($script:Tasks.Keys)
-    $script:TotalTasks  = $script:TaskKeyList.Count
-    $btnRestart.Visible  = $false
-    $lblHint.Text        = "GOAT is running..."
+    $script:IsRunning = $true
+    $script:RunIndex  = 0
+    $script:DoneCount = 0
+    $btnRestart.Visible = $false
     $timerWorker.Start()
 })
 
