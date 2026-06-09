@@ -223,7 +223,7 @@ function Invoke-Cleanup {
 [int]$taskCount  = 13
 [int]$listHeight = ($taskCount * $rowH) + 20   # 540
 [int]$formWidth = 1240 # New width for horizontal layout
-[int]$formHeight = 36 + 155 + 28 + ($listHeight + 40) + 86 + 30 # Final adjusted height for horizontal layout
+[int]$formHeight = 36 + 155 + 28 + ($listHeight + 20) + 86 + 10 # Adjusted height for horizontal layout
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text            = "GOAT // GREATEST OF ALL TWEAKS v3.0"
@@ -489,57 +489,47 @@ $scrollPanel.BackColor   = $cBg
 $scrollPanel.AutoScroll  = $true
 $mainContent.Controls.Add($scrollPanel)
 
-# ── CHANGELOG ──────────────────────────────────────────────────────────────
-[int]$changelogPanelWidth = 400
-[int]$changelogPanelHeight = $listHeight + 20
+# ── LIVE LOG PANEL ──────────────────────────────────────────────────────────
+[int]$logPanelWidth = 400
+[int]$logPanelHeight = $listHeight + 20
 
-$changelogContent = @"
-v3.1 (2026-06-09)
-- Added Changelog feature.
-- Redesigned UI layout to horizontal.
-- Improved control positioning.
+$logPanel = New-Object System.Windows.Forms.Panel
+$logPanel.Size      = New-Object System.Drawing.Size($logPanelWidth, $logPanelHeight)
+$logPanel.Location  = New-Object System.Drawing.Point(24 + 760 + 20, 10)
+$logPanel.BackColor = $cSurface2
+$logPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$mainContent.Controls.Add($logPanel)
 
-v3.0 (2026-05-20)
-- Initial release of Monochrome Dark Theme.
-- Redesigned task list and progress indicators.
-"@
+$logTitle = New-Object System.Windows.Forms.Label
+$logTitle.Text      = "OPTIMIZATION LOG"
+$logTitle.Font      = $fMonoBold
+$logTitle.ForeColor = $cWhite
+$logTitle.AutoSize  = $false
+$logTitle.Size      = New-Object System.Drawing.Size($logPanelWidth - 20, 20)
+$logTitle.Location  = New-Object System.Drawing.Point(10, 10)
+$logTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
+$logPanel.Controls.Add($logTitle)
 
-$changelogPanel = New-Object System.Windows.Forms.Panel
-$changelogPanel.Size      = New-Object System.Drawing.Size($changelogPanelWidth, $changelogPanelHeight)
-$changelogPanel.Location  = New-Object System.Drawing.Point(24 + 760 + 20, 10)
-$changelogPanel.BackColor = $cSurface2
-$changelogPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
-$mainContent.Controls.Add($changelogPanel)
-
-$changelogTitle = New-Object System.Windows.Forms.Label
-$changelogTitle.Text      = "CHANGELOG"
-$changelogTitle.Font      = $fMonoBold
-$changelogTitle.ForeColor = $cWhite
-$changelogTitle.AutoSize  = $false
-$changelogTitle.Size      = New-Object System.Drawing.Size($changelogPanelWidth - 20, 20)
-$changelogTitle.Location  = New-Object System.Drawing.Point(10, 10)
-$changelogTitle.TextAlign = [System.Drawing.ContentAlignment]::MiddleLeft
-$changelogPanel.Controls.Add($changelogTitle)
-
-$changelogTextBox = New-Object System.Windows.Forms.TextBox
-$changelogTextBox.Text            = $changelogContent
-$changelogTextBox.Font            = $fMono9
-$changelogTextBox.ForeColor       = $cWhiteDim
-$changelogTextBox.BackColor       = $cSurface2
-$changelogTextBox.BorderStyle     = [System.Windows.Forms.BorderStyle]::None
-$changelogTextBox.Multiline       = $true
-$changelogTextBox.ReadOnly        = $true
-$changelogTextBox.ScrollBars      = [System.Windows.Forms.ScrollBars]::Vertical
-$changelogTextBox.Size            = New-Object System.Drawing.Size($changelogPanelWidth - 20, $changelogPanelHeight - 45)
-$changelogTextBox.Location        = New-Object System.Drawing.Point(10, 35)
-$changelogPanel.Controls.Add($changelogTextBox)
+$logTextBox = New-Object System.Windows.Forms.TextBox
+$logTextBox.Text            = "Ready to optimize system..."
+$logTextBox.Font            = $fMono9
+$logTextBox.ForeColor       = $cWhiteDim
+$logTextBox.BackColor       = $cSurface2
+$logTextBox.BorderStyle     = [System.Windows.Forms.BorderStyle]::None
+$logTextBox.Multiline       = $true
+$logTextBox.ReadOnly        = $true
+$logTextBox.ScrollBars      = [System.Windows.Forms.ScrollBars]::Vertical
+$logTextBox.Size            = New-Object System.Drawing.Size($logPanelWidth - 20, $logPanelHeight - 45)
+$logTextBox.Location        = New-Object System.Drawing.Point(10, 35)
+$logPanel.Controls.Add($logTextBox)
 
 # ── ADD CONTROLS TO FORM ──────────────────────────────────────────────────
+# Order: Bottom, Fill, then Top panels (last added is topmost)
+$form.Controls.Add($footer)      # Bottom
 $form.Controls.Add($mainContent) # Fill middle
 $form.Controls.Add($sectionBar)  # Top
 $form.Controls.Add($heroPanel)   # Top
 $form.Controls.Add($topBar)      # Top
-$form.Controls.Add($footer)      # Bottom
 
 # ── BUILD TASK ROWS ────────────────────────────────────────────────────────
 $script:TaskRows = @{}
@@ -787,6 +777,14 @@ function Set-RunButtonStyle ([string]$mode) {
     }
 }
 
+# ── LOGGING ────────────────────────────────────────────────────────────────
+function Write-Log ([string]$msg) {
+    $timestamp = Get-Date -Format "HH:mm:ss"
+    $logTextBox.AppendText("[$timestamp] $msg`r`n")
+    $logTextBox.SelectionStart = $logTextBox.Text.Length
+    $logTextBox.ScrollToCaret()
+}
+
 # ── RUN LOGIC ──────────────────────────────────────────────────────────────
 $script:RunIndex    = 0
 $script:TaskKeyList = @()
@@ -804,6 +802,7 @@ $runTimer.Add_Tick({
         $prevKey = $script:TaskKeyList[$script:RunIndex - 1]
         Set-TaskState $prevKey "done"
         $script:DoneCount++
+        Write-Log "Success: $($script:Tasks[$prevKey]) complete."
         Set-OverallProgress $script:DoneCount $script:TotalTasks "RUNNING"
         $form.Refresh()
     }
@@ -813,6 +812,7 @@ $runTimer.Add_Tick({
         $animTimer.Stop()
         if ($script:JobWorker) { $script:JobWorker | Remove-Job -Force -ErrorAction SilentlyContinue }
         $script:IsRunning    = $false
+        Write-Log "All tasks completed successfully."
         Set-OverallProgress $script:TotalTasks $script:TotalTasks "COMPLETE"
         $lblPct.ForeColor    = $cWhite
         $lblFooterHint.Text  = "Optimization complete. Restart your PC to apply all system-level changes."
@@ -825,6 +825,7 @@ $btnRun.Location = New-Object System.Drawing.Point($formWidth - 128, 26) # Ensur
     }
 
     $key    = $script:TaskKeyList[$script:RunIndex]
+    Write-Log "Action: Optimizing $($script:Tasks[$key])..."
     Set-TaskState $key "running"
 
     $script:AnimKey    = $key
@@ -859,6 +860,8 @@ $btnRun.Location = New-Object System.Drawing.Point($formWidth - 128, 26) # Ensur
 
 $btnRun.Add_Click({
     if ($script:IsRunning) { return }
+    $logTextBox.Text = ""
+    Write-Log "Initializing GOAT v3.0..."
     $script:IsRunning   = $true
     $script:RunIndex    = 0
     $script:DoneCount   = 0
