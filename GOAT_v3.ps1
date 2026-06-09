@@ -306,7 +306,7 @@ $modules = @(
     @{ Msg="synthetictimers → enabled";
        Cmd={ bcdedit /set synthetictimers yes 2>$null } },
     @{ Msg="Disabling HPET via PnP...";
-       Cmd={ Get-PnpDevice -EA SilentlyContinue | Where-Object { $_.FriendlyName -like '*High Precision*' } | Disable-PnpDevice -Confirm:$false -EA SilentlyContinue } },
+       Cmd={ Get-PnpDevice -EA SilentlyContinue | Where-Object { $_.FriendlyName -like '*High Precision*' } | ForEach-Object { Disable-PnpDevice -InstanceId $_.InstanceId -Confirm:$false -EA SilentlyContinue } } },
     @{ Msg="Kernel & HPET optimized ✓"; Cmd=$null }
   )},
   @{ Name="Timer Resolution"; Num="02"; Steps=@(
@@ -334,8 +334,8 @@ $modules = @(
   )},
   @{ Name="IRQ MSI Mode"; Num="04"; Steps=@(
     @{ Msg="Enabling MSI on all PCI devices...";
-       Cmd={ Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Enum\PCI' -EA SilentlyContinue | ForEach-Object {
-               $p = "$($_.PSPath)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"
+Cmd={ Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Enum\PCI' -EA SilentlyContinue | ForEach-Object {
+               $p = "HKLM:\$($_.Name.Replace('HKEY_LOCAL_MACHINE\',''))\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"
                if (Test-Path $p) { Set-ItemProperty -Path $p -Name MSISupported -Value 1 -Type DWord -Force -EA SilentlyContinue }
              } } },
     @{ Msg="MSI mode activated ✓"; Cmd=$null }
@@ -375,10 +375,11 @@ $modules = @(
   )},
   @{ Name="Nagle Algorithm"; Num="07"; Steps=@(
     @{ Msg="TcpAckFrequency=1, TCPNoDelay=1, DelAckTicks=0 on all adapters";
-       Cmd={ Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces' -EA SilentlyContinue | ForEach-Object {
-               Set-ItemProperty -Path $_.PSPath -Name TcpAckFrequency -Value 1 -Type DWord -Force -EA SilentlyContinue
-               Set-ItemProperty -Path $_.PSPath -Name TCPNoDelay      -Value 1 -Type DWord -Force -EA SilentlyContinue
-               Set-ItemProperty -Path $_.PSPath -Name TcpDelAckTicks  -Value 0 -Type DWord -Force -EA SilentlyContinue
+Cmd={ Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces' -EA SilentlyContinue | ForEach-Object {
+               $p = "HKLM:\$($_.Name.Replace('HKEY_LOCAL_MACHINE\',''))"
+               Set-ItemProperty -Path $p -Name TcpAckFrequency -Value 1 -Type DWord -Force -EA SilentlyContinue
+               Set-ItemProperty -Path $p -Name TCPNoDelay      -Value 1 -Type DWord -Force -EA SilentlyContinue
+               Set-ItemProperty -Path $p -Name TcpDelAckTicks  -Value 0 -Type DWord -Force -EA SilentlyContinue
              } } },
     @{ Msg="Nagle algorithm disabled ✓"; Cmd=$null }
   )},
@@ -386,7 +387,7 @@ $modules = @(
     @{ Msg="VisualFXSetting = 2 (custom performance)";
        Cmd={ reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" /v "VisualFXSetting" /t REG_DWORD /d 2 /f 2>$null } },
     @{ Msg="UserPreferencesMask applied";
-       Cmd={ reg add "HKCU\Control Panel\Desktop" /v "UserPreferencesMask" /t REG_BINARY /d 9012078010000000 /f 2>$null } },
+       Cmd={ reg add "HKCU\Control Panel\Desktop" /v "UserPreferencesMask" /t REG_BINARY /d 9012038010000000 /f 2>$null } },
     @{ Msg="Window + taskbar animations disabled";
        Cmd={ reg add "HKCU\Control Panel\Desktop\WindowMetrics" /v "MinAnimate" /t REG_SZ /d "0" /f 2>$null
              reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "TaskbarAnimations" /t REG_DWORD /d 0 /f 2>$null } },
@@ -432,37 +433,41 @@ $modules = @(
   )},
   @{ Name="Windows Services"; Num="12"; Steps=@(
     @{ Msg="Stopping & disabling DiagTrack, WSearch...";
-       Cmd={ foreach ($s in @('DiagTrack','WSearch','MapsBroker')) {
-               Stop-Service $s -Force -EA SilentlyContinue
-               Set-Service  $s -StartupType Disabled -EA SilentlyContinue
+Cmd={ foreach ($s in @('DiagTrack','WSearch','MapsBroker')) {
+               if (Get-Service $s -EA SilentlyContinue) {
+                 Stop-Service $s -Force -EA SilentlyContinue
+                 Set-Service  $s -StartupType Disabled -EA SilentlyContinue
+               }
              } } },
     @{ Msg="Disabling Xbox, Fax, RetailDemo, RemoteRegistry, WerSvc...";
-       Cmd={ foreach ($s in @('XblAuthManager','XblGameSave','XboxNetApiSvc','Fax','RetailDemo','RemoteRegistry','WerSvc')) {
-               Stop-Service $s -Force -EA SilentlyContinue
-               Set-Service  $s -StartupType Disabled -EA SilentlyContinue
+Cmd={ foreach ($s in @('XblAuthManager','XblGameSave','XboxNetApiSvc','Fax','RetailDemo','RemoteRegistry','WerSvc')) {
+               if (Get-Service $s -EA SilentlyContinue) {
+                 Stop-Service $s -Force -EA SilentlyContinue
+                 Set-Service  $s -StartupType Disabled -EA SilentlyContinue
+               }
              } } },
     @{ Msg="Ensuring audio + network essentials running...";
-       Cmd={ foreach ($s in @('Audiosrv','AudioEndpointBuilder','Dhcp','NlaSvc','Netman','WlanSvc','RpcSs','EventLog','PlugPlay','LanmanWorkstation','LanmanServer')) {
-               Set-Service $s -StartupType Automatic -EA SilentlyContinue
-               Start-Service $s -EA SilentlyContinue
+Cmd={ foreach ($s in @('Audiosrv','AudioEndpointBuilder','Dhcp','NlaSvc','Netman','WlanSvc','RpcSs','EventLog','PlugPlay','LanmanWorkstation','LanmanServer')) {
+               if (Get-Service $s -EA SilentlyContinue) {
+                 Set-Service $s -StartupType Automatic -EA SilentlyContinue
+                 Start-Service $s -EA SilentlyContinue
+               }
              } } },
     @{ Msg="Services cleanup done ✓"; Cmd=$null }
   )},
   @{ Name="Junk & Log Cleanup"; Num="13"; Steps=@(
     @{ Msg="Clearing Temp folders...";
-       Cmd={ Remove-Item "$env:USERPROFILE\AppData\Local\Temp\*" -Recurse -Force -EA SilentlyContinue
-             Remove-Item "C:\Windows\Temp\*"     -Recurse -Force -EA SilentlyContinue
-             Remove-Item "C:\Windows\Prefetch\*" -Recurse -Force -EA SilentlyContinue } },
+Cmd={ Get-ChildItem "$env:USERPROFILE\AppData\Local\Temp\*" -Recurse -EA SilentlyContinue | Remove-Item -Recurse -Force -EA SilentlyContinue
+             Get-ChildItem "C:\Windows\Temp\*" -Recurse -EA SilentlyContinue | Remove-Item -Recurse -Force -EA SilentlyContinue
+             Get-ChildItem "C:\Windows\Prefetch\*" -Recurse -EA SilentlyContinue | Remove-Item -Recurse -Force -EA SilentlyContinue } },
     @{ Msg="Stopping Windows Update, removing cache...";
-       Cmd={ Stop-Service wuauserv -Force -EA SilentlyContinue
-             Stop-Service UsoSvc   -Force -EA SilentlyContinue
-             Remove-Item "C:\Windows\SoftwareDistribution" -Recurse -Force -EA SilentlyContinue } },
+Cmd={ if (Get-Service wuauserv -EA SilentlyContinue) { Stop-Service wuauserv -Force -EA SilentlyContinue }
+             if (Get-Service UsoSvc -EA SilentlyContinue) { Stop-Service UsoSvc -Force -EA SilentlyContinue }
+             if (Test-Path "C:\Windows\SoftwareDistribution") { Remove-Item "C:\Windows\SoftwareDistribution" -Recurse -Force -EA SilentlyContinue } } },
     @{ Msg="Restarting Windows Update service";
        Cmd={ Start-Service wuauserv -EA SilentlyContinue } },
     @{ Msg="Clearing all Windows Event Logs...";
-       Cmd={ Get-WinEvent -ListLog * -EA SilentlyContinue | ForEach-Object {
-               [System.Diagnostics.Eventing.Reader.EventLogSession]::GlobalSession.ClearLog($_.LogName)
-             } } },
+       Cmd={ Get-WinEvent -ListLog * -EA SilentlyContinue | ForEach-Object { try { [System.Diagnostics.Eventing.Reader.EventLogSession]::GlobalSession.ClearLog($_.LogName) } catch {} } } },
     @{ Msg="Cleanup complete ✓"; Cmd=$null }
   )}
 )
@@ -681,13 +686,6 @@ function Start-RunAll {
   $ps.Runspace = $rs
   [void]$ps.AddScript({
     param($addLog, $mods, $win, $pPct, $pFill, $badge, $bRun, $bReset, $logLinesCtrl, $startT)
-
-    # ── Import required modules into this runspace ──────────────────────────────
-    Import-Module Microsoft.PowerShell.Management -ErrorAction SilentlyContinue
-    Import-Module Microsoft.PowerShell.Utility    -ErrorAction SilentlyContinue
-    try { Import-Module PnpDevice    -ErrorAction SilentlyContinue } catch {}
-    try { Import-Module NetAdapter   -ErrorAction SilentlyContinue } catch {}
-    try { Import-Module NetTCPIP     -ErrorAction SilentlyContinue } catch {}
 
     for ($i = 0; $i -lt $mods.Count; $i++) {
       $m = $mods[$i]
