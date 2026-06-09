@@ -261,7 +261,7 @@ function Invoke-Network {
     Write-Log "NETWORK" "TCP RSS" "→ enabled"
     netsh int tcp set global rss=enabled 2>$null | Out-Null
     Write-Log "NETWORK" "autotuninglevel" "→ normal"
-    netsh int tcp set global autotuninglevel=normal 2>$null | Out-Null
+    netsh int tcp set global autotuninglevel=disabled 2>$null | Out-Null
     Write-Log "NETWORK" "timestamps" "→ disabled"
     netsh int tcp set global timestamps=disabled 2>$null | Out-Null
     Write-Log "NETWORK" "chimney offload" "→ disabled"
