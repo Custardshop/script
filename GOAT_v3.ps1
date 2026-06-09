@@ -536,7 +536,9 @@ function Start-RunAll {
   
   Add-LogLine 'Starting GOAT Tweak v3.0 — 13 modules queued' 'go'
 
-  $rs = [runspacefactory]::CreateRunspace()
+  # Use InitialSessionState to ensure all default modules are loaded in the background thread
+  $iss = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+  $rs = [runspacefactory]::CreateRunspace($iss)
   $rs.ApartmentState = 'STA'; $rs.ThreadOptions = 'ReuseThread'; $rs.Open()
   $rs.SessionStateProxy.SetVariable('modules', $modules)
   $rs.SessionStateProxy.SetVariable('window', $window)
