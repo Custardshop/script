@@ -2,7 +2,7 @@
 
 <#
 GOAT - GREATEST OF ALL TWEAKS
-GUI Edition v3.0 - Monochrome Dark Theme
+GUI Edition v4.0 - Monochrome Dark Theme
 #>
 
 # ── ADMIN AUTO-ELEVATE ─────────────────────────────────────────────────────
@@ -60,35 +60,45 @@ $fLogoBold = New-Object System.Drawing.Font("Consolas", 9, [System.Drawing.FontS
 
 # ── TASK DEFINITIONS ───────────────────────────────────────────────────────
 $script:Tasks = [ordered]@{
-    "kernel"   = "Kernel and HPET"
-    "timer"    = "Timer Resolution"
-    "priority" = "Process Priority"
-    "irq"      = "IRQ MSI Mode"
-    "memory"   = "Memory Management"
-    "input"    = "Input and USB"
-    "nagle"    = "Nagle Algorithm"
-    "visual"   = "Visual Effects"
-    "gamebar"  = "Game Bar and DVR"
-    "power"    = "Processor Power"
-    "network"  = "Network and DNS"
-    "services" = "Windows Services"
-    "cleanup"  = "Junk and Log Cleanup"
+    "kernel"      = "Kernel and HPET"
+    "timer"       = "Timer Resolution"
+    "priority"    = "Process Priority"
+    "irq"         = "IRQ MSI Mode"
+    "memory"      = "Memory Management"
+    "storage"     = "Storage Optimizations"
+    "input"       = "Input and USB"
+    "nagle"       = "Nagle Algorithm"
+    "visual"      = "Visual Effects"
+    "gamebar"     = "Game Bar and DVR"
+    "power"       = "Processor Power"
+    "cpupark"     = "CPU Core Parking"
+    "gpu"         = "GPU and Display"
+    "audio"       = "Audio Latency"
+    "network"     = "Network and DNS"
+    "privacy"     = "Privacy and Telemetry"
+    "services"    = "Windows Services"
+    "cleanup"     = "Junk and Log Cleanup"
 }
 
 $script:FnMap = [ordered]@{
-    "kernel"   = "Invoke-Kernel"
-    "timer"    = "Invoke-TimerResolution"
-    "priority" = "Invoke-Priority"
-    "irq"      = "Invoke-IRQ"
-    "memory"   = "Invoke-Memory"
-    "input"    = "Invoke-Input"
-    "nagle"    = "Invoke-Nagle"
-    "visual"   = "Invoke-VisualEffects"
-    "gamebar"  = "Invoke-GameBar"
-    "power"    = "Invoke-ProcessorPower"
-    "network"  = "Invoke-Network"
-    "services" = "Invoke-Services"
-    "cleanup"  = "Invoke-Cleanup"
+    "kernel"      = "Invoke-Kernel"
+    "timer"       = "Invoke-TimerResolution"
+    "priority"    = "Invoke-Priority"
+    "irq"         = "Invoke-IRQ"
+    "memory"      = "Invoke-Memory"
+    "storage"     = "Invoke-Storage"
+    "input"       = "Invoke-Input"
+    "nagle"       = "Invoke-Nagle"
+    "visual"      = "Invoke-VisualEffects"
+    "gamebar"     = "Invoke-GameBar"
+    "power"       = "Invoke-ProcessorPower"
+    "cpupark"     = "Invoke-CPUParking"
+    "gpu"         = "Invoke-GPU"
+    "audio"       = "Invoke-Audio"
+    "network"     = "Invoke-Network"
+    "privacy"     = "Invoke-Privacy"
+    "services"    = "Invoke-Services"
+    "cleanup"     = "Invoke-Cleanup"
 }
 
 # ── OPTIMIZATION FUNCTIONS ─────────────────────────────────────────────────
@@ -99,18 +109,25 @@ function Invoke-Kernel {
     bcdedit /set tscsyncpolicy Enhanced 2>$null | Out-Null
     bcdedit /set nx OptOut 2>$null | Out-Null
     bcdedit /set synthetictimers yes 2>$null | Out-Null
+    # Disable Spectre/Meltdown mitigations (performance mode)
+    bcdedit /set nospeculationcontrol 1 2>$null | Out-Null
+    # Disable kernel paging
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name "DisablePagingExecutive" -Value 1 -Type DWord -Force 2>$null
     $h = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*High Precision*" }
     if ($h) { Disable-PnpDevice -InstanceId $h.InstanceId -Confirm:$false -ErrorAction SilentlyContinue }
 }
+
 function Invoke-TimerResolution {
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null
 }
+
 function Invoke-IRQ {
     Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI" -ErrorAction SilentlyContinue | ForEach-Object {
         $p = "$($_.PSPath)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"
         if (Test-Path $p) { Set-ItemProperty -Path $p -Name "MSISupported" -Value 1 -Type DWord -Force 2>$null }
     }
 }
+
 function Invoke-Nagle {
     $iP = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces"
     Get-ChildItem $iP -ErrorAction SilentlyContinue | ForEach-Object {
@@ -119,6 +136,7 @@ function Invoke-Nagle {
         Set-ItemProperty -Path $_.PSPath -Name "TcpDelAckTicks"  -Value 0 -Type DWord -Force 2>$null
     }
 }
+
 function Invoke-VisualEffects {
     $vp = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"
     if (-not (Test-Path $vp)) { New-Item -Path $vp -Force | Out-Null }
@@ -127,6 +145,7 @@ function Invoke-VisualEffects {
     Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String -Force 2>$null
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null
 }
+
 function Invoke-GameBar {
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWord -Force 2>$null
@@ -136,12 +155,55 @@ function Invoke-GameBar {
     $gp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"
     if (-not (Test-Path $gp)) { New-Item -Path $gp -Force | Out-Null }
     Set-ItemProperty -Path $gp -Name "AllowGameDVR" -Value 0 -Type DWord -Force 2>$null
+    # Disable fullscreen optimizations system-wide
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2 -Type DWord -Force 2>$null
+    $fsoPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options"
+    if (-not (Test-Path "$fsoPath\<DisableFSO>")) { New-Item -Path "$fsoPath\<DisableFSO>" -Force | Out-Null }
+    Set-ItemProperty -Path "$fsoPath\<DisableFSO>" -Name "DisableExceptionChainValidation" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name "EnableXamlStartMenu" -Value 0 -Type DWord -Force 2>$null
 }
+
 function Invoke-ProcessorPower {
     powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100 2>$null | Out-Null
     powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 2>$null | Out-Null
     powercfg /setactive SCHEME_CURRENT 2>$null | Out-Null
+    # Disable fast startup (conflicts with full shutdown)
+    powercfg /hibernate off 2>$null | Out-Null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value 0 -Type DWord -Force 2>$null
 }
+
+function Invoke-CPUParking {
+    # Disable CPU core parking
+    $cpuParkPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerSettings\54533251-82be-4824-96c1-47b60b740d00\0cc5b647-c1df-4637-891a-dec35c318583"
+    if (Test-Path $cpuParkPath) {
+        Set-ItemProperty -Path $cpuParkPath -Name "ValueMin" -Value 0 -Type DWord -Force 2>$null
+    }
+    powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100 2>$null | Out-Null
+    powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100 2>$null | Out-Null
+    powercfg /setactive SCHEME_CURRENT 2>$null | Out-Null
+    # Heterogeneous scheduling policy (Intel P/E core optimization)
+    powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR HETEROCLASS1INITIALPERF 100 2>$null | Out-Null
+    powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR HETEROCLASS0FLOORPERF 100 2>$null | Out-Null
+    powercfg /setactive SCHEME_CURRENT 2>$null | Out-Null
+}
+
+function Invoke-GPU {
+    # Disable fullscreen optimizations system-wide via registry
+    Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord -Force 2>$null
+    # GPU prefer max performance power policy
+    $gpuPref = "HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers"
+    if (-not (Test-Path $gpuPref)) { New-Item -Path $gpuPref -Force | Out-Null }
+    Set-ItemProperty -Path $gpuPref -Name "HwSchMode" -Value 1 -Type DWord -Force 2>$null
+    # Disable VRR/FreeSync/GSync for competitive (reduce input lag)
+    Set-ItemProperty -Path $gpuPref -Name "TdrLevel" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $gpuPref -Name "TdrDelay" -Value 60 -Type DWord -Force 2>$null
+    # NVIDIA threaded optimization (global)
+    $nvRegPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000"
+    if (Test-Path $nvRegPath) {
+        Set-ItemProperty -Path $nvRegPath -Name "RMHdcpKeyglobZero" -Value 1 -Type DWord -Force 2>$null
+    }
+}
+
 function Invoke-Priority {
     $pp = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
     $sp = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
@@ -158,16 +220,36 @@ function Invoke-Priority {
     Set-ItemProperty -Path $gp -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null
     Set-ItemProperty -Path $gp -Name "SFIO Priority"       -Value "High" -Type String -Force 2>$null
 }
+
 function Invoke-Memory {
     $mp = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"
     Set-ItemProperty -Path $mp -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path $mp -Name "ClearPageFileAtShutdown"       -Value 0 -Type DWord -Force 2>$null
+    # Large system cache off (prefer foreground app performance)
+    Set-ItemProperty -Path $mp -Name "LargeSystemCache" -Value 0 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null
     powercfg -h off 2>$null | Out-Null
     taskkill /f /im OneDrive.exe 2>$null | Out-Null
     Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue
 }
+
+function Invoke-Storage {
+    # Disable 8.3 filename creation
+    fsutil behavior set disable8dot3 1 2>$null | Out-Null
+    # Disable last access timestamp updates
+    fsutil behavior set disablelastaccess 1 2>$null | Out-Null
+    # Enable TRIM
+    fsutil behavior set disabledeletenotify 0 2>$null | Out-Null
+    # Disable search indexing on C: drive
+    $vol = Get-WmiObject -Class Win32_Volume -Filter "DriveLetter='C:'" -ErrorAction SilentlyContinue
+    if ($vol) { $vol.IndexingEnabled = $false; $vol.Put() | Out-Null }
+    # Optimize drives (SSD-aware)
+    Get-Volume | Where-Object { $_.DriveType -eq 'Fixed' -and $_.DriveLetter } | ForEach-Object {
+        Optimize-Volume -DriveLetter $_.DriveLetter -ReTrim -ErrorAction SilentlyContinue
+    }
+}
+
 function Invoke-Input {
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize"    -Value 16 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null
@@ -182,15 +264,49 @@ function Invoke-Input {
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB"    -Name "DisableSelectiveSuspend" -Value 1 -Type DWord -Force 2>$null
     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HidUsb" -Name "IdleEnable"              -Value 0 -Type DWord -Force 2>$null
 }
+
+function Invoke-Audio {
+    # Set Pro Audio MMCSS task (lowest latency)
+    $audioPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Pro Audio"
+    if (-not (Test-Path $audioPath)) { New-Item -Path $audioPath -Force | Out-Null }
+    Set-ItemProperty -Path $audioPath -Name "Affinity"           -Value 0      -Type DWord  -Force 2>$null
+    Set-ItemProperty -Path $audioPath -Name "Background Only"    -Value "False" -Type String -Force 2>$null
+    Set-ItemProperty -Path $audioPath -Name "Clock Rate"         -Value 10000  -Type DWord  -Force 2>$null
+    Set-ItemProperty -Path $audioPath -Name "GPU Priority"       -Value 8      -Type DWord  -Force 2>$null
+    Set-ItemProperty -Path $audioPath -Name "Priority"           -Value 1      -Type DWord  -Force 2>$null
+    Set-ItemProperty -Path $audioPath -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null
+    Set-ItemProperty -Path $audioPath -Name "SFIO Priority"      -Value "High" -Type String -Force 2>$null
+    # Disable audio enhancements system-wide
+    $enhPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render"
+    Get-ChildItem $enhPath -ErrorAction SilentlyContinue | ForEach-Object {
+        $ep = "$($_.PSPath)\FxProperties"
+        if (Test-Path $ep) {
+            Set-ItemProperty -Path $ep -Name "{1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5" -Value ([byte[]](0x01,0x00,0x00,0x00)) -Type Binary -Force 2>$null
+        }
+    }
+}
+
 function Invoke-Network {
     netsh int tcp set global rss=enabled 2>$null | Out-Null
     netsh int tcp set global autotuninglevel=normal 2>$null | Out-Null
     netsh int tcp set global timestamps=disabled 2>$null | Out-Null
     netsh int tcp set global chimney=disabled 2>$null | Out-Null
+    # Disable QoS packet scheduler reservation
+    $qosPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched"
+    if (-not (Test-Path $qosPath)) { New-Item -Path $qosPath -Force | Out-Null }
+    Set-ItemProperty -Path $qosPath -Name "NonBestEffortLimit" -Value 0 -Type DWord -Force 2>$null
     $tp = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"
     Set-ItemProperty -Path $tp -Name "TCPNoDelay"      -Value 1  -Type DWord -Force 2>$null
     Set-ItemProperty -Path $tp -Name "TcpAckFrequency" -Value 1  -Type DWord -Force 2>$null
     Set-ItemProperty -Path $tp -Name "DefaultTTL"      -Value 64 -Type DWord -Force 2>$null
+    # Disable IPv6
+    Set-ItemProperty -Path $tp -Name "DisabledComponents" -Value 0xFF -Type DWord -Force 2>$null
+    # Set DNS to Cloudflare 1.1.1.1 + Google 8.8.8.8
+    Get-NetAdapter | Where-Object { $_.Status -eq "Up" -and $_.Physical } | ForEach-Object {
+        Set-DnsClientServerAddress -InterfaceIndex $_.ifIndex -ServerAddresses ("1.1.1.1","8.8.8.8") -ErrorAction SilentlyContinue
+        # Disable adapter power management
+        Disable-NetAdapterPowerManagement -Name $_.Name -ErrorAction SilentlyContinue
+    }
     Clear-DnsClientCache -ErrorAction SilentlyContinue | Out-Null
     netsh winsock reset 2>$null | Out-Null
     netsh int ip reset  2>$null | Out-Null
@@ -198,6 +314,41 @@ function Invoke-Network {
     ipconfig /renew     2>$null | Out-Null
     Get-NetAdapter | Where-Object { $_.Physical } | Restart-NetAdapter -ErrorAction SilentlyContinue
 }
+
+function Invoke-Privacy {
+    # Telemetry
+    $tp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
+    if (-not (Test-Path $tp)) { New-Item -Path $tp -Force | Out-Null }
+    Set-ItemProperty -Path $tp -Name "AllowTelemetry" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Value 0 -Type DWord -Force 2>$null
+    # Disable Cortana
+    $cp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
+    if (-not (Test-Path $cp)) { New-Item -Path $cp -Force | Out-Null }
+    Set-ItemProperty -Path $cp -Name "AllowCortana" -Value 0 -Type DWord -Force 2>$null
+    # Disable Windows Error Reporting
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting" -Name "Disabled" -Value 1 -Type DWord -Force 2>$null
+    $wer = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting"
+    if (-not (Test-Path $wer)) { New-Item -Path $wer -Force | Out-Null }
+    Set-ItemProperty -Path $wer -Name "Disabled" -Value 1 -Type DWord -Force 2>$null
+    # Disable Activity History / Timeline
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "PublishUserActivities" -Value 0 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "UploadUserActivities" -Value 0 -Type DWord -Force 2>$null
+    # Disable Windows Update auto-restart
+    $wu = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
+    if (-not (Test-Path $wu)) { New-Item -Path $wu -Force | Out-Null }
+    Set-ItemProperty -Path $wu -Name "NoAutoRebootWithLoggedOnUsers" -Value 1 -Type DWord -Force 2>$null
+    Set-ItemProperty -Path $wu -Name "AUPowerManagement" -Value 0 -Type DWord -Force 2>$null
+    # Disable app launch tracking
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackProgs" -Value 0 -Type DWord -Force 2>$null
+    # Disable advertising ID
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name "Enabled" -Value 0 -Type DWord -Force 2>$null
+    # Disable location tracking
+    $lp = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors"
+    if (-not (Test-Path $lp)) { New-Item -Path $lp -Force | Out-Null }
+    Set-ItemProperty -Path $lp -Name "DisableLocation" -Value 1 -Type DWord -Force 2>$null
+}
+
 function Invoke-Services {
     @('DiagTrack','WSearch','MapsBroker','XblAuthManager','XblGameSave','XboxNetApiSvc','Fax','RetailDemo','RemoteRegistry','WerSvc') | ForEach-Object {
         Stop-Service -Name $_ -Force -ErrorAction SilentlyContinue
@@ -208,6 +359,7 @@ function Invoke-Services {
         Start-Service -Name $_ -ErrorAction SilentlyContinue
     }
 }
+
 function Invoke-Cleanup {
     @("$env:USERPROFILE\AppData\Local\Temp\*","C:\Windows\Temp\*","C:\Windows\Prefetch\*") | ForEach-Object {
         Get-ChildItem -Path $_ -Recurse -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
@@ -220,12 +372,12 @@ function Invoke-Cleanup {
 
 # ── FORM ───────────────────────────────────────────────────────────────────
 [int]$rowH       = 40
-[int]$taskCount  = 13
-[int]$listHeight = ($taskCount * $rowH) + 20   # 540
-[int]$formHeight = 36 + 155 + 28 + $listHeight + 86 + 14  # ~861
+[int]$taskCount  = 18
+[int]$listHeight = ($taskCount * $rowH) + 20   # 740
+[int]$formHeight = 36 + 155 + 28 + $listHeight + 86 + 14
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text            = "GOAT // GREATEST OF ALL TWEAKS v3.0"
+$form.Text            = "GOAT // GREATEST OF ALL TWEAKS v4.0"
 $form.Size            = New-Object System.Drawing.Size(820, $formHeight)
 $form.MinimumSize     = New-Object System.Drawing.Size(820, $formHeight)
 $form.StartPosition   = "CenterScreen"
@@ -316,7 +468,7 @@ $heroPanel.Add_Paint({
     # subtitle
     $subBr = New-Object System.Drawing.SolidBrush($cGray)
     $subFont = New-Object System.Drawing.Font("Consolas", 8)
-    $g.DrawString("GREATEST OF ALL TWEAKS  ·  v3.0", $subFont, $subBr, 24, 120)
+    $g.DrawString("GREATEST OF ALL TWEAKS  ·  v4.0", $subFont, $subBr, 24, 120)
     $subBr.Dispose(); $subFont.Dispose()
 
     # sys info right
@@ -380,7 +532,7 @@ $lblSection.BackColor = [System.Drawing.Color]::Transparent
 $sectionBar.Controls.Add($lblSection)
 
 $lblDoneCount = New-Object System.Windows.Forms.Label
-$lblDoneCount.Text      = "0 / 13"
+$lblDoneCount.Text      = "0 / $taskCount"
 $lblDoneCount.Font      = $fMono8
 $lblDoneCount.ForeColor = $cGrayDim
 $lblDoneCount.AutoSize  = $false
@@ -481,13 +633,11 @@ $scrollPanel.BackColor   = $cBg
 $scrollPanel.AutoScroll  = $true
 
 # ── ADD CONTROLS TO FORM — ORDER MATTERS FOR DOCKING ──────────────────────
-# Bottom and Fill must be added before Top panels.
-# Top panels stack in reverse add order (last added = topmost).
-$form.Controls.Add($footer)      # Bottom  — add first
-$form.Controls.Add($scrollPanel) # Fill    — add second
-$form.Controls.Add($sectionBar)  # Top     — appears below heroPanel
-$form.Controls.Add($heroPanel)   # Top     — appears below topBar
-$form.Controls.Add($topBar)      # Top     — add last = sits at very top
+$form.Controls.Add($footer)
+$form.Controls.Add($scrollPanel)
+$form.Controls.Add($sectionBar)
+$form.Controls.Add($heroPanel)
+$form.Controls.Add($topBar)
 
 # ── BUILD TASK ROWS ────────────────────────────────────────────────────────
 $script:TaskRows = @{}
@@ -533,7 +683,6 @@ foreach ($key in $taskKeys) {
         $sepPen.Dispose()
     })
 
-    # index
     $lblIdx = New-Object System.Windows.Forms.Label
     $lblIdx.Text      = $idxLabel
     $lblIdx.Font      = $fMono8
@@ -545,7 +694,6 @@ foreach ($key in $taskKeys) {
     $lblIdx.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($lblIdx)
 
-    # dot indicator
     $dot = New-Object System.Windows.Forms.Panel
     $dot.Size      = New-Object System.Drawing.Size(10, 10)
     $dot.Location  = New-Object System.Drawing.Point(62, 14)
@@ -579,7 +727,6 @@ foreach ($key in $taskKeys) {
     })
     $row.Controls.Add($dot)
 
-    # name
     $lblName = New-Object System.Windows.Forms.Label
     $lblName.Text      = $label
     $lblName.Font      = $fMono10
@@ -591,7 +738,6 @@ foreach ($key in $taskKeys) {
     $lblName.BackColor = [System.Drawing.Color]::Transparent
     $row.Controls.Add($lblName)
 
-    # bar track
     $barTrack = New-Object System.Windows.Forms.Panel
     $barTrack.Location  = New-Object System.Drawing.Point(316, 18)
     $barTrack.Size      = New-Object System.Drawing.Size(360, 4)
@@ -604,7 +750,6 @@ foreach ($key in $taskKeys) {
     $barFill.BackColor = $cWhite
     $barTrack.Controls.Add($barFill)
 
-    # status
     $lblStatus = New-Object System.Windows.Forms.Label
     $lblStatus.Text      = "pending"
     $lblStatus.Font      = $fMono8
@@ -785,17 +930,22 @@ $runTimer.Add_Tick({
     $fnName = $script:FnMap[$key]
     $script:JobWorker = Start-Job -ScriptBlock {
         param($fn)
-        function Invoke-Kernel { bcdedit /set useplatformclock no 2>$null|Out-Null; bcdedit /set useplatformtick yes 2>$null|Out-Null; bcdedit /set disabledynamictick yes 2>$null|Out-Null; bcdedit /set tscsyncpolicy Enhanced 2>$null|Out-Null; bcdedit /set nx OptOut 2>$null|Out-Null; bcdedit /set synthetictimers yes 2>$null|Out-Null; $h=Get-PnpDevice -ErrorAction SilentlyContinue|Where-Object{$_.FriendlyName -like "*High Precision*"}; if($h){Disable-PnpDevice -InstanceId $h.InstanceId -Confirm:$false -ErrorAction SilentlyContinue} }
+        function Invoke-Kernel { bcdedit /set useplatformclock no 2>$null|Out-Null; bcdedit /set useplatformtick yes 2>$null|Out-Null; bcdedit /set disabledynamictick yes 2>$null|Out-Null; bcdedit /set tscsyncpolicy Enhanced 2>$null|Out-Null; bcdedit /set nx OptOut 2>$null|Out-Null; bcdedit /set synthetictimers yes 2>$null|Out-Null; bcdedit /set nospeculationcontrol 1 2>$null|Out-Null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" -Name "DisablePagingExecutive" -Value 1 -Type DWord -Force 2>$null; $h=Get-PnpDevice -ErrorAction SilentlyContinue|Where-Object{$_.FriendlyName -like "*High Precision*"}; if($h){Disable-PnpDevice -InstanceId $h.InstanceId -Confirm:$false -ErrorAction SilentlyContinue} }
         function Invoke-TimerResolution { Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel" -Name "GlobalTimerResolutionRequests" -Value 1 -Type DWord -Force 2>$null }
         function Invoke-IRQ { Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\PCI" -ErrorAction SilentlyContinue|ForEach-Object{ $p="$($_.PSPath)\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties"; if(Test-Path $p){Set-ItemProperty -Path $p -Name "MSISupported" -Value 1 -Type DWord -Force 2>$null} } }
         function Invoke-Nagle { $iP="HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces"; Get-ChildItem $iP -ErrorAction SilentlyContinue|ForEach-Object{ Set-ItemProperty -Path $_.PSPath -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $_.PSPath -Name "TCPNoDelay" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $_.PSPath -Name "TcpDelAckTicks" -Value 0 -Type DWord -Force 2>$null } }
         function Invoke-VisualEffects { $vp="HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects"; if(-not(Test-Path $vp)){New-Item -Path $vp -Force|Out-Null}; Set-ItemProperty -Path $vp -Name "VisualFXSetting" -Value 2 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name "UserPreferencesMask" -Value([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -Type Binary -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Desktop\WindowMetrics" -Name "MinAnimate" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarAnimations" -Value 0 -Type DWord -Force 2>$null }
         function Invoke-GameBar { Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR" -Name "AppCaptureEnabled" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_Enabled" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_FSEBehaviorMode" -Value 2 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_HonorUserFSEBehaviorMode" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\System\GameConfigStore" -Name "GameDVR_DXGIHonorFSEWindowsCompatible" -Value 1 -Type DWord -Force 2>$null; $gp="HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR"; if(-not(Test-Path $gp)){New-Item -Path $gp -Force|Out-Null}; Set-ItemProperty -Path $gp -Name "AllowGameDVR" -Value 0 -Type DWord -Force 2>$null }
-        function Invoke-ProcessorPower { powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100 2>$null|Out-Null; powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 2>$null|Out-Null; powercfg /setactive SCHEME_CURRENT 2>$null|Out-Null }
+        function Invoke-ProcessorPower { powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMIN 100 2>$null|Out-Null; powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR PROCTHROTTLEMAX 100 2>$null|Out-Null; powercfg /setactive SCHEME_CURRENT 2>$null|Out-Null; powercfg /hibernate off 2>$null|Out-Null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value 0 -Type DWord -Force 2>$null }
+        function Invoke-CPUParking { $cpuParkPath="HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerSettings\54533251-82be-4824-96c1-47b60b740d00\0cc5b647-c1df-4637-891a-dec35c318583"; if(Test-Path $cpuParkPath){Set-ItemProperty -Path $cpuParkPath -Name "ValueMin" -Value 0 -Type DWord -Force 2>$null}; powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMINCORES 100 2>$null|Out-Null; powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR CPMAXCORES 100 2>$null|Out-Null; powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR HETEROCLASS1INITIALPERF 100 2>$null|Out-Null; powercfg /setacvalueindex SCHEME_CURRENT SUB_PROCESSOR HETEROCLASS0FLOORPERF 100 2>$null|Out-Null; powercfg /setactive SCHEME_CURRENT 2>$null|Out-Null }
+        function Invoke-GPU { $gpuPref="HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers"; if(-not(Test-Path $gpuPref)){New-Item -Path $gpuPref -Force|Out-Null}; Set-ItemProperty -Path $gpuPref -Name "HwSchMode" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $gpuPref -Name "TdrLevel" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path $gpuPref -Name "TdrDelay" -Value 60 -Type DWord -Force 2>$null; $nvRegPath="HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000"; if(Test-Path $nvRegPath){Set-ItemProperty -Path $nvRegPath -Name "RMHdcpKeyglobZero" -Value 1 -Type DWord -Force 2>$null} }
         function Invoke-Priority { $pp="HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"; $sp="HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"; $gp="$sp\Tasks\Games"; $ep="HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Executive"; Set-ItemProperty -Path $pp -Name "Win32PrioritySeparation" -Value 0x2a -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value 33554432 -Type DWord -Force 2>$null; Set-ItemProperty -Path $sp -Name "SystemResponsiveness" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path $sp -Name "NetworkThrottlingIndex" -Value 0xFFFFFFFF -Type DWord -Force 2>$null; Set-ItemProperty -Path $ep -Name "AdditionalCriticalWorkerThreads" -Value 2 -Type DWord -Force 2>$null; if(-not(Test-Path $gp)){New-Item -Path $gp -Force|Out-Null}; Set-ItemProperty -Path $gp -Name "GPU Priority" -Value 8 -Type DWord -Force 2>$null; Set-ItemProperty -Path $gp -Name "Priority" -Value 6 -Type DWord -Force 2>$null; Set-ItemProperty -Path $gp -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null; Set-ItemProperty -Path $gp -Name "SFIO Priority" -Value "High" -Type String -Force 2>$null }
-        function Invoke-Memory { $mp="HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"; Set-ItemProperty -Path $mp -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path $mp -Name "ClearPageFileAtShutdown" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null; Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null; powercfg -h off 2>$null|Out-Null; taskkill /f /im OneDrive.exe 2>$null|Out-Null; Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue }
+        function Invoke-Memory { $mp="HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management"; Set-ItemProperty -Path $mp -Name "SystemCacheDirtyPageThreshold" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path $mp -Name "ClearPageFileAtShutdown" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path $mp -Name "LargeSystemCache" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnablePrefetcher" -Value 3 -Type DWord -Force 2>$null; Set-ItemProperty -Path "$mp\PrefetchParameters" -Name "EnableSuperfetch" -Value 0 -Type DWord -Force 2>$null; powercfg -h off 2>$null|Out-Null; taskkill /f /im OneDrive.exe 2>$null|Out-Null; Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "OneDrive" -Force -ErrorAction SilentlyContinue }
+        function Invoke-Storage { fsutil behavior set disable8dot3 1 2>$null|Out-Null; fsutil behavior set disablelastaccess 1 2>$null|Out-Null; fsutil behavior set disabledeletenotify 0 2>$null|Out-Null; $vol=Get-WmiObject -Class Win32_Volume -Filter "DriveLetter='C:'" -ErrorAction SilentlyContinue; if($vol){$vol.IndexingEnabled=$false;$vol.Put()|Out-Null}; Get-Volume|Where-Object{$_.DriveType -eq 'Fixed' -and $_.DriveLetter}|ForEach-Object{Optimize-Volume -DriveLetter $_.DriveLetter -ReTrim -ErrorAction SilentlyContinue} }
         function Invoke-Input { Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\mouclass\Parameters" -Name "MouseDataQueueSize" -Value 16 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\kbdclass\Parameters" -Name "KeyboardDataQueueSize" -Value 16 -Type DWord -Force 2>$null; $pt="HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling"; if(-not(Test-Path $pt)){New-Item -Path $pt -Force|Out-Null}; Set-ItemProperty -Path $pt -Name "PowerThrottlingOff" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseSpeed" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold1" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Mouse" -Name "MouseThreshold2" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardDelay" -Value "0" -Type String -Force 2>$null; Set-ItemProperty -Path "HKCU:\Control Panel\Keyboard" -Name "KeyboardSpeed" -Value "31" -Type String -Force 2>$null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\USB" -Name "DisableSelectiveSuspend" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\HidUsb" -Name "IdleEnable" -Value 0 -Type DWord -Force 2>$null }
-        function Invoke-Network { netsh int tcp set global rss=enabled 2>$null|Out-Null; netsh int tcp set global autotuninglevel=normal 2>$null|Out-Null; netsh int tcp set global timestamps=disabled 2>$null|Out-Null; netsh int tcp set global chimney=disabled 2>$null|Out-Null; $tp="HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"; Set-ItemProperty -Path $tp -Name "TCPNoDelay" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $tp -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $tp -Name "DefaultTTL" -Value 64 -Type DWord -Force 2>$null; Clear-DnsClientCache -ErrorAction SilentlyContinue|Out-Null; netsh winsock reset 2>$null|Out-Null; netsh int ip reset 2>$null|Out-Null; ipconfig /release 2>$null|Out-Null; ipconfig /renew 2>$null|Out-Null; Get-NetAdapter|Where-Object{$_.Physical}|Restart-NetAdapter -ErrorAction SilentlyContinue }
+        function Invoke-Audio { $audioPath="HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Pro Audio"; if(-not(Test-Path $audioPath)){New-Item -Path $audioPath -Force|Out-Null}; Set-ItemProperty -Path $audioPath -Name "Affinity" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path $audioPath -Name "Background Only" -Value "False" -Type String -Force 2>$null; Set-ItemProperty -Path $audioPath -Name "Clock Rate" -Value 10000 -Type DWord -Force 2>$null; Set-ItemProperty -Path $audioPath -Name "GPU Priority" -Value 8 -Type DWord -Force 2>$null; Set-ItemProperty -Path $audioPath -Name "Priority" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $audioPath -Name "Scheduling Category" -Value "High" -Type String -Force 2>$null; Set-ItemProperty -Path $audioPath -Name "SFIO Priority" -Value "High" -Type String -Force 2>$null; $enhPath="HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render"; Get-ChildItem $enhPath -ErrorAction SilentlyContinue|ForEach-Object{ $ep="$($_.PSPath)\FxProperties"; if(Test-Path $ep){Set-ItemProperty -Path $ep -Name "{1da5d803-d492-4edd-8c23-e0c0ffee7f0e},5" -Value([byte[]](0x01,0x00,0x00,0x00)) -Type Binary -Force 2>$null} } }
+        function Invoke-Network { netsh int tcp set global rss=enabled 2>$null|Out-Null; netsh int tcp set global autotuninglevel=normal 2>$null|Out-Null; netsh int tcp set global timestamps=disabled 2>$null|Out-Null; netsh int tcp set global chimney=disabled 2>$null|Out-Null; $qosPath="HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched"; if(-not(Test-Path $qosPath)){New-Item -Path $qosPath -Force|Out-Null}; Set-ItemProperty -Path $qosPath -Name "NonBestEffortLimit" -Value 0 -Type DWord -Force 2>$null; $tp="HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"; Set-ItemProperty -Path $tp -Name "TCPNoDelay" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $tp -Name "TcpAckFrequency" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $tp -Name "DefaultTTL" -Value 64 -Type DWord -Force 2>$null; Set-ItemProperty -Path $tp -Name "DisabledComponents" -Value 0xFF -Type DWord -Force 2>$null; Get-NetAdapter|Where-Object{$_.Status -eq "Up" -and $_.Physical}|ForEach-Object{ Set-DnsClientServerAddress -InterfaceIndex $_.ifIndex -ServerAddresses ("1.1.1.1","8.8.8.8") -ErrorAction SilentlyContinue; Disable-NetAdapterPowerManagement -Name $_.Name -ErrorAction SilentlyContinue }; Clear-DnsClientCache -ErrorAction SilentlyContinue|Out-Null; netsh winsock reset 2>$null|Out-Null; netsh int ip reset 2>$null|Out-Null; ipconfig /release 2>$null|Out-Null; ipconfig /renew 2>$null|Out-Null; Get-NetAdapter|Where-Object{$_.Physical}|Restart-NetAdapter -ErrorAction SilentlyContinue }
+        function Invoke-Privacy { $tp="HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"; if(-not(Test-Path $tp)){New-Item -Path $tp -Force|Out-Null}; Set-ItemProperty -Path $tp -Name "AllowTelemetry" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection" -Name "AllowTelemetry" -Value 0 -Type DWord -Force 2>$null; $cp="HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"; if(-not(Test-Path $cp)){New-Item -Path $cp -Force|Out-Null}; Set-ItemProperty -Path $cp -Name "AllowCortana" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting" -Name "Disabled" -Value 1 -Type DWord -Force 2>$null; $wer="HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting"; if(-not(Test-Path $wer)){New-Item -Path $wer -Force|Out-Null}; Set-ItemProperty -Path $wer -Name "Disabled" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableActivityFeed" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "PublishUserActivities" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "UploadUserActivities" -Value 0 -Type DWord -Force 2>$null; $wu="HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"; if(-not(Test-Path $wu)){New-Item -Path $wu -Force|Out-Null}; Set-ItemProperty -Path $wu -Name "NoAutoRebootWithLoggedOnUsers" -Value 1 -Type DWord -Force 2>$null; Set-ItemProperty -Path $wu -Name "AUPowerManagement" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_TrackProgs" -Value 0 -Type DWord -Force 2>$null; Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" -Name "Enabled" -Value 0 -Type DWord -Force 2>$null; $lp="HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors"; if(-not(Test-Path $lp)){New-Item -Path $lp -Force|Out-Null}; Set-ItemProperty -Path $lp -Name "DisableLocation" -Value 1 -Type DWord -Force 2>$null }
         function Invoke-Services { @('DiagTrack','WSearch','MapsBroker','XblAuthManager','XblGameSave','XboxNetApiSvc','Fax','RetailDemo','RemoteRegistry','WerSvc')|ForEach-Object{ Stop-Service -Name $_ -Force -ErrorAction SilentlyContinue; Set-Service -Name $_ -StartupType Disabled -ErrorAction SilentlyContinue }; @('Audiosrv','AudioEndpointBuilder','Dhcp','NlaSvc','Netman','WlanSvc','RpcSs','EventLog','PlugPlay','LanmanWorkstation','LanmanServer')|ForEach-Object{ Set-Service -Name $_ -StartupType Automatic -ErrorAction SilentlyContinue; Start-Service -Name $_ -ErrorAction SilentlyContinue } }
         function Invoke-Cleanup { @("$env:USERPROFILE\AppData\Local\Temp\*","C:\Windows\Temp\*","C:\Windows\Prefetch\*")|ForEach-Object{ Get-ChildItem -Path $_ -Recurse -ErrorAction SilentlyContinue|Remove-Item -Recurse -Force -ErrorAction SilentlyContinue }; Stop-Service -Name wuauserv,UsoSvc -Force -ErrorAction SilentlyContinue; Remove-Item -Path "C:\Windows\SoftwareDistribution\*" -Recurse -Force -ErrorAction SilentlyContinue; Start-Service -Name wuauserv -ErrorAction SilentlyContinue; wevtutil.exe el|ForEach-Object{ wevtutil.exe cl "$_" 2>$null } }
         try { & $fn } catch {}
