@@ -324,22 +324,3 @@ Copy-Item $systemIni "$systemIni.backup" -Force -ErrorAction SilentlyContinue
 Copy-Item $winIni "$winIni.backup" -Force -ErrorAction SilentlyContinue
 Add-Content $systemIni "`r`n$ini"
 Add-Content $winIni "`r`n$ini"
-
-
-# --- Policy-based QoS (FiveM) ---
-try {
-    Remove-NetQosPolicy -Name "FiveM" -PolicyStore LocalComputer -Confirm:$false -ErrorAction SilentlyContinue
-
-    New-NetQosPolicy `
-        -Name "FiveM" `
-        -AppPathNameMatchCondition "FiveM_GTAProcess.exe" `
-        -IPProtocolMatchCondition UDP `
-        -DSCPAction 46 `
-        -ThrottleRateActionBitsPerSecond 0 `
-        -PolicyStore LocalComputer
-
-    gpupdate /force | Out-Null
-}
-catch {
-    Write-Host "QoS policy creation failed: $($_.Exception.Message)"
-}
